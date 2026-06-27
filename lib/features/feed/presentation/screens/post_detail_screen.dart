@@ -312,7 +312,7 @@ class PostDetailScreen extends StatelessWidget {
 
                       // Comment 1: Author comment (Christian Pickett)
                       _buildComment(
-                        avatarAsset: 'assets/images/dharmik_avatar.png',
+                        avatarAsset: 'assets/images/dharmik_avatar.jpg',
                         name: 'Christian Pickett',
                         isAuthor: true,
                         headline: 'Co-founder @ Orthogonal (YC W26)',
@@ -340,7 +340,7 @@ class PostDetailScreen extends StatelessWidget {
 
                       // Comment 2: Aryan Gandhi
                       _buildComment(
-                        avatarAsset: 'assets/images/somraj_avatar.png',
+                        avatarAsset: 'assets/images/somraj_avatar.jpg',
                         name: 'Aryan Gandhi',
                         isAuthor: false,
                         headline: 'Building the Future with AI 0->1 | Gen ...',
@@ -367,7 +367,7 @@ class PostDetailScreen extends StatelessWidget {
 
                       // Comment 3: Ryan Widgeon
                       _buildComment(
-                        avatarAsset: 'assets/images/alina_avatar.png',
+                        avatarAsset: 'assets/images/alina_avatar.jpg',
                         name: 'Ryan Widgeon',
                         isAuthor: false,
                         headline: 'Founder | AI/ML | AI Agents |GTM| Forb...',
@@ -392,7 +392,7 @@ class PostDetailScreen extends StatelessWidget {
                         replies: [
                           // Reply to Ryan: Dr. Xi Zeng
                           _buildReply(
-                            avatarAsset: 'assets/images/dharmik_avatar.png',
+                            avatarAsset: 'assets/images/dharmik_avatar.jpg',
                             name: 'Dr. Xi Zeng',
                             headline: 'Founder and CEO of Chance A...',
                             timeAgo: '18h',
@@ -428,7 +428,7 @@ class PostDetailScreen extends StatelessWidget {
 
                       // Comment 4: Sudan Bey
                       _buildComment(
-                        avatarAsset: 'assets/images/somraj_avatar.png',
+                        avatarAsset: 'assets/images/somraj_avatar.jpg',
                         name: 'Sudan Bey',
                         isAuthor: false,
                         headline: 'GTM Sales Leader | Digital Engineering ...',
@@ -476,7 +476,7 @@ class PostDetailScreen extends StatelessWidget {
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           image: DecorationImage(
-                            image: AssetImage('assets/images/somraj_avatar.png'),
+                            image: AssetImage('assets/images/somraj_avatar.jpg'),
                             fit: BoxFit.cover,
                           ),
                         ),

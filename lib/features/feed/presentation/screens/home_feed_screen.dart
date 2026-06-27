@@ -52,7 +52,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                   decoration: const BoxDecoration(
                                     shape: BoxShape.circle,
                                     image: DecorationImage(
-                                      image: AssetImage('assets/images/alina_avatar.png'),
+                                      image: AssetImage('assets/images/alina_avatar.jpg'),
                                       fit: BoxFit.cover,
                                     ),
                                   ),
@@ -228,7 +228,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 builder: (_) => const PostDetailScreen(
                   authorName: 'Christian Pickett',
                   authorHeadline: 'Co-founder @ Orthogonal (YC W26)',
-                  authorAvatar: 'assets/images/dharmik_avatar.png',
+                  authorAvatar: 'assets/images/dharmik_avatar.jpg',
                   timeAgo: '1d',
                   postText: '',
                   connectionDegree: '3rd+',
@@ -261,7 +261,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
           // Image (Warp team)
           Image.asset(
-            'assets/images/warp_team.png',
+            'assets/images/warp_team.jpg',
             fit: BoxFit.cover,
             width: double.infinity,
           ),
@@ -362,7 +362,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 builder: (_) => const PostDetailScreen(
                   authorName: 'Christian Pickett',
                   authorHeadline: 'Co-founder @ Orthogonal (YC W26)',
-                  authorAvatar: 'assets/images/dharmik_avatar.png',
+                  authorAvatar: 'assets/images/dharmik_avatar.jpg',
                   timeAgo: '1d',
                   postText: '',
                   connectionDegree: '3rd+',
@@ -384,7 +384,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             alignment: Alignment.center,
             children: [
               Image.asset(
-                'assets/images/time_handshake.png',
+                'assets/images/time_handshake.jpg',
                 fit: BoxFit.cover,
                 width: double.infinity,
               ),
@@ -462,7 +462,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                      image: AssetImage('assets/images/alina_avatar.png'),
+                      image: AssetImage('assets/images/alina_avatar.jpg'),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -545,7 +545,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 builder: (_) => const PostDetailScreen(
                   authorName: 'Christian Pickett',
                   authorHeadline: 'Co-founder @ Orthogonal (YC W26)',
-                  authorAvatar: 'assets/images/dharmik_avatar.png',
+                  authorAvatar: 'assets/images/dharmik_avatar.jpg',
                   timeAgo: '1d',
                   postText: '',
                   connectionDegree: '3rd+',
@@ -564,7 +564,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
           // Image (crossed-out valuation poster)
           Image.asset(
-            'assets/images/valuation_sentence.png',
+            'assets/images/valuation_sentence.jpg',
             fit: BoxFit.cover,
             width: double.infinity,
           ),
@@ -650,7 +650,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
                             image: DecorationImage(
-                              image: AssetImage('assets/images/somraj_avatar.png'),
+                              image: AssetImage('assets/images/somraj_avatar.jpg'),
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -667,7 +667,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                             image: const DecorationImage(
-                              image: AssetImage('assets/images/dharmik_avatar.png'),
+                              image: AssetImage('assets/images/dharmik_avatar.jpg'),
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -726,19 +726,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     ],
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add, size: 14, color: Color(0xFF0A66C2)),
-                  label: const Text(
-                    'Follow',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0A66C2)),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
               ],
             ),
           ),
@@ -751,7 +738,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 builder: (_) => const PostDetailScreen(
                   authorName: 'Christian Pickett',
                   authorHeadline: 'Co-founder @ Orthogonal (YC W26)',
-                  authorAvatar: 'assets/images/dharmik_avatar.png',
+                  authorAvatar: 'assets/images/dharmik_avatar.jpg',
                   timeAgo: '1d',
                   postText: '',
                   connectionDegree: '3rd+',
@@ -772,7 +759,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           Stack(
             children: [
               Image.asset(
-                'assets/images/young_entrepreneur.png',
+                'assets/images/young_entrepreneur.jpg',
                 fit: BoxFit.cover,
                 width: double.infinity,
               ),
@@ -853,7 +840,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: AssetImage('assets/images/user_avatar.png'),
+                    image: AssetImage('assets/images/user_avatar.jpg'),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -978,7 +965,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   width: 1.5,
                 ),
                 image: const DecorationImage(
-                  image: AssetImage('assets/images/somraj_avatar.png'),
+                  image: AssetImage('assets/images/somraj_avatar.jpg'),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -1025,7 +1012,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
                             image: DecorationImage(
-                              image: AssetImage('assets/images/alina_avatar.png'),
+                              image: AssetImage('assets/images/alina_avatar.jpg'),
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -1112,7 +1099,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   );
                 }),
                 _buildDrawerNavItem('Repositories'),
-                _buildDrawerNavItem('Stars'),
+                _buildDrawerNavItem('Startup Galary', onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const StartupGalleryScreen(),
+                  ));
+                }),
                 _buildDrawerNavItem('Gists'),
                 _buildDrawerNavItem('Organizations'),
                 _buildDrawerNavItem('Enterprises'),

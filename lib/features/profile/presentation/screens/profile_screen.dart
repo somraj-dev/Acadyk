@@ -163,7 +163,7 @@ class ProfileScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 3.5),
                     image: const DecorationImage(
-                      image: AssetImage('assets/images/somraj_avatar.png'),
+                      image: AssetImage('assets/images/somraj_avatar.jpg'),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -382,7 +382,7 @@ class ProfileScreen extends StatelessWidget {
                     bottomRight: Radius.circular(7),
                   ),
                   child: Image.asset(
-                    'assets/images/arogya_dashboard.png',
+                    'assets/images/arogya_dashboard.jpg',
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: 200,
@@ -485,7 +485,7 @@ class ProfileScreen extends StatelessWidget {
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: AssetImage('assets/images/somraj_avatar.png'),
+                    image: AssetImage('assets/images/somraj_avatar.jpg'),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -619,7 +619,7 @@ class ProfileScreen extends StatelessWidget {
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: AssetImage('assets/images/somraj_avatar.png'),
+                    image: AssetImage('assets/images/somraj_avatar.jpg'),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -943,7 +943,7 @@ class ProfileScreen extends StatelessWidget {
                 width: 36, height: 36,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  image: DecorationImage(image: AssetImage('assets/images/somraj_avatar.png'), fit: BoxFit.cover),
+                  image: DecorationImage(image: AssetImage('assets/images/somraj_avatar.jpg'), fit: BoxFit.cover),
                 ),
               ),
               Transform.translate(
@@ -952,7 +952,7 @@ class ProfileScreen extends StatelessWidget {
                   width: 36, height: 36,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    image: DecorationImage(image: AssetImage('assets/images/dharmik_avatar.png'), fit: BoxFit.cover),
+                    image: DecorationImage(image: AssetImage('assets/images/dharmik_avatar.jpg'), fit: BoxFit.cover),
                   ),
                 ),
               ),
