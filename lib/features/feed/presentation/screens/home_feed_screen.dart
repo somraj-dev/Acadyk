@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import 'post_detail_screen.dart';
+import 'startup_gallery_screen.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -173,9 +174,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF6600), // YC Orange
-                    borderRadius: BorderRadius.circular(4),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFF6600), // YC Orange
+                    shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
                   child: const Text(
@@ -296,9 +297,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE50914), // TIME Red
-                    borderRadius: BorderRadius.circular(4),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE50914), // TIME Red
+                    shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
                   child: const Text(

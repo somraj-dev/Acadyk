@@ -20,10 +20,6 @@ class ProfileScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
                   child: Row(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Color(0xFF191919)),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
                       const Expanded(child: SizedBox()),
                       const Icon(Icons.search, color: Color(0xFF5E5E5E), size: 24),
                       const SizedBox(width: 16),

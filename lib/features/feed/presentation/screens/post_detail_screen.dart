@@ -35,10 +35,6 @@ class PostDetailScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 6.0),
                   child: Row(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Color(0xFF191919), size: 24),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
                       const Spacer(),
                       const Icon(Icons.more_vert, color: Color(0xFF5E5E5E), size: 24),
                       const SizedBox(width: 8),
