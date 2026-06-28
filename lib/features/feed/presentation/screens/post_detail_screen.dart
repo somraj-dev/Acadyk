@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class PostDetailScreen extends StatelessWidget {
   final String authorName;
@@ -237,52 +238,38 @@ class PostDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // Reaction summary row
+                      // Action/Engagement row
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // Reaction icons
-                            Container(
-                              width: 18, height: 18,
-                              decoration: const BoxDecoration(color: Color(0xFF0A66C2), shape: BoxShape.circle),
-                              child: const Icon(Icons.thumb_up, size: 10, color: Colors.white),
+                            Row(
+                              children: [
+                                const Icon(CupertinoIcons.heart, size: 24, color: Colors.black87),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  '537',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 14.0,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                const Icon(CupertinoIcons.chat_bubble, size: 24, color: Colors.black87),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  '51',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 14.0,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Transform.translate(
-                              offset: const Offset(-4, 0),
-                              child: Container(
-                                width: 18, height: 18,
-                                decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-                                child: const Icon(Icons.favorite, size: 10, color: Colors.white),
-                              ),
-                            ),
-                            Transform.translate(
-                              offset: const Offset(-8, 0),
-                              child: Container(
-                                width: 18, height: 18,
-                                decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
-                                child: const Icon(Icons.psychology, size: 10, color: Colors.white),
-                              ),
-                            ),
-                            const Text('537', style: TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
-                            const Spacer(),
-                            const Text('51 comments • 24 reposts', style: TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Divider(height: 1, color: Color(0xFFE0E0E0)),
-
-                      // Action bar
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildActionButton(Icons.thumb_up_alt_outlined, 'Like'),
-                            _buildActionButton(Icons.comment_outlined, 'Comment'),
-                            _buildActionButton(Icons.repeat, 'Repost'),
-                            _buildActionButton(Icons.send_outlined, 'Send'),
+                            const Icon(CupertinoIcons.bookmark, size: 24, color: Colors.black87),
                           ],
                         ),
                       ),

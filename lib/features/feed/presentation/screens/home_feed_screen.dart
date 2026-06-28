@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../profile/presentation/screens/appearance_screen.dart';
+import '../../../profile/presentation/screens/about_account_screen.dart';
 import 'post_detail_screen.dart';
 import 'startup_gallery_screen.dart';
-
+import 'exhibition_screen.dart';
+import 'create_post_screen.dart';
+import '../../../notifications/presentation/screens/notification_screen.dart';
+import '../../../community/presentation/screens/discover_communities_screen.dart';
+import '../../../chat/presentation/screens/message_center_screen.dart';
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
 
@@ -88,23 +94,48 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  const Icon(CupertinoIcons.heart, color: Colors.black87, size: 28),
-                                  Positioned(
-                                    top: -1,
-                                    right: -2,
-                                    child: Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.redAccent,
-                                        shape: BoxShape.circle,
+                              GestureDetector(
+                                onTap: () {
+                                  showSearch(
+                                    context: context,
+                                    delegate: AcadykSearchDelegate(),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF1E1F22), // Dark grey circle
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(CupertinoIcons.search, color: Colors.white, size: 16),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (_) => const NotificationScreen(),
+                                  ));
+                                },
+                                behavior: HitTestBehavior.opaque,
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    const Icon(CupertinoIcons.heart, color: Colors.black87, size: 28),
+                                    Positioned(
+                                      top: -1,
+                                      right: -2,
+                                      child: Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.redAccent,
+                                          shape: BoxShape.circle,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -133,6 +164,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
                         // Post 4: P Dharmik
                         _buildDharmikPostCard(),
+
+                        // Post 5: Repost Card
+                        _buildRepostCard(),
 
                         const SizedBox(height: 16.0),
                       ],
@@ -166,9 +200,16 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Row(
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const ProfileScreen(),
+              ));
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Row(
               children: [
                 // YC Profile square logo
                 Container(
@@ -214,10 +255,19 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     ],
                   ),
                 ),
-                const Icon(Icons.more_horiz, color: Color(0xFF5E5E5E)),
-                const SizedBox(width: 10),
-                const Icon(Icons.close, color: Color(0xFF5E5E5E)),
+                GestureDetector(
+                  onTap: () => _showPostOptionsBottomSheet(context, {
+                    'name': 'Y Combinator',
+                    'avatarText': 'Y',
+                    'avatarColor': const Color(0xFFFF6600),
+                    'dateJoined': 'March 2005',
+                    'location': 'United States',
+                    'sharedFollowers': 24,
+                  }),
+                  child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
+                ),
               ],
+            ),
             ),
           ),
           const SizedBox(height: 10),
@@ -269,10 +319,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           const SizedBox(height: 10),
 
           // Action/Engagement row
-          _buildLinkedInActionRow(
+          _buildPostActionRow(
             likes: '537',
             comments: '51',
-            reposts: '24',
           ),
         ],
       ),
@@ -289,9 +338,16 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Row(
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const ProfileScreen(),
+              ));
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Row(
               children: [
                 // TIME red square logo
                 Container(
@@ -348,10 +404,19 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     ],
                   ),
                 ),
-                const Icon(Icons.more_horiz, color: Color(0xFF5E5E5E)),
-                const SizedBox(width: 10),
-                const Icon(Icons.close, color: Color(0xFF5E5E5E)),
+                GestureDetector(
+                  onTap: () => _showPostOptionsBottomSheet(context, {
+                    'name': 'TIME',
+                    'avatarText': 'TIME',
+                    'avatarColor': const Color(0xFFE50914),
+                    'dateJoined': 'October 2010',
+                    'location': 'United States',
+                    'sharedFollowers': 12,
+                  }),
+                  child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
+                ),
               ],
+            ),
             ),
           ),
           const SizedBox(height: 10),
@@ -432,10 +497,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           const SizedBox(height: 10),
 
           // Engagement Row (TIME post reaction bar)
-          _buildLinkedInActionRow(
+          _buildPostActionRow(
             likes: '1,204',
             comments: '89',
-            reposts: '',
           ),
         ],
       ),
@@ -452,9 +516,16 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Row(
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const ProfileScreen(),
+              ));
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Row(
               children: [
                 // Alina image avatar
                 Container(
@@ -521,20 +592,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     ],
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add, size: 14, color: Color(0xFF0A66C2)),
-                  label: const Text(
-                    'Follow',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0A66C2)),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
+                GestureDetector(
+                  onTap: () => _showPostOptionsBottomSheet(context, {
+                    'name': 'Alina Sprongole',
+                    'avatarUrl': 'assets/images/alina_avatar.jpg',
+                    'dateJoined': 'November 2020',
+                    'location': 'India',
+                    'sharedFollowers': 2,
+                  }),
+                  child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
                 ),
               ],
+            ),
             ),
           ),
           const SizedBox(height: 10),
@@ -572,10 +641,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           const SizedBox(height: 10),
 
           // Action/Engagement row
-          _buildLinkedInActionRow(
+          _buildPostActionRow(
             likes: '23',
             comments: '15',
-            reposts: '',
           ),
         ],
       ),
@@ -609,13 +677,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               ),
             ],
           ),
-          Row(
-            children: [
-              Icon(Icons.more_horiz, size: 18, color: Color(0xFF5E5E5E)),
-              SizedBox(width: 10),
-              Icon(Icons.close, size: 18, color: Color(0xFF5E5E5E)),
-            ],
-          ),
+          const SizedBox.shrink(),
         ],
       ),
     );
@@ -631,9 +693,16 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Row(
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const ProfileScreen(),
+              ));
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Row(
               children: [
                 // Collab avatars (Overlapping)
                 SizedBox(
@@ -729,6 +798,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 ),
               ],
             ),
+            ),
           ),
           const SizedBox(height: 10),
 
@@ -807,10 +877,229 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           const SizedBox(height: 10),
 
           // Action/Engagement row
-          _buildLinkedInActionRow(
+          _buildPostActionRow(
             likes: '1,492',
             comments: '235',
-            reposts: '48',
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Post 5: Repost Card
+  Widget _buildRepostCard() {
+    return Container(
+      color: Colors.white,
+      margin: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Outer Header (Reposter)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: Row(
+              children: [
+                // Reposter Avatar
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/dharmik_avatar.jpg'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Gokul Rajaram',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.0,
+                              color: Color(0xFF191919),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            '• Following',
+                            style: TextStyle(
+                              color: Color(0xFF5E5E5E),
+                              fontSize: 13.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Text(
+                        'Investor and Company Helper',
+                        style: TextStyle(
+                          color: Color(0xFF5E5E5E),
+                          fontSize: 12.0,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => _showPostOptionsBottomSheet(context, {
+                    'name': 'Gokul Rajaram',
+                    'avatarUrl': 'assets/images/dharmik_avatar.jpg',
+                    'dateJoined': 'Jan 2010',
+                    'location': 'United States',
+                    'sharedFollowers': 50,
+                  }),
+                  child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Reposter Text
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.0),
+            child: Text(
+              'This is awesome!!!!',
+              style: TextStyle(color: Color(0xFF191919), fontSize: 16.0, height: 1.3),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Inner Card (Original Post)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 1.0),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Inner Header
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            image: DecorationImage(
+                              image: AssetImage('assets/images/alina_avatar.jpg'),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Rahul Thathoo',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14.0,
+                                  color: Color(0xFF191919),
+                                ),
+                              ),
+                              Text(
+                                'Engineering @ OpenAI',
+                                style: TextStyle(
+                                  color: Color(0xFF5E5E5E),
+                                  fontSize: 12.0,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        // + Follow Button
+                        Row(
+                          children: [
+                            const Icon(Icons.add, color: Color(0xFF0A66C2), size: 20),
+                            const SizedBox(width: 2),
+                            const Text(
+                              'Follow',
+                              style: TextStyle(
+                                color: Color(0xFF0A66C2),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Inner Text
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: RichText(
+                      text: const TextSpan(
+                        style: TextStyle(color: Color(0xFF191919), fontSize: 13.5, height: 1.45),
+                        children: [
+                          TextSpan(text: 'I enjoyed the podcast featuring '),
+                          TextSpan(
+                            text: 'Nikesh Arora',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
+                          ),
+                          TextSpan(text: ' with '),
+                          TextSpan(
+                            text: 'Harry Stebbings',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
+                          ),
+                          TextSpan(text: ' on 20VC. I utilized '),
+                          TextSpan(
+                            text: 'Gokul Rajaram',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
+                          ),
+                          TextSpan(text: '\'s Use Transcribe tool to... '),
+                          TextSpan(
+                            text: 'more',
+                            style: TextStyle(color: Color(0xFF5E5E5E)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Inner Image
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(8.0),
+                      bottomRight: Radius.circular(8.0),
+                    ),
+                    child: Image.asset(
+                      'assets/images/young_entrepreneur.jpg',
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Action/Engagement row
+          _buildPostActionRow(
+            likes: '892',
+            comments: '124',
           ),
         ],
       ),
@@ -821,91 +1110,271 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // REUSABLE FEEDBACK ACTION ROW
   // -------------------------------------------------------------
 
-  Widget _buildLinkedInActionRow({
+  Widget _buildPostActionRow({
     required String likes,
     required String comments,
-    required String reposts,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Left: User avatar, down arrow, and engagement counters
           Row(
             children: [
-              // User Avatar circular photo
-              Container(
-                width: 20,
-                height: 20,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/user_avatar.jpg'),
-                    fit: BoxFit.cover,
-                  ),
+              const Icon(CupertinoIcons.heart, size: 24, color: Colors.black87),
+              const SizedBox(width: 6),
+              Text(
+                likes,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(width: 2),
-              const Icon(Icons.arrow_drop_down, size: 14, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 10),
-
-              // Like Trigger + count
-              const Icon(Icons.thumb_up_alt_outlined, size: 16, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 4),
-              Text(likes, style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 12.0, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 14),
-
-              // Comment Trigger + count
-              const Icon(Icons.comment_outlined, size: 16, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 4),
-              Text(comments, style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 12.0, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 14),
-
-              // Repost Trigger + count (if present)
-              if (reposts.isNotEmpty && reposts != '0') ...[
-                const Icon(Icons.repeat, size: 16, color: Color(0xFF5E5E5E)),
-                const SizedBox(width: 4),
-                Text(reposts, style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 12.0, fontWeight: FontWeight.bold)),
-                const SizedBox(width: 14),
-              ],
-
-              // Send/Share Trigger
-              const Icon(Icons.send_outlined, size: 16, color: Color(0xFF5E5E5E)),
+              const SizedBox(width: 16),
+              const Icon(CupertinoIcons.chat_bubble, size: 24, color: Colors.black87),
+              const SizedBox(width: 6),
+              Text(
+                comments,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
+          const Icon(CupertinoIcons.bookmark, size: 24, color: Colors.black87),
+        ],
+      ),
+    );
+  }
 
-          // Right: Overlapping reaction circle badges
-          Row(
-            children: [
-              _buildReactionBadge(const Color(0xFF0A66C2), Icons.thumb_up, 10.0), // Blue Like
-              Transform.translate(
-                offset: const Offset(-4, 0),
-                child: _buildReactionBadge(const Color(0xFF10B981), Icons.psychology, 10.0), // Green Insight
-              ),
-              Transform.translate(
-                offset: const Offset(-8, 0),
-                child: _buildReactionBadge(const Color(0xFFEF4444), Icons.favorite, 10.0), // Red Heart
-              ),
-            ],
+  // -------------------------------------------------------------
+  // POST OPTIONS BOTTOM SHEET
+  // -------------------------------------------------------------
+
+  void _showPostOptionsBottomSheet(BuildContext context, Map<String, dynamic> accountData) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white, // Bright theme matching the app
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 12.0, bottom: 20.0), // Outer padding
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top drag handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Top row of actions
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildTopActionIcon(CupertinoIcons.bookmark, 'Save'),
+                    _buildTopActionIcon(CupertinoIcons.repeat, 'Repost'),
+                    _buildTopActionIcon(CupertinoIcons.qrcode_viewfinder, 'QR code'),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Vertical list actions (left aligned with padding)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    children: [
+                      _buildListAction(CupertinoIcons.eye_slash, 'Hide', onTap: () {
+                        Navigator.pop(context);
+                      }),
+                      const SizedBox(height: 20),
+                      _buildListAction(CupertinoIcons.person, 'About this account', onTap: () {
+                        Navigator.pop(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AboutAccountScreen(accountData: accountData),
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 20),
+                      _buildListAction(CupertinoIcons.exclamationmark_bubble, 'Report', color: const Color(0xFFED4956), onTap: () {
+                        Navigator.pop(context);
+                      }),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTopActionIcon(IconData icon, String label) {
+    return Column(
+      children: [
+        Container(
+          width: 65,
+          height: 65,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF2F2F2), // Light grey for blocks
+            borderRadius: BorderRadius.circular(18), // Slightly less rounded
+          ),
+          child: Icon(icon, color: Colors.black, size: 28),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w400),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListAction(IconData icon, String label, {Color color = Colors.black, VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 26),
+          const SizedBox(width: 16),
+          Text(
+            label,
+            style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w400),
           ),
         ],
       ),
     );
   }
 
-  // Small circular reaction icon badge helper
-  Widget _buildReactionBadge(Color color, IconData icon, double size) {
-    return Container(
-      width: size * 1.6,
-      height: size * 1.6,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 1.0),
+  void _showCreatePostBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF202022),
+      constraints: const BoxConstraints(maxWidth: 480),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      alignment: Alignment.center,
-      child: Icon(icon, size: size * 0.9, color: Colors.white),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 16.0, bottom: 32.0, left: 16.0, right: 16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top Row: Close and Title
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    const Text(
+                      'Start creating now',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                // Horizontal items
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildCreateOption(
+                      context,
+                      icon: Icons.push_pin_outlined,
+                      label: 'Pin',
+                      onTap: () {
+                        Navigator.pop(context); // Close bottom sheet
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const CreatePostScreen()),
+                        );
+                      },
+                    ),
+                    _buildCreateOption(
+                      context,
+                      icon: Icons.content_cut_outlined,
+                      label: 'Collage',
+                      onTap: () {
+                        Navigator.pop(context); // Close bottom sheet
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Collage creation coming soon!'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildCreateOption(
+                      context,
+                      icon: Icons.splitscreen_outlined,
+                      label: 'Board',
+                      onTap: () {
+                        Navigator.pop(context); // Close bottom sheet
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Board creation coming soon!'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCreateOption(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 84,
+            height: 84,
+            decoration: BoxDecoration(
+              color: const Color(0xFF2F3033),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Icon(icon, color: Colors.white, size: 36),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -937,7 +1406,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           ),
           // Add/Plus
           GestureDetector(
-            onTap: () => setState(() => _activeTab = 2),
+            onTap: () {
+              _showCreatePostBottomSheet(context);
+            },
             child: Icon(
               CupertinoIcons.add,
               color: _activeTab == 2 ? Colors.black : const Color(0xFF737373),
@@ -946,7 +1417,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           ),
           // Message/Chat
           GestureDetector(
-            onTap: () => setState(() => _activeTab = 3),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const MessageCenterScreen()),
+              );
+            },
             child: Icon(
               CupertinoIcons.ellipses_bubble,
               color: _activeTab == 3 ? Colors.black : const Color(0xFF737373),
@@ -998,95 +1473,109 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
               children: [
-                // Somraj Avatar
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                      ColorFiltered(
-                        colorFilter: const ColorFilter.mode(
-                          Colors.blueGrey, // Subtle tint change
-                          BlendMode.modulate,
-                        ),
-                        child: Container(
-                          width: 68,
-                          height: 68,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            image: DecorationImage(
-                              image: AssetImage('assets/images/alina_avatar.jpg'),
-                              fit: BoxFit.cover,
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop(); // close drawer
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    );
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Somraj Avatar
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                            ColorFiltered(
+                              colorFilter: const ColorFilter.mode(
+                                Colors.blueGrey, // Subtle tint change
+                                BlendMode.modulate,
+                              ),
+                              child: Container(
+                                width: 68,
+                                height: 68,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  image: DecorationImage(
+                                    image: AssetImage('assets/images/alina_avatar.jpg'),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Name & Verified Shield Badge
+                      Row(
+                        children: const [
+                          Text(
+                            'Alina Sprongole',
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF191919),
                             ),
                           ),
+                          SizedBox(width: 6),
+                          Icon(Icons.verified_user, size: 18, color: Color(0xFF191919)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Headline
+                      const Text(
+                        'Founder | Thinker | Quant Engineer',
+                        style: TextStyle(
+                          fontSize: 13.0,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF191919),
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 12),
+                      const SizedBox(height: 4),
 
-                // Name & Verified Shield Badge
-                Row(
-                  children: const [
-                    Text(
-                      'Alina Sprongole',
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF191919),
+                      // Location
+                      const Text(
+                        'Indore, Madhya Pradesh, India',
+                        style: TextStyle(
+                          fontSize: 12.0,
+                          color: Color(0xFF5E5E5E),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 6),
-                    Icon(Icons.verified_user, size: 18, color: Color(0xFF191919)),
-                  ],
-                ),
-                const SizedBox(height: 6),
+                      const SizedBox(height: 12),
 
-                // Headline
-                const Text(
-                  'Founder | Thinker | Quant Engineer',
-                  style: TextStyle(
-                    fontSize: 13.0,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF191919),
+                      // Company block
+                      Row(
+                        children: [
+                          // Quantaforze Logo
+                          Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            padding: const EdgeInsets.all(3.0),
+                            child: CustomPaint(
+                              painter: const QuantaforzeLogoPainter(),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Quantaforze Corporation',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF191919),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 4),
-
-                // Location
-                const Text(
-                  'Indore, Madhya Pradesh, India',
-                  style: TextStyle(
-                    fontSize: 12.0,
-                    color: Color(0xFF5E5E5E),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Company block
-                Row(
-                  children: [
-                    // Quantaforze Logo
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                      padding: const EdgeInsets.all(3.0),
-                      child: CustomPaint(
-                        painter: const QuantaforzeLogoPainter(),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Quantaforze Corporation',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF191919),
-                      ),
-                    ),
-                  ],
                 ),
                 const SizedBox(height: 16),
                 const SizedBox(height: 16),
@@ -1099,16 +1588,24 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     MaterialPageRoute(builder: (_) => const ProfileScreen()),
                   );
                 }),
-                _buildDrawerNavItem('Repositories'),
+                _buildDrawerNavItem('My saves'),
                 _buildDrawerNavItem('Startup Galary', onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => const StartupGalleryScreen(),
                   ));
                 }),
-                _buildDrawerNavItem('Gists'),
-                _buildDrawerNavItem('Organizations'),
-                _buildDrawerNavItem('Enterprises'),
-                _buildDrawerNavItem('Sponsors'),
+                _buildDrawerNavItem('Clubs'),
+                _buildDrawerNavItem('Exhibition', onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const ExhibitionScreen(),
+                  ));
+                }),
+                _buildDrawerNavItem('Space'),
+                _buildDrawerNavItem('Community', onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const DiscoverCommunitiesScreen(),
+                  ));
+                }),
                 
                 const SizedBox(height: 8),
                 const Divider(height: 1, color: Color(0xFFE0E0E0)),
@@ -1117,7 +1614,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 _buildDrawerNavItem('Settings'),
                 _buildDrawerNavItem('Copilot settings'),
                 _buildDrawerNavItem('Feature preview'),
-                _buildDrawerNavItem('Appearance'),
+                _buildDrawerNavItem('Appearance', onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const AppearanceScreen(),
+                  ));
+                }),
                 _buildDrawerNavItem('Accessibility'),
                 _buildDrawerNavItem('Upgrade'),
 
@@ -1201,5 +1702,95 @@ class QuantaforzeLogoPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class AcadykSearchDelegate extends SearchDelegate<String> {
+  final List<String> suggestions = [
+    'Y Combinator',
+    'Horror Circus tarot deck',
+    'Gandalf the White',
+    'Parks Europe',
+    'Alina Sprongole',
+    'Startup Gallery',
+    'Clubs',
+  ];
+
+  @override
+  ThemeData appBarTheme(BuildContext context) {
+    return ThemeData(
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Colors.black),
+        elevation: 0,
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        border: InputBorder.none,
+        hintStyle: TextStyle(color: Colors.grey),
+      ),
+      textTheme: const TextTheme(
+        titleLarge: TextStyle(color: Colors.black, fontSize: 18),
+      ),
+    );
+  }
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear, color: Colors.black54),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back, color: Colors.black54),
+      onPressed: () {
+        close(context, '');
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    return Container(
+      color: const Color(0xFFF3F2EF),
+      child: Center(
+        child: Text(
+          'No results found for "$query"',
+          style: const TextStyle(color: Colors.black54, fontSize: 16),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final suggestionList = query.isEmpty
+        ? suggestions
+        : suggestions.where((element) => element.toLowerCase().contains(query.toLowerCase())).toList();
+
+    return Container(
+      color: Colors.white,
+      child: ListView.builder(
+        itemCount: suggestionList.length,
+        itemBuilder: (context, index) => ListTile(
+          leading: const Icon(Icons.search, color: Colors.black45),
+          title: Text(
+            suggestionList[index],
+            style: const TextStyle(color: Colors.black87),
+          ),
+          onTap: () {
+            query = suggestionList[index];
+            showResults(context);
+          },
+        ),
+      ),
+    );
+  }
 }
 

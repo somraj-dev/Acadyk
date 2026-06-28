@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -609,38 +610,34 @@ class ProfileScreen extends StatelessWidget {
 
           // Engagement bar
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 24, height: 24,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/somraj_avatar.jpg'),
-                    fit: BoxFit.cover,
+              Row(
+                children: [
+                  const Icon(CupertinoIcons.heart, size: 24, color: Colors.black87),
+                  const SizedBox(width: 6),
+                  const Text(
+                    '5',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 16),
+                  const Icon(CupertinoIcons.chat_bubble, size: 24, color: Colors.black87),
+                  const SizedBox(width: 6),
+                  const Text(
+                    '0',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 2),
-              const Icon(Icons.arrow_drop_down, size: 14, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 12),
-              const Icon(Icons.thumb_up_alt_outlined, size: 18, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 4),
-              const Text('5', style: TextStyle(fontSize: 13, color: Color(0xFF5E5E5E), fontWeight: FontWeight.bold)),
-              const SizedBox(width: 16),
-              const Icon(Icons.comment_outlined, size: 18, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 16),
-              const Icon(Icons.repeat, size: 18, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 16),
-              const Icon(Icons.send_outlined, size: 18, color: Color(0xFF5E5E5E)),
-              const Spacer(),
-              Container(
-                width: 20, height: 20,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0A66C2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.thumb_up, size: 11, color: Colors.white),
-              ),
+              const Icon(CupertinoIcons.bookmark, size: 24, color: Colors.black87),
             ],
           ),
         ],
