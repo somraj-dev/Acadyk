@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 
 class GoogleLogo extends StatelessWidget {
   final double size;
+  final bool transparent;
 
   const GoogleLogo({
     super.key,
     this.size = 20.0,
+    this.transparent = false,
   });
 
   @override
@@ -14,17 +16,20 @@ class GoogleLogo extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-      ),
-      padding: EdgeInsets.all(size * 0.15),
+      decoration: transparent
+          ? null
+          : const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+      padding: EdgeInsets.all(transparent ? 0.0 : size * 0.15),
       child: CustomPaint(
         painter: _GoogleLogoPainter(),
       ),
     );
   }
 }
+
 
 class _GoogleLogoPainter extends CustomPainter {
   @override

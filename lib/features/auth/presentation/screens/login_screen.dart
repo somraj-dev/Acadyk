@@ -175,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 36.0),
 
                 _buildSocialButton(
-                  logo: const GoogleLogo(size: 20.0),
+                  logo: const GoogleLogo(size: 20.0, transparent: true),
                   text: 'Login with Google',
                   onTap: () {
                     Navigator.pushReplacement(
@@ -389,25 +389,61 @@ class LinkedInLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: const Color(0xFF0A66C2),
-        borderRadius: BorderRadius.circular(4.0),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        'in',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: size * 0.7,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'sans-serif',
-          height: 1.0,
-        ),
+      child: CustomPaint(
+        painter: _LinkedInLogoPainter(),
       ),
     );
   }
 }
+
+class _LinkedInLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // Draw background rounded rectangle (official LinkedIn Blue)
+    final bgPaint = Paint()..color = const Color(0xFF0A66C2);
+    final bgRRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, w, h),
+      Radius.circular(w * 0.15),
+    );
+    canvas.drawRRect(bgRRect, bgPaint);
+
+    final whitePaint = Paint()..color = Colors.white;
+
+    // Draw 'i'
+    // Dot
+    canvas.drawCircle(Offset(w * 0.29, h * 0.26), w * 0.065, whitePaint);
+    // Stem
+    canvas.drawRect(
+      Rect.fromLTWH(w * 0.23, h * 0.44, w * 0.12, h * 0.37),
+      whitePaint,
+    );
+
+    // Draw 'n' (complete letter shape drawn in one single precise path)
+    final nPath = Path();
+    nPath.moveTo(w * 0.43, h * 0.44);
+    nPath.lineTo(w * 0.55, h * 0.44);
+    nPath.quadraticBezierTo(w * 0.62, h * 0.38, w * 0.71, h * 0.44);
+    nPath.quadraticBezierTo(w * 0.77, h * 0.49, w * 0.77, h * 0.58);
+    nPath.lineTo(w * 0.77, h * 0.81);
+    nPath.lineTo(w * 0.65, h * 0.81);
+    nPath.lineTo(w * 0.65, h * 0.56);
+    nPath.quadraticBezierTo(w * 0.65, h * 0.51, w * 0.59, h * 0.51);
+    nPath.quadraticBezierTo(w * 0.55, h * 0.51, w * 0.55, h * 0.56);
+    nPath.lineTo(w * 0.55, h * 0.81);
+    nPath.lineTo(w * 0.43, h * 0.81);
+    nPath.close();
+
+    canvas.drawPath(nPath, whitePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 
