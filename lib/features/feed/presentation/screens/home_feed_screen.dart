@@ -2042,21 +2042,20 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             ),
           ),
           // Profile Avatar
-          GestureDetector(
-            onTap: () => setState(() => _activeTab = 4),
-            child: Container(
-              padding: const EdgeInsets.all(1.5),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _activeTab == 4 ? Colors.black : Colors.transparent,
-                  width: 1.5,
-                ),
+          Container(
+            padding: const EdgeInsets.all(1.5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: _activeTab == 4 ? Colors.black : Colors.transparent,
+                width: 1.5,
               ),
-              child: const StatusAvatar(
-                avatarAsset: 'assets/images/somraj_avatar.jpg',
-                radius: 13.5,
-              ),
+            ),
+            child: StatusAvatar(
+              avatarAsset: 'assets/images/somraj_avatar.jpg',
+              radius: 13.5,
+              enableTapToViewStory: false,
+              onDefaultTap: () => setState(() => _activeTab = 4),
             ),
           ),
 

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'story_view_screen.dart';
+
 
 class UserStatusState {
   static String? emoji;
@@ -434,12 +436,16 @@ class StatusAvatar extends StatelessWidget {
   final String avatarAsset;
   final double radius;
   final bool isProfilePageAccountHolder;
+  final bool enableTapToViewStory;
+  final VoidCallback? onDefaultTap;
 
   const StatusAvatar({
     super.key,
     required this.avatarAsset,
     required this.radius,
     this.isProfilePageAccountHolder = false,
+    this.enableTapToViewStory = true,
+    this.onDefaultTap,
   });
 
   @override
@@ -457,7 +463,7 @@ class StatusAvatar extends StatelessWidget {
         );
 
         if (showRing) {
-          return Container(
+          avatarWidget = Container(
             padding: const EdgeInsets.all(2.0),
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
@@ -474,8 +480,23 @@ class StatusAvatar extends StatelessWidget {
           );
         }
 
-        return avatarWidget;
+        return GestureDetector(
+          onTap: () {
+            if (showRing && enableTapToViewStory) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const StoryViewScreen()),
+              );
+            } else {
+              if (onDefaultTap != null) {
+                onDefaultTap!();
+              }
+            }
+          },
+          child: avatarWidget,
+        );
       },
     );
   }
 }
+
