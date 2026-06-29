@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
-class PostDetailScreen extends StatelessWidget {
+class PostDetailScreen extends StatefulWidget {
   final String authorName;
   final String authorHeadline;
   final String authorAvatar;
@@ -20,6 +20,103 @@ class PostDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<PostDetailScreen> createState() => _PostDetailScreenState();
+}
+
+class _PostDetailScreenState extends State<PostDetailScreen> {
+  bool _isPostLiked = false;
+  int _postLikesCount = 537;
+
+  // Replying state
+  int? _replyingToCommentIndex;
+  String? _replyingToName;
+
+  final TextEditingController _commentInputCtrl = TextEditingController();
+  final FocusNode _commentFocusNode = FocusNode();
+
+  late List<Map<String, dynamic>> _comments;
+
+  @override
+  void initState() {
+    super.initState();
+    _comments = [
+      {
+        'name': 'Christian Pickett',
+        'isAuthor': true,
+        'headline': 'Co-founder @ Orthogonal (YC W26)',
+        'timeAgo': '1d',
+        'connectionDegree': null,
+        'body': 'Read more:\nhttps://www.thestreet.com/crypto/newsroom/orthogonal-is-betting-the-agent-economy-needs-better-infrastructure',
+        'likes': 10,
+        'hasLiked': false,
+        'replies': <Map<String, dynamic>>[],
+      },
+      {
+        'name': 'Aryan Gandhi',
+        'isAuthor': false,
+        'headline': 'Building the Future with AI 0->1 | Gen ...',
+        'timeAgo': '15h',
+        'connectionDegree': '1st',
+        'body': 'Congratulations on the raise! The idea of agents dynamically discovering and orchestrating capabilities feels like a missing layer in today\'s agent stack. Excited to see where Orthogonal goes from here. Christian Pickett 👏',
+        'likes': 0,
+        'hasLiked': false,
+        'replies': <Map<String, dynamic>>[],
+      },
+      {
+        'name': 'Ryan Widgeon',
+        'isAuthor': false,
+        'headline': 'Founder | AI/ML | AI Agents |GTM| Forb...',
+        'timeAgo': '1d',
+        'connectionDegree': '3rd+',
+        'body': 'Congrats! This is a reallyyy interesting layer to build.\n\nMost agents today are only as useful as the tools they were pre-wired with. The moment the task requires a new capability, they either hallucinate a workaround, fail silently, or punt back to a human.\n\nDynamic capability discovery...',
+        'likes': 9,
+        'hasLiked': false,
+        'replies': <Map<String, dynamic>>[
+          {
+            'name': 'Dr. Xi Zeng',
+            'headline': 'Founder and CEO of Chance A...',
+            'timeAgo': '18h',
+            'connectionDegree': '3rd+',
+            'body': 'Ryan Widgeon The safety point is where this gets interesting. Tool discovery is easy to describe as routing, but the agent also needs a reason to stop....',
+            'likes': 1,
+            'hasLiked': false,
+          }
+        ],
+      },
+      {
+        'name': 'Sudan Bey',
+        'isAuthor': false,
+        'headline': 'GTM Sales Leader | Digital Engineering ...',
+        'timeAgo': '1d',
+        'connectionDegree': '3rd+',
+        'body': 'This is a smart direction Orthogonal (YC W26) . Customers / organizations are looking for connected action across these AI tools and workflows they already use. This integration layer is just as strategic and important as the intelligence layer.',
+        'likes': 0,
+        'hasLiked': false,
+        'replies': <Map<String, dynamic>>[],
+      }
+    ];
+  }
+
+  @override
+  void dispose() {
+    _commentInputCtrl.dispose();
+    _commentFocusNode.dispose();
+    super.dispose();
+  }
+
+  int get _totalCommentsCount {
+    int count = 47; // Start offset to match 51 comments initially
+    for (final comment in _comments) {
+      count++;
+      final reps = comment['replies'] as List?;
+      if (reps != null) {
+        count += reps.length;
+      }
+    }
+    return count;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -36,6 +133,10 @@ class PostDetailScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 6.0),
                   child: Row(
                     children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Color(0xFF191919)),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
                       const Spacer(),
                       const Icon(Icons.more_vert, color: Color(0xFF5E5E5E), size: 24),
                       const SizedBox(width: 8),
@@ -64,7 +165,7 @@ class PostDetailScreen extends StatelessWidget {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 image: DecorationImage(
-                                  image: AssetImage(authorAvatar),
+                                  image: AssetImage(widget.authorAvatar),
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -78,7 +179,7 @@ class PostDetailScreen extends StatelessWidget {
                                     children: [
                                       Flexible(
                                         child: Text(
-                                          authorName,
+                                          widget.authorName,
                                           style: const TextStyle(
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold,
@@ -100,17 +201,17 @@ class PostDetailScreen extends StatelessWidget {
                                           style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold),
                                         ),
                                       ),
-                                      if (connectionDegree != null) ...[
+                                      if (widget.connectionDegree != null) ...[
                                         const SizedBox(width: 4),
                                         Text(
-                                          '• $connectionDegree',
+                                          '• ${widget.connectionDegree}',
                                           style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 13),
                                         ),
                                       ],
                                     ],
                                   ),
                                   Text(
-                                    authorHeadline,
+                                    widget.authorHeadline,
                                     style: const TextStyle(fontSize: 12.5, color: Color(0xFF5E5E5E)),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -118,7 +219,7 @@ class PostDetailScreen extends StatelessWidget {
                                   Row(
                                     children: [
                                       Text(
-                                        timeAgo,
+                                        widget.timeAgo,
                                         style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E)),
                                       ),
                                       const Text(' • ', style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 12)),
@@ -246,22 +347,39 @@ class PostDetailScreen extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                const Icon(CupertinoIcons.heart, size: 24, color: Colors.black87),
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _isPostLiked = !_isPostLiked;
+                                      _postLikesCount += _isPostLiked ? 1 : -1;
+                                    });
+                                  },
+                                  child: Icon(
+                                    _isPostLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+                                    size: 24,
+                                    color: _isPostLiked ? Colors.red : Colors.black87,
+                                  ),
+                                ),
                                 const SizedBox(width: 6),
-                                const Text(
-                                  '537',
-                                  style: TextStyle(
+                                Text(
+                                  _postLikesCount.toString(),
+                                  style: const TextStyle(
                                     color: Colors.black87,
                                     fontSize: 14.0,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 const SizedBox(width: 16),
-                                const Icon(CupertinoIcons.chat_bubble, size: 24, color: Colors.black87),
+                                GestureDetector(
+                                  onTap: () {
+                                    _commentFocusNode.requestFocus();
+                                  },
+                                  child: const Icon(CupertinoIcons.chat_bubble, size: 24, color: Colors.black87),
+                                ),
                                 const SizedBox(width: 6),
-                                const Text(
-                                  '51',
-                                  style: TextStyle(
+                                Text(
+                                  _totalCommentsCount.toString(),
+                                  style: const TextStyle(
                                     color: Colors.black87,
                                     fontSize: 14.0,
                                     fontWeight: FontWeight.w600,
@@ -283,158 +401,53 @@ class PostDetailScreen extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                         child: Row(
-                          children: [
-                            const Text(
+                          children: const [
+                            Text(
                               'Most relevant',
                               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
                             ),
-                            const Icon(Icons.arrow_drop_down, size: 20, color: Color(0xFF191919)),
+                            Icon(Icons.arrow_drop_down, size: 20, color: Color(0xFF191919)),
                           ],
                         ),
                       ),
 
-                      // Comment 1: Author comment (Christian Pickett)
-                      _buildComment(
-                        avatarAsset: 'assets/images/dharmik_avatar.jpg',
-                        name: 'Christian Pickett',
-                        isAuthor: true,
-                        headline: 'Co-founder @ Orthogonal (YC W26)',
-                        timeAgo: '1d',
-                        connectionDegree: null,
-                        commentWidget: RichText(
-                          text: const TextSpan(
-                            style: TextStyle(fontSize: 14, color: Color(0xFF191919), height: 1.45),
-                            children: [
-                              TextSpan(text: 'Read more:\n'),
-                              TextSpan(
-                                text: 'https://www.thestreet.com/crypto/newsroom/orthogonal-is-betting-the-agent-economy-needs-better-infrastructure',
-                                style: TextStyle(
-                                  color: Color(0xFF0A66C2),
-                                  fontWeight: FontWeight.bold,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        likeCount: '10',
-                        hasReactions: true,
-                      ),
+                      // Comments list builder
+                      ..._comments.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final comment = entry.value;
+                        final repliesList = comment['replies'] as List<dynamic>;
 
-                      // Comment 2: Aryan Gandhi
-                      _buildComment(
-                        avatarAsset: 'assets/images/somraj_avatar.jpg',
-                        name: 'Aryan Gandhi',
-                        isAuthor: false,
-                        headline: 'Building the Future with AI 0->1 | Gen ...',
-                        timeAgo: '15h',
-                        connectionDegree: '1st',
-                        commentWidget: RichText(
-                          text: const TextSpan(
-                            style: TextStyle(fontSize: 14, color: Color(0xFF191919), height: 1.45),
-                            children: [
-                              TextSpan(
-                                text: 'Congratulations on the raise! The idea of agents dynamically discovering and orchestrating capabilities feels like a missing layer in today\'s agent stack. Excited to see where Orthogonal goes from here. ',
-                              ),
-                              TextSpan(
-                                text: 'Christian Pickett',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              TextSpan(text: ' 👏'),
-                            ],
-                          ),
-                        ),
-                        likeCount: null,
-                        hasReactions: false,
-                      ),
-
-                      // Comment 3: Ryan Widgeon
-                      _buildComment(
-                        avatarAsset: 'assets/images/alina_avatar.jpg',
-                        name: 'Ryan Widgeon',
-                        isAuthor: false,
-                        headline: 'Founder | AI/ML | AI Agents |GTM| Forb...',
-                        timeAgo: '1d',
-                        connectionDegree: '3rd+',
-                        commentWidget: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Congrats! This is a reallyyy interesting layer to build.\n\nMost agents today are only as useful as the tools they were pre-wired with. The moment the task requires a new capability, they either hallucinate a workaround, fail silently, or punt back to a human.\n\nDynamic capability discovery...',
-                              style: TextStyle(fontSize: 14, color: Color(0xFF191919), height: 1.45),
-                            ),
-                            const Text(
-                              ' more',
-                              style: TextStyle(fontSize: 14, color: Color(0xFF5E5E5E), fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                        likeCount: '9',
-                        hasReactions: true,
-                        replyCount: '1',
-                        replies: [
-                          // Reply to Ryan: Dr. Xi Zeng
-                          _buildReply(
-                            avatarAsset: 'assets/images/dharmik_avatar.jpg',
-                            name: 'Dr. Xi Zeng',
-                            headline: 'Founder and CEO of Chance A...',
-                            timeAgo: '18h',
-                            connectionDegree: '3rd+',
-                            commentWidget: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                RichText(
-                                  text: const TextSpan(
-                                    style: TextStyle(fontSize: 14, color: Color(0xFF191919), height: 1.45),
-                                    children: [
-                                      TextSpan(
-                                        text: 'Ryan Widgeon',
-                                        style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                                      ),
-                                      TextSpan(
-                                        text: ' The safety point is where this gets interesting. Tool discovery is easy to describe as routing, but the agent also needs a reason to stop....',
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Text(
-                                  ' more',
-                                  style: TextStyle(fontSize: 14, color: Color(0xFF5E5E5E), fontWeight: FontWeight.w500),
-                                ),
-                              ],
-                            ),
-                            likeCount: '1',
-                            isLastReply: true,
-                          ),
-                        ],
-                      ),
-
-                      // Comment 4: Sudan Bey
-                      _buildComment(
-                        avatarAsset: 'assets/images/somraj_avatar.jpg',
-                        name: 'Sudan Bey',
-                        isAuthor: false,
-                        headline: 'GTM Sales Leader | Digital Engineering ...',
-                        timeAgo: '1d',
-                        connectionDegree: '3rd+',
-                        commentWidget: RichText(
-                          text: const TextSpan(
-                            style: TextStyle(fontSize: 14, color: Color(0xFF191919), height: 1.45),
-                            children: [
-                              TextSpan(text: 'This is a smart direction '),
-                              TextSpan(
-                                text: 'Orthogonal (YC W26)',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              TextSpan(
-                                text: '. Customers / organizations are looking for connected action across these AI tools and workflows they already use. This integration layer is just as strategic and important as the intelligence layer.',
-                              ),
-                            ],
-                          ),
-                        ),
-                        likeCount: null,
-                        hasReactions: false,
-                      ),
+                        return _buildComment(
+                          index: index,
+                          avatarAsset: comment['avatar'] ?? (comment['name'] == 'Christian Pickett' ? 'assets/images/dharmik_avatar.jpg' : (comment['name'] == 'Aryan Gandhi' ? 'assets/images/somraj_avatar.jpg' : (comment['name'] == 'Ryan Widgeon' ? 'assets/images/alina_avatar.jpg' : 'assets/images/somraj_avatar.jpg'))),
+                          name: comment['name'],
+                          isAuthor: comment['isAuthor'] ?? false,
+                          headline: comment['headline'],
+                          timeAgo: comment['timeAgo'],
+                          connectionDegree: comment['connectionDegree'],
+                          commentWidget: _buildCommentBodyText(comment['body']),
+                          likeCount: comment['likes'] > 0 ? comment['likes'].toString() : null,
+                          hasLiked: comment['hasLiked'] ?? false,
+                          replyCount: comment['replies'].isNotEmpty ? comment['replies'].length.toString() : null,
+                          replies: repliesList.asMap().entries.map((replyEntry) {
+                            final replyIndex = replyEntry.key;
+                            final reply = replyEntry.value;
+                            return _buildReply(
+                              commentIndex: index,
+                              replyIndex: replyIndex,
+                              avatarAsset: reply['avatar'] ?? 'assets/images/dharmik_avatar.jpg',
+                              name: reply['name'],
+                              headline: reply['headline'],
+                              timeAgo: reply['timeAgo'],
+                              connectionDegree: reply['connectionDegree'],
+                              commentWidget: _buildCommentBodyText(reply['body']),
+                              likeCount: reply['likes'] > 0 ? reply['likes'].toString() : null,
+                              hasLiked: reply['hasLiked'] ?? false,
+                              isLastReply: replyIndex == repliesList.length - 1,
+                            );
+                          }).toList(),
+                        );
+                      }).toList(),
 
                       const SizedBox(height: 80), // Space for bottom bar
                     ],
@@ -449,54 +462,153 @@ class PostDetailScreen extends StatelessWidget {
                     color: Colors.white,
                     border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Row(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // User avatar
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          image: DecorationImage(
-                            image: AssetImage('assets/images/somraj_avatar.jpg'),
-                            fit: BoxFit.cover,
+                      if (_replyingToCommentIndex != null)
+                        Container(
+                          color: const Color(0xFFF3F2EF),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Replying to $_replyingToName',
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E), fontWeight: FontWeight.w500),
+                              ),
+                              const Spacer(),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _replyingToCommentIndex = null;
+                                    _replyingToName = null;
+                                  });
+                                },
+                                child: const Icon(Icons.close, size: 16, color: Color(0xFF5E5E5E)),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 2),
-                      const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF5E5E5E)),
-                      const SizedBox(width: 8),
-                      // Comment input
-                      Expanded(
-                        child: Container(
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3F2EF),
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          alignment: Alignment.centerLeft,
-                          child: const Text(
-                            'Add a comment...',
-                            style: TextStyle(fontSize: 14, color: Color(0xFF5E5E5E)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      // @ mention button
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFE0E0E0)),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            '@',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E)),
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(
+                          children: [
+                            // User avatar
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: DecorationImage(
+                                  image: AssetImage('assets/images/somraj_avatar.jpg'),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF5E5E5E)),
+                            const SizedBox(width: 8),
+                            // Comment input
+                            Expanded(
+                              child: Container(
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3F2EF),
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                alignment: Alignment.centerLeft,
+                                child: TextField(
+                                  controller: _commentInputCtrl,
+                                  focusNode: _commentFocusNode,
+                                  decoration: InputDecoration(
+                                    hintText: _replyingToCommentIndex != null ? 'Add a reply...' : 'Add a comment...',
+                                    hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF5E5E5E)),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                  ),
+                                  style: const TextStyle(fontSize: 14, color: Colors.black),
+                                  onSubmitted: (val) {
+                                    if (val.trim().isNotEmpty) {
+                                      final text = val.trim();
+                                      setState(() {
+                                        if (_replyingToCommentIndex != null) {
+                                          final parentComment = _comments[_replyingToCommentIndex!];
+                                          final replies = parentComment['replies'] as List;
+                                          replies.add({
+                                            'name': 'Somraj lodhi',
+                                            'headline': 'Founder & Builder @ Acadyk',
+                                            'avatar': 'assets/images/somraj_avatar.jpg',
+                                            'timeAgo': 'Just now',
+                                            'connectionDegree': '1st',
+                                            'body': text,
+                                            'likes': 0,
+                                            'hasLiked': false,
+                                          });
+                                          _replyingToCommentIndex = null;
+                                          _replyingToName = null;
+                                        } else {
+                                          _comments.add({
+                                            'name': 'Somraj lodhi',
+                                            'isAuthor': false,
+                                            'headline': 'Founder & Builder @ Acadyk',
+                                            'timeAgo': 'Just now',
+                                            'connectionDegree': '1st',
+                                            'body': text,
+                                            'likes': 0,
+                                            'hasLiked': false,
+                                            'replies': <Map<String, dynamic>>[],
+                                          });
+                                        }
+                                        _commentInputCtrl.clear();
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            // Send button
+                            GestureDetector(
+                              onTap: () {
+                                final val = _commentInputCtrl.text;
+                                if (val.trim().isNotEmpty) {
+                                  final text = val.trim();
+                                  setState(() {
+                                    if (_replyingToCommentIndex != null) {
+                                      final parentComment = _comments[_replyingToCommentIndex!];
+                                      final replies = parentComment['replies'] as List;
+                                      replies.add({
+                                        'name': 'Somraj lodhi',
+                                        'headline': 'Founder & Builder @ Acadyk',
+                                        'avatar': 'assets/images/somraj_avatar.jpg',
+                                        'timeAgo': 'Just now',
+                                        'connectionDegree': '1st',
+                                        'body': text,
+                                        'likes': 0,
+                                        'hasLiked': false,
+                                      });
+                                      _replyingToCommentIndex = null;
+                                      _replyingToName = null;
+                                    } else {
+                                      _comments.add({
+                                        'name': 'Somraj lodhi',
+                                        'isAuthor': false,
+                                        'headline': 'Founder & Builder @ Acadyk',
+                                        'timeAgo': 'Just now',
+                                        'connectionDegree': '1st',
+                                        'body': text,
+                                        'likes': 0,
+                                        'hasLiked': false,
+                                        'replies': <Map<String, dynamic>>[],
+                                      });
+                                    }
+                                    _commentInputCtrl.clear();
+                                  });
+                                }
+                              },
+                              child: const Icon(Icons.send, color: Color(0xFF0A66C2), size: 22),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -510,17 +622,37 @@ class PostDetailScreen extends StatelessWidget {
     );
   }
 
-  // ============================
-  // ACTION BUTTON HELPER
-  // ============================
-  Widget _buildActionButton(IconData icon, String label) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 20, color: const Color(0xFF5E5E5E)),
-        const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E))),
-      ],
+
+  Widget _buildCommentBodyText(String body) {
+    final words = ['Christian Pickett', 'Ryan Widgeon'];
+    String? foundWord;
+    for (final w in words) {
+      if (body.contains(w)) {
+        foundWord = w;
+        break;
+      }
+    }
+
+    if (foundWord == null) {
+      return Text(
+        body,
+        style: const TextStyle(color: Color(0xFF191919), fontSize: 14, height: 1.45),
+      );
+    }
+
+    final parts = body.split(foundWord);
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(color: Color(0xFF191919), fontSize: 14, height: 1.45),
+        children: [
+          TextSpan(text: parts[0]),
+          TextSpan(
+            text: foundWord,
+            style: const TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+          ),
+          if (parts.length > 1) TextSpan(text: parts[1]),
+        ],
+      ),
     );
   }
 
@@ -528,6 +660,7 @@ class PostDetailScreen extends StatelessWidget {
   // COMMENT BUILDER
   // ============================
   Widget _buildComment({
+    required int index,
     required String avatarAsset,
     required String name,
     required bool isAuthor,
@@ -536,7 +669,7 @@ class PostDetailScreen extends StatelessWidget {
     String? connectionDegree,
     required Widget commentWidget,
     String? likeCount,
-    bool hasReactions = false,
+    required bool hasLiked,
     String? replyCount,
     List<Widget>? replies,
   }) {
@@ -615,33 +748,57 @@ class PostDetailScreen extends StatelessWidget {
           // Like / Reply row
           Row(
             children: [
-              const Text('Like', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E))),
-              if (hasReactions && likeCount != null) ...[
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    final comment = _comments[index];
+                    if (comment['hasLiked'] == true) {
+                      comment['hasLiked'] = false;
+                      comment['likes'] = (comment['likes'] as int) - 1;
+                    } else {
+                      comment['hasLiked'] = true;
+                      comment['likes'] = (comment['likes'] as int) + 1;
+                    }
+                  });
+                },
+                child: Text(
+                  'Like',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: hasLiked ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
+                  ),
+                ),
+              ),
+              if (likeCount != null) ...[
                 const SizedBox(width: 8),
                 Container(
                   width: 16, height: 16,
                   decoration: const BoxDecoration(color: Color(0xFF0A66C2), shape: BoxShape.circle),
                   child: const Icon(Icons.thumb_up, size: 9, color: Colors.white),
                 ),
-                Container(
-                  width: 16, height: 16,
-                  transform: Matrix4.translationValues(-4, 0, 0),
-                  decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-                  child: const Icon(Icons.favorite, size: 9, color: Colors.white),
-                ),
-                Text(likeCount, style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E))),
-              ] else if (likeCount != null) ...[
-                const SizedBox(width: 8),
-                Container(
-                  width: 16, height: 16,
-                  decoration: const BoxDecoration(color: Color(0xFF0A66C2), shape: BoxShape.circle),
-                  child: const Icon(Icons.thumb_up, size: 9, color: Colors.white),
-                ),
+                if (index == 2) ...[
+                  Container(
+                    width: 16, height: 16,
+                    transform: Matrix4.translationValues(-4, 0, 0),
+                    decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                    child: const Icon(Icons.favorite, size: 9, color: Colors.white),
+                  ),
+                ],
                 const SizedBox(width: 2),
                 Text(likeCount, style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E))),
               ],
               const SizedBox(width: 16),
-              const Text('Reply', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E))),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _replyingToCommentIndex = index;
+                    _replyingToName = name;
+                    _commentFocusNode.requestFocus();
+                  });
+                },
+                child: const Text('Reply', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E))),
+              ),
               if (replyCount != null) ...[
                 const SizedBox(width: 8),
                 Text(replyCount, style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E))),
@@ -687,7 +844,7 @@ class PostDetailScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           mainRow,
-          if (hasReplies) ...replies!,
+          if (hasReplies) ...replies,
         ],
       ),
     );
@@ -697,6 +854,8 @@ class PostDetailScreen extends StatelessWidget {
   // REPLY (INDENTED COMMENT)
   // ============================
   Widget _buildReply({
+    required int commentIndex,
+    required int replyIndex,
     required String avatarAsset,
     required String name,
     required String headline,
@@ -704,6 +863,7 @@ class PostDetailScreen extends StatelessWidget {
     String? connectionDegree,
     required Widget commentWidget,
     String? likeCount,
+    required bool hasLiked,
     bool isLastReply = true,
   }) {
     return IntrinsicHeight(
@@ -778,7 +938,28 @@ class PostDetailScreen extends StatelessWidget {
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              const Text('Like', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E))),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    final reply = (_comments[commentIndex]['replies'] as List)[replyIndex];
+                                    if (reply['hasLiked'] == true) {
+                                      reply['hasLiked'] = false;
+                                      reply['likes'] = (reply['likes'] as int) - 1;
+                                    } else {
+                                      reply['hasLiked'] = true;
+                                      reply['likes'] = (reply['likes'] as int) + 1;
+                                    }
+                                  });
+                                },
+                                child: Text(
+                                  'Like',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: hasLiked ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
+                                  ),
+                                ),
+                              ),
                               if (likeCount != null) ...[
                                 const SizedBox(width: 6),
                                 Container(
@@ -790,7 +971,16 @@ class PostDetailScreen extends StatelessWidget {
                                 Text(likeCount, style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E))),
                               ],
                               const SizedBox(width: 14),
-                              const Text('Reply', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E))),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _replyingToCommentIndex = commentIndex;
+                                    _replyingToName = name;
+                                    _commentFocusNode.requestFocus();
+                                  });
+                                },
+                                child: const Text('Reply', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E))),
+                              ),
                             ],
                           ),
                         ],
