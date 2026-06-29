@@ -137,105 +137,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Banner + Profile Photo
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Dark banner
-              Container(
-                height: 120,
-                width: double.infinity,
-                color: const Color(0xFF1A1A1A),
-                alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'CONQUER.',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2.5,
-                        fontFamily: 'serif',
-                      ),
-                    ),
-                    const SizedBox(width: 40),
-                    // Edit banner icon
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.edit, size: 16, color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Profile avatar overlapping the banner
-              Positioned(
-                left: 16,
-                bottom: -40,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3.5),
-                      ),
-                      child: const StatusAvatar(
-                        avatarAsset: 'assets/images/somraj_avatar.jpg',
-                        radius: 44.5,
-                        isProfilePageAccountHolder: true, // Own profile = no status ring
-                      ),
-                    ),
-                    if (widget.isOwnProfile)
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: ValueListenableBuilder<bool>(
-                          valueListenable: UserStatusState.statusNotifier,
-                          builder: (context, statusValue, child) {
-                            final displayEmoji = UserStatusState.emoji ?? '💬';
-                            return GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const EditStatusScreen()),
-                                );
-                              },
-                              child: Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF161B22), // GitHub dark gray badge
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  displayEmoji,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            );
-                          },
+          SizedBox(
+            height: 160,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Dark banner
+                Container(
+                  height: 120,
+                  width: double.infinity,
+                  color: const Color(0xFF1A1A1A),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'CONQUER.',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2.5,
+                          fontFamily: 'serif',
                         ),
                       ),
-                  ],
+                      const SizedBox(width: 40),
+                      // Edit banner icon
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.edit, size: 16, color: Colors.white),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-            ],
+                // Profile avatar overlapping the banner
+                Positioned(
+                  left: 16,
+                  top: 64,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3.5),
+                        ),
+                        child: const StatusAvatar(
+                          avatarAsset: 'assets/images/somraj_avatar.jpg',
+                          radius: 44.5,
+                          isProfilePageAccountHolder: true, // Own profile = no status ring
+                        ),
+                      ),
+                      if (widget.isOwnProfile)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: ValueListenableBuilder<bool>(
+                            valueListenable: UserStatusState.statusNotifier,
+                            builder: (context, statusValue, child) {
+                              final displayEmoji = UserStatusState.emoji ?? '🤕';
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const EditStatusScreen()),
+                                  );
+                                },
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF161B22), // GitHub dark gray badge
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    displayEmoji,
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
 
           // Space for the overlapping avatar
-          const SizedBox(height: 48),
+          const SizedBox(height: 8),
+
 
           // Edit profile icon row (right-aligned)
           Align(
