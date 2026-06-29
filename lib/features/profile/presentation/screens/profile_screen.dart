@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'settings_activity_screen.dart';
+import 'about_account_screen.dart';
+import '../../../feed/presentation/screens/create_startup_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _activityKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +35,16 @@ class ProfileScreen extends StatelessWidget {
                       const Expanded(child: SizedBox()),
                       const Icon(Icons.search, color: Color(0xFF5E5E5E), size: 24),
                       const SizedBox(width: 16),
-                      const Icon(Icons.settings, color: Color(0xFF5E5E5E), size: 24),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsActivityScreen(),
+                            ),
+                          );
+                        },
+                        child: const Icon(Icons.menu, color: Color(0xFF5E5E5E), size: 24),
+                      ),
                       const SizedBox(width: 8),
                     ],
                   ),
@@ -33,6 +53,7 @@ class ProfileScreen extends StatelessWidget {
                 // Scrollable content
                 Expanded(
                   child: ListView(
+                    controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
                     children: [
                       // =============================================
@@ -177,14 +198,17 @@ class ProfileScreen extends StatelessWidget {
             alignment: Alignment.centerRight,
             child: Padding(
               padding: const EdgeInsets.only(right: 16.0),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF5E5E5E), width: 1),
+              child: GestureDetector(
+                onTap: () => _showProfileOptionsBottomSheet(context),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF5E5E5E), width: 1),
+                  ),
+                  child: const Icon(Icons.more_horiz, size: 18, color: Color(0xFF5E5E5E)),
                 ),
-                child: const Icon(Icons.edit, size: 16, color: Color(0xFF5E5E5E)),
               ),
             ),
           ),
@@ -330,79 +354,124 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildFeaturedSection() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Text(
-                'Featured',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-              ),
-              const Spacer(),
-              const Icon(Icons.add, size: 24, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 16),
-              const Icon(Icons.edit, size: 20, color: Color(0xFF5E5E5E)),
-            ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                const Text(
+                  'Featured',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
+                ),
+                const Spacer(),
+                const Icon(Icons.add, size: 24, color: Color(0xFF5E5E5E)),
+                const SizedBox(width: 16),
+                const Icon(Icons.edit, size: 20, color: Color(0xFF5E5E5E)),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
 
-          // Featured post card
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFE0E0E0)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(12, 12, 12, 4),
-                  child: Text(
-                    'Post',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF5E5E5E)),
-                  ),
+                const SizedBox(width: 16),
+                _buildFeaturedCard(
+                  category: 'Post',
+                  text: 'Healthcare isn\'t broken because of lack of technology — it\'s broken because of fragmentat...',
+                  imageAsset: 'assets/images/arogya_dashboard.jpg',
+                  reactions: '13',
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    'Healthcare isn\'t broken because of lack of technology — it\'s broken because of fragmentat...',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF191919), fontWeight: FontWeight.w500, height: 1.4),
-                  ),
+                const SizedBox(width: 12),
+                _buildFeaturedCard(
+                  category: 'Article',
+                  text: 'The Future of Decentralized Teamwork and Remote Engineering Collaborations...',
+                  imageAsset: 'assets/images/warp_team.jpg',
+                  reactions: '42',
                 ),
-                const SizedBox(height: 8),
-                // Featured post image
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(7),
-                    bottomRight: Radius.circular(7),
-                  ),
-                  child: Image.asset(
-                    'assets/images/arogya_dashboard.jpg',
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 200,
-                  ),
+                const SizedBox(width: 12),
+                _buildFeaturedCard(
+                  category: 'Post',
+                  text: 'Deeply honored to be recognized among the top young innovators and entrepreneurs of this year...',
+                  imageAsset: 'assets/images/young_entrepreneur.jpg',
+                  reactions: '58',
                 ),
-                // Reaction count
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 18, height: 18,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF0A66C2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.thumb_up, size: 10, color: Colors.white),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text('13', style: TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
-                    ],
+                const SizedBox(width: 16),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeaturedCard({
+    required String category,
+    required String text,
+    required String imageAsset,
+    required String reactions,
+  }) {
+    return Container(
+      width: 320,
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            child: Text(
+              category,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: SizedBox(
+              height: 40,
+              child: Text(
+                text,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF191919), fontWeight: FontWeight.w500, height: 1.4),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(7),
+              bottomRight: Radius.circular(7),
+            ),
+            child: Image.asset(
+              imageAsset,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: 180,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0A66C2),
+                    shape: BoxShape.circle,
                   ),
+                  child: const Icon(Icons.thumb_up, size: 10, color: Colors.white),
                 ),
+                const SizedBox(width: 4),
+                Text(reactions, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
               ],
             ),
           ),
@@ -416,60 +485,29 @@ class ProfileScreen extends StatelessWidget {
   // =============================================================
   Widget _buildActivitySection() {
     return Container(
+      key: _activityKey,
       color: Colors.white,
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
-          Row(
+          // Header
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Activity',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-                    ),
-                    Text(
-                      '168 followers',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
-                    ),
-                  ],
-                ),
+              Text(
+                'Activity',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
               ),
-              OutlinedButton(
-                onPressed: null,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF5E5E5E)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                ),
-                child: const Text(
-                  'Create a post',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-                ),
+              Text(
+                '168 followers',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
               ),
-              const SizedBox(width: 10),
-              const Icon(Icons.edit, size: 20, color: Color(0xFF5E5E5E)),
             ],
           ),
           const SizedBox(height: 14),
 
-          // Tab pills
-          Row(
-            children: [
-              _buildPill('Posts', filled: true),
-              const SizedBox(width: 8),
-              _buildPill('Comments'),
-              const SizedBox(width: 8),
-              _buildPill('Videos'),
-              const SizedBox(width: 8),
-              _buildPill('Images'),
-            ],
-          ),
-          const SizedBox(height: 16),
+
 
           // Activity post
           Row(
@@ -866,7 +904,16 @@ class ProfileScreen extends StatelessWidget {
               const Spacer(),
               const Icon(Icons.add, size: 24, color: Color(0xFF5E5E5E)),
               const SizedBox(width: 16),
-              const Icon(Icons.edit, size: 20, color: Color(0xFF5E5E5E)),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const CreateStartupScreen(),
+                    ),
+                  );
+                },
+                child: const Icon(Icons.edit, size: 20, color: Color(0xFF5E5E5E)),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -1049,24 +1096,7 @@ class ProfileScreen extends StatelessWidget {
   // HELPERS
   // =============================================================
 
-  Widget _buildPill(String text, {bool filled = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        color: filled ? const Color(0xFF1B7A2D) : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: filled ? const Color(0xFF1B7A2D) : const Color(0xFF5E5E5E)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          color: filled ? Colors.white : const Color(0xFF191919),
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildAppChip(String label, IconData icon, Color color) {
     return Container(
@@ -1096,4 +1126,280 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
+
+  // =============================================================
+  // BOTTOM SHEETS & POPUPS
+  // =============================================================
+  void _showProfileOptionsBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28.0)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 48,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E0E0),
+                  borderRadius: BorderRadius.circular(2.5),
+                ),
+              ),
+              _buildBottomSheetOption(
+                icon: Icons.near_me_outlined,
+                title: 'Send profile in a message',
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: const [
+                          Icon(Icons.check_circle_outline, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text('Profile sent in a message successfully!'),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF262626),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                },
+              ),
+              _buildBottomSheetOption(
+                icon: Icons.share_outlined,
+                title: 'Share via...',
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: const [
+                          Icon(Icons.share_outlined, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text('Share options loaded!'),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF262626),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                },
+              ),
+              _buildBottomSheetOption(
+                icon: Icons.import_contacts_outlined,
+                title: 'Contact info',
+                onTap: () {
+                  Navigator.pop(context);
+                  _showContactInfoBottomSheet(context);
+                },
+              ),
+              _buildBottomSheetOption(
+                icon: Icons.assignment_outlined,
+                title: 'Activity',
+                onTap: () {
+                  Navigator.pop(context);
+                  if (_activityKey.currentContext != null) {
+                    Scrollable.ensureVisible(
+                      _activityKey.currentContext!,
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                },
+              ),
+              _buildBottomSheetOption(
+                icon: Icons.bookmark_border,
+                title: 'Saved items',
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: const [
+                          Icon(Icons.bookmark_outline, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text('Saved items loaded!'),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF262626),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                },
+              ),
+              _buildBottomSheetOption(
+                icon: Icons.info_outline,
+                title: 'About this member',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const AboutAccountScreen(
+                        accountData: {
+                          'name': 'Somraj Lodhi',
+                          'avatarUrl': 'assets/images/somraj_avatar.jpg',
+                          'dateJoined': 'June 2024',
+                          'location': 'Indore, India',
+                          'sharedFollowers': 18,
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showContactInfoBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28.0)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 16),
+                    width: 48,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0E0E0),
+                      borderRadius: BorderRadius.circular(2.5),
+                    ),
+                  ),
+                ),
+                const Center(
+                  child: Text(
+                    'Contact info',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF262626),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildContactInfoTile(
+                  icon: Icons.email_outlined,
+                  title: 'Email',
+                  value: 'somraj.lodhi@acadyk.com',
+                ),
+                const SizedBox(height: 16),
+                _buildContactInfoTile(
+                  icon: Icons.phone_outlined,
+                  title: 'Phone',
+                  value: '+91 98765 43210',
+                ),
+                const SizedBox(height: 16),
+                _buildContactInfoTile(
+                  icon: Icons.link,
+                  title: 'Website',
+                  value: 'https://acadyk.com/somraj',
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBottomSheetOption({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
+        child: Row(
+          children: [
+            Icon(icon, size: 26, color: const Color(0xFF262626)),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF262626),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactInfoTile({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F2EF),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 22, color: const Color(0xFF5E5E5E)),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF5E5E5E),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 15,
+                color: Color(0xFF191919),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
+

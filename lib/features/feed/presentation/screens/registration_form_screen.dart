@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'registration_success_screen.dart';
+import 'celebration_success_screen.dart';
 
 class RegistrationFormScreen extends StatefulWidget {
   final String eventTitle;
   final String logoUrl;
+  final String organizer;
 
   const RegistrationFormScreen({
     super.key,
     required this.eventTitle,
     required this.logoUrl,
+    required this.organizer,
   });
 
   @override
@@ -579,7 +583,15 @@ class _RegistrationFormScreenState extends State<RegistrationFormScreen> {
                 return;
               }
               if (_formKey.currentState!.validate()) {
-                Navigator.of(context).pop(true); // Return true to indicate successful registration
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => RegistrationSuccessScreen(
+                      eventTitle: widget.eventTitle,
+                      logoUrl: widget.logoUrl,
+                      organizer: widget.organizer,
+                    ),
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(

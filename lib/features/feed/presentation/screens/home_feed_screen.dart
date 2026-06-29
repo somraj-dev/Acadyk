@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
+import 'company_profile_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../profile/presentation/screens/appearance_screen.dart';
 import '../../../profile/presentation/screens/about_account_screen.dart';
@@ -9,6 +11,7 @@ import 'exhibition_screen.dart';
 import 'create_post_screen.dart';
 import '../../../notifications/presentation/screens/notification_screen.dart';
 import '../../../community/presentation/screens/discover_communities_screen.dart';
+import '../../../profile/presentation/screens/space_screen.dart';
 import '../../../chat/presentation/screens/message_center_screen.dart';
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -20,6 +23,13 @@ class HomeFeedScreen extends StatefulWidget {
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
   int _activeTab = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // Dynamic feedback and comment state
+  final Map<String, bool> _likedPosts = {};
+  final Map<String, int> _likesCountOverride = {};
+  final Map<String, bool> _commentsExpanded = {};
+  final Map<String, List<Map<String, dynamic>>> _customComments = {};
+  final TextEditingController _commentInputCtrl = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +213,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const ProfileScreen(),
+                builder: (_) => const CompanyProfileScreen(companyName: 'Y Combinator'),
               ));
             },
             behavior: HitTestBehavior.opaque,
@@ -273,38 +283,52 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           const SizedBox(height: 10),
 
           // Content Text (tappable to open detail)
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const PostDetailScreen(
-                  authorName: 'Christian Pickett',
-                  authorHeadline: 'Co-founder @ Orthogonal (YC W26)',
-                  authorAvatar: 'assets/images/dharmik_avatar.jpg',
-                  timeAgo: '1d',
-                  postText: '',
-                  connectionDegree: '3rd+',
-                ),
-              ));
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: RichText(
-                text: const TextSpan(
-                  style: TextStyle(color: Color(0xFF191919), fontSize: 13.5, height: 1.45),
-                  children: [
-                    TextSpan(
-                      text: 'Warp',
-                      style: TextStyle(
-                        color: Color(0xFF0A66C2),
-                        fontWeight: FontWeight.w600,
-                        decoration: TextDecoration.underline,
-                      ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(color: Color(0xFF191919), fontSize: 13.5, height: 1.45),
+                children: [
+                  TextSpan(
+                    text: 'Warp',
+                    style: const TextStyle(
+                      color: Color(0xFF0A66C2),
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
                     ),
-                    TextSpan(
-                      text: ' has raised \$60 million in Series B funding to automate payroll, HR, tax compliance, and employee onboarding. ...more',
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const CompanyProfileScreen(companyName: 'Warp'),
+                          ),
+                        );
+                      },
+                  ),
+                  const TextSpan(
+                    text: ' has raised \$60 million in Series B funding to automate payroll, HR, tax compliance, and employee onboarding. ',
+                  ),
+                  TextSpan(
+                    text: '...more',
+                    style: const TextStyle(
+                      color: Color(0xFF191919),
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => const PostDetailScreen(
+                            authorName: 'Christian Pickett',
+                            authorHeadline: 'Co-founder @ Orthogonal (YC W26)',
+                            authorAvatar: 'assets/images/dharmik_avatar.jpg',
+                            timeAgo: '1d',
+                            postText: '',
+                            connectionDegree: '3rd+',
+                          ),
+                        ));
+                      },
+                  ),
+                ],
               ),
             ),
           ),
@@ -320,9 +344,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
           // Action/Engagement row
           _buildPostActionRow(
-            likes: '537',
-            comments: '51',
+            postId: 'warp_post',
+            defaultLikes: 537,
+            defaultComments: 51,
           ),
+          if (_commentsExpanded['warp_post'] == true) ...[
+            _buildCommentsSection('warp_post'),
+          ],
         ],
       ),
     );
@@ -394,7 +422,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        'Promoted',
+                        'Hyped',
                         style: TextStyle(
                           color: Color(0xFF5E5E5E),
                           fontSize: 11.0,
@@ -496,11 +524,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           ),
           const SizedBox(height: 10),
 
-          // Engagement Row (TIME post reaction bar)
+          // Action/Engagement row
           _buildPostActionRow(
-            likes: '1,204',
-            comments: '89',
+            postId: 'time_post',
+            defaultLikes: 1204,
+            defaultComments: 89,
           ),
+          if (_commentsExpanded['time_post'] == true) ...[
+            _buildCommentsSection('time_post'),
+          ],
         ],
       ),
     );
@@ -642,9 +674,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
           // Action/Engagement row
           _buildPostActionRow(
-            likes: '23',
-            comments: '15',
+            postId: 'alina_post',
+            defaultLikes: 23,
+            defaultComments: 15,
           ),
+          if (_commentsExpanded['alina_post'] == true) ...[
+            _buildCommentsSection('alina_post'),
+          ],
         ],
       ),
     );
@@ -878,9 +914,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
           // Action/Engagement row
           _buildPostActionRow(
-            likes: '1,492',
-            comments: '235',
+            postId: 'collab_post',
+            defaultLikes: 1492,
+            defaultComments: 235,
           ),
+          if (_commentsExpanded['collab_post'] == true) ...[
+            _buildCommentsSection('collab_post'),
+          ],
         ],
       ),
     );
@@ -1098,22 +1138,38 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
           // Action/Engagement row
           _buildPostActionRow(
-            likes: '892',
-            comments: '124',
+            postId: 'openai_post',
+            defaultLikes: 892,
+            defaultComments: 124,
           ),
+          if (_commentsExpanded['openai_post'] == true) ...[
+            _buildCommentsSection('openai_post'),
+          ],
         ],
       ),
     );
   }
 
   // -------------------------------------------------------------
-  // REUSABLE FEEDBACK ACTION ROW
+  // REUSABLE FEEDBACK ACTION ROW WITH COMMENTS ACCORDION
   // -------------------------------------------------------------
 
   Widget _buildPostActionRow({
-    required String likes,
-    required String comments,
+    required String postId,
+    required int defaultLikes,
+    required int defaultComments,
   }) {
+    final isLiked = _likedPosts[postId] ?? false;
+    final likesCount = _likesCountOverride[postId] ?? defaultLikes;
+    final commentsCount = defaultComments;
+    final isCommentsExpanded = _commentsExpanded[postId] ?? false;
+
+    String likesStr = likesCount.toString();
+    if (likesCount >= 1000) {
+      final str = likesCount.toString();
+      likesStr = '${str.substring(0, str.length - 3)},${str.substring(str.length - 3)}';
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: Row(
@@ -1121,10 +1177,28 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         children: [
           Row(
             children: [
-              const Icon(CupertinoIcons.heart, size: 24, color: Colors.black87),
+              // Heart icon (like button)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (isLiked) {
+                      _likedPosts[postId] = false;
+                      _likesCountOverride[postId] = likesCount - 1;
+                    } else {
+                      _likedPosts[postId] = true;
+                      _likesCountOverride[postId] = likesCount + 1;
+                    }
+                  });
+                },
+                child: Icon(
+                  isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+                  size: 24,
+                  color: isLiked ? Colors.red : Colors.black87,
+                ),
+              ),
               const SizedBox(width: 6),
               Text(
-                likes,
+                likesStr,
                 style: const TextStyle(
                   color: Colors.black87,
                   fontSize: 14.0,
@@ -1132,10 +1206,22 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              const Icon(CupertinoIcons.chat_bubble, size: 24, color: Colors.black87),
+              // Comment icon button
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _commentsExpanded[postId] = !isCommentsExpanded;
+                  });
+                },
+                child: Icon(
+                  isCommentsExpanded ? CupertinoIcons.chat_bubble_fill : CupertinoIcons.chat_bubble,
+                  size: 24,
+                  color: isCommentsExpanded ? const Color(0xFF0A66C2) : Colors.black87,
+                ),
+              ),
               const SizedBox(width: 6),
               Text(
-                comments,
+                commentsCount.toString(),
                 style: const TextStyle(
                   color: Colors.black87,
                   fontSize: 14.0,
@@ -1145,6 +1231,308 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             ],
           ),
           const Icon(CupertinoIcons.bookmark, size: 24, color: Colors.black87),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentsSection(String postId) {
+    final comments = _customComments[postId] ?? [
+      {
+        'name': 'Christian Pickett',
+        'headline': 'Co-founder @ Orthogonal (YC W26)',
+        'avatar': 'assets/images/dharmik_avatar.jpg',
+        'isAuthor': true,
+        'timeText': '1d',
+        'body': 'Read more:\nhttps://www.thestreet.com/crypto/newsroom/orthogonal-is-betting-the-agent-economy-needs-better-infrastructure',
+        'likes': 10,
+        'hasLiked': false,
+        'replies': <Map<String, dynamic>>[],
+      },
+      {
+        'name': 'Aryan Gandhi',
+        'headline': 'Building the Future with AI 0->1 | Gen ...',
+        'avatar': 'assets/images/alina_avatar.jpg',
+        'isAuthor': false,
+        'timeText': '15h',
+        'body': 'Congratulations on the raise! The idea of agents dynamically discovering and orchestrating capabilities feels like a missing layer in today\'s agent stack. Excited to see where Orthogonal goes from here. Christian Pickett 👏',
+        'likes': 0,
+        'hasLiked': false,
+        'replies': <Map<String, dynamic>>[],
+      },
+      {
+        'name': 'Ryan Widgeon',
+        'headline': 'Founder | AI/ML | AI Agents |GTM| Forb...',
+        'avatar': 'assets/images/somraj_avatar.jpg',
+        'isAuthor': false,
+        'timeText': '1d',
+        'body': 'Congrats! This is a reallyyy interesting layer to build.\n\nMost agents today are only as useful as the tools they were pre-wired with. The moment the task requires a new capability, they either hallucinate a workaround, fail silently, or punt back to a human.\n\nDynamic capability discovery...',
+        'likes': 9,
+        'hasLiked': false,
+        'replies': <Map<String, dynamic>>[
+          {
+            'name': 'Dr. Xi Zeng',
+            'headline': 'Founder and CEO of Chance A...',
+            'avatar': 'assets/images/dharmik_avatar.jpg',
+            'timeText': '18h',
+            'body': 'Ryan Widgeon The safety point is where this gets interesting. Tool discovery is easy to describe as routing, but the agent also needs a reason to stop....',
+          }
+        ],
+      }
+    ];
+
+    return Container(
+      color: const Color(0xFFF9FAFB),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Dropdown
+          Row(
+            children: const [
+              Text(
+                'Most relevant',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF374151)),
+              ),
+              Icon(Icons.arrow_drop_down, size: 18, color: Color(0xFF374151)),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Comments List
+          ...comments.map((comment) {
+            final replies = comment['replies'] as List<dynamic>;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundImage: AssetImage(comment['avatar']),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  comment['name'],
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                                ),
+                                if (comment['isAuthor'] == true) ...[
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE0F2FE),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'Author',
+                                      style: TextStyle(color: Color(0xFF0369A1), fontSize: 9, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                                const Spacer(),
+                                Text(
+                                  comment['timeText'],
+                                  style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              comment['headline'],
+                              style: const TextStyle(color: Colors.grey, fontSize: 11),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            _buildCommentBodyText(comment['body']),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Text(
+                                  'Like',
+                                  style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                                if (comment['likes'] > 0) ...[
+                                  const SizedBox(width: 6),
+                                  const Icon(CupertinoIcons.hand_thumbsup_fill, size: 12, color: Color(0xFF0A66C2)),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    comment['likes'].toString(),
+                                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                  ),
+                                ],
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'Reply',
+                                  style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Render Replies
+                  if (replies.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(left: 36.0, top: 12.0),
+                      child: Column(
+                        children: replies.map((reply) {
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                radius: 14,
+                                backgroundImage: AssetImage(reply['avatar']),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          reply['name'],
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                                        ),
+                                        const Spacer(),
+                                        Text(
+                                          reply['timeText'],
+                                          style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      reply['headline'],
+                                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    _buildCommentBodyText(reply['body']),
+                                    const SizedBox(height: 6),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          }).toList(),
+
+          const Divider(height: 1, color: Color(0xFFECECE8)),
+          const SizedBox(height: 12),
+
+          // Add a comment box
+          Row(
+            children: [
+              const CircleAvatar(
+                radius: 18,
+                backgroundImage: AssetImage('assets/images/somraj_avatar.jpg'),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  alignment: Alignment.centerLeft,
+                  child: TextField(
+                    controller: _commentInputCtrl,
+                    decoration: const InputDecoration(
+                      hintText: 'Add a comment...',
+                      hintStyle: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13.5),
+                      border: InputBorder.none,
+                      isDense: true,
+                    ),
+                    style: const TextStyle(fontSize: 13.5, color: Colors.black),
+                    onSubmitted: (val) {
+                      if (val.trim().isNotEmpty) {
+                        final newComment = {
+                          'name': 'Somraj lodhi',
+                          'headline': 'Founder & Builder @ Acadyk',
+                          'avatar': 'assets/images/somraj_avatar.jpg',
+                          'isAuthor': false,
+                          'timeText': 'Just now',
+                          'body': val.trim(),
+                          'likes': 0,
+                          'hasLiked': false,
+                          'replies': <Map<String, dynamic>>[],
+                        };
+                        setState(() {
+                          final currentComments = List<Map<String, dynamic>>.from(comments);
+                          currentComments.add(newComment);
+                          _customComments[postId] = currentComments;
+                          _commentInputCtrl.clear();
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.alternate_email, color: Color(0xFF6B7280), size: 22),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentBodyText(String body) {
+    final words = ['Christian Pickett', 'Ryan Widgeon'];
+    String? foundWord;
+    for (final w in words) {
+      if (body.contains(w)) {
+        foundWord = w;
+        break;
+      }
+    }
+
+    if (foundWord == null) {
+      return Text(
+        body,
+        style: const TextStyle(color: Color(0xFF374151), fontSize: 13, height: 1.4),
+      );
+    }
+
+    final parts = body.split(foundWord);
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(color: Color(0xFF374151), fontSize: 13, height: 1.4),
+        children: [
+          TextSpan(text: parts[0]),
+          TextSpan(
+            text: foundWord,
+            style: const TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const ProfileScreen(),
+                ));
+              },
+          ),
+          if (parts.length > 1) TextSpan(text: parts[1]),
         ],
       ),
     );
@@ -1600,7 +1988,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     builder: (context) => const ExhibitionScreen(),
                   ));
                 }),
-                _buildDrawerNavItem('Space'),
+                _buildDrawerNavItem('Space', onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const SpaceScreen(),
+                  ));
+                }),
                 _buildDrawerNavItem('Community', onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => const DiscoverCommunitiesScreen(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../feed/presentation/services/startup_manager.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
@@ -80,95 +81,129 @@ class NotificationScreen extends StatelessWidget {
 
                 // Notifications List
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    children: [
-                      _buildNotificationItem(
-                        avatarUrl: 'assets/images/somraj_avatar.jpg', 
-                        username: '@frankiesullivan',
-                        actionText: 'followed you',
-                        timeText: 'Thursday 4:20pm',
-                        timeAgo: '2 hours ago',
-                        isUnread: true,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildNotificationItem(
-                        avatarUrl: 'assets/images/alina_avatar.jpg', 
-                        username: '@eleanor_mac',
-                        actionText: 'commented on your post',
-                        timeText: 'Thursday 3:12pm',
-                        timeAgo: '3 hours ago',
-                        isUnread: true,
-                        contentWidget: Container(
-                          margin: const EdgeInsets.only(top: 8),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3F4F6),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'Love the background on this! Would love to learn how you created the mesh gradient effect.',
-                            style: TextStyle(
-                              color: Color(0xFF374151),
-                              fontSize: 14,
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildNotificationItem(
-                        avatarUrl: 'assets/images/alina_avatar.jpg',
-                        username: '@eleanor_mac',
-                        actionText: 'liked your post',
-                        timeText: 'Thursday 3:11pm',
-                        timeAgo: '3 hours ago',
-                        isUnread: true,
-                        badgeIcon: Icons.favorite,
-                        badgeColor: const Color(0xFF4F46E5), 
-                        isActiveBackground: true, 
-                      ),
-                      const SizedBox(height: 12),
-                      _buildNotificationItem(
-                        avatarUrl: 'assets/images/dharmik_avatar.jpg', 
-                        username: '@ollie_diggs',
-                        actionText: 'invited you to Sisyphus Dashboard',
-                        timeText: 'Thursday 2:44pm',
-                        timeAgo: '4 hours ago',
-                        isUnread: false,
-                        contentWidget: Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: Row(
-                            children: [
-                              OutlinedButton(
-                                onPressed: () {},
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Color(0xFFD1D5DB)),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  foregroundColor: const Color(0xFF374151),
-                                  minimumSize: const Size(0, 36),
+                  child: ValueListenableBuilder<List<Map<String, dynamic>>>(
+                    valueListenable: StartupManager.notifications,
+                    builder: (context, notificationsList, child) {
+                      return ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                        itemCount: notificationsList.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final item = notificationsList[index];
+                          final isInvite = item['type'] == 'invite';
+
+                          Widget? contentWidget;
+                          if (isInvite) {
+                            final status = item['status'] ?? 'pending';
+                            if (status == 'pending') {
+                              contentWidget = Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: Row(
+                                  children: [
+                                    OutlinedButton(
+                                      onPressed: () {
+                                        StartupManager.updateNotificationStatus(item['id']!, 'declined');
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Co-founder invitation declined.'),
+                                            backgroundColor: Colors.black,
+                                          ),
+                                        );
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(color: Color(0xFFD1D5DB)),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        foregroundColor: const Color(0xFF374151),
+                                        minimumSize: const Size(0, 36),
+                                      ),
+                                      child: const Text('Decline', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        StartupManager.updateNotificationStatus(item['id']!, 'accepted');
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Joined startup as co-founder with ${item['senderName'] ?? 'Somraj lodhi'}!'),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF4F46E5),
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        minimumSize: const Size(0, 36),
+                                      ),
+                                      child: const Text('Accept', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                    ),
+                                  ],
                                 ),
-                                child: const Text('Decline', style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF4F46E5),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  minimumSize: const Size(0, 36),
+                              );
+                            } else if (status == 'accepted') {
+                              contentWidget = const Padding(
+                                padding: EdgeInsets.only(top: 8.0),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.check_circle, color: Colors.green, size: 16),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Accepted invitation to join',
+                                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13),
+                                    ),
+                                  ],
                                 ),
-                                child: const Text('Accept', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                              );
+                            } else {
+                              contentWidget = const Padding(
+                                padding: EdgeInsets.only(top: 8.0),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.cancel, color: Colors.red, size: 16),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Declined invitation',
+                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          } else if (item['content'] != null) {
+                            contentWidget = Container(
+                              margin: const EdgeInsets.only(top: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F4F6),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                              child: Text(
+                                item['content']!,
+                                style: const TextStyle(
+                                  color: Color(0xFF374151),
+                                  fontSize: 14,
+                                  height: 1.4,
+                                ),
+                              ),
+                            );
+                          }
+
+                          return _buildNotificationItem(
+                            avatarUrl: item['avatarUrl']!,
+                            username: item['username']!,
+                            actionText: item['actionText']!,
+                            timeText: item['timeText']!,
+                            timeAgo: item['timeAgo']!,
+                            isUnread: item['isUnread'] ?? false,
+                            contentWidget: contentWidget,
+                            badgeIcon: item['type'] == 'like' ? Icons.favorite : null,
+                            badgeColor: item['type'] == 'like' ? const Color(0xFF4F46E5) : null,
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ],

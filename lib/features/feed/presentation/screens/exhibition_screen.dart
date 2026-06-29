@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 import 'event_detail_screen.dart';
+import 'startup_details_screen.dart';
 
 class ExhibitionScreen extends StatelessWidget {
-  const ExhibitionScreen({super.key});
+  final List<Map<String, dynamic>>? items;
+  final String? title;
+  final bool isFineArts;
+
+  const ExhibitionScreen({
+    super.key,
+    this.items,
+    this.title,
+    this.isFineArts = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     const bgColor = Color(0xFF0F0F10);
     const cardBgColor = Color(0xFF1A1A1C);
 
-    final List<Map<String, dynamic>> exhibitionItems = [
+    final List<Map<String, dynamic>> exhibitionItems = items ?? [
       {
         'title': 'Horror Circus tarot deck',
         'image': 'https://images.unsplash.com/photo-1601042879364-f3947d3f9c16?w=500&auto=format&fit=crop&q=80',
@@ -351,9 +361,9 @@ class ExhibitionScreen extends StatelessWidget {
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-                title: const Text(
-                  'Exhibition',
-                  style: TextStyle(
+                title: Text(
+                  title ?? 'Exhibition',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
@@ -398,11 +408,19 @@ class ExhibitionScreen extends StatelessWidget {
   Widget _buildCard(BuildContext context, Map<String, dynamic> item, Color cardBg) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => EventDetailScreen(eventData: item['event']),
-          ),
-        );
+        if (isFineArts) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const StartupDetailsScreen(),
+            ),
+          );
+        } else {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => EventDetailScreen(eventData: item['event']),
+            ),
+          );
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12.0),

@@ -72,62 +72,58 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 480),
-            color: const Color(0xFFF3F2EF),
+            color: Colors.white,
             child: Column(
               children: [
-                // Top App Bar
+                // Header (No margins, matches screenshot)
                 _buildAppBar(context, event['title']),
                 
-                // Scrollable Body (Structured in high-fidelity cards)
+                // Scrollable Body - Sections flow edge-to-edge
                 Expanded(
                   child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // 1. High-Fidelity Banner Card
-                          _buildHighFidelityBanner(event),
-                          const SizedBox(height: 12),
-                          
-                          // 2. Info & Stats Card (Teal border top)
-                          _buildInfoStatsCard(event),
-                          const SizedBox(height: 12),
-                          
-                          // 3. Eligibility & Description Card
-                          _buildDescriptionCard(event),
-                          const SizedBox(height: 12),
-                          
-                          // 4. Stages & Timelines Card
-                          _buildStagesTimelineCard(timeline, event),
-                          const SizedBox(height: 12),
-                          
-                          // 5. Important dates & deadlines
-                          _buildImportantDatesCard(importantDates),
-                          const SizedBox(height: 12),
-                          
-                          // 6. Rewards and Prizes
-                          _buildRewardsCard(rewards),
-                          const SizedBox(height: 12),
-                          
-                          // 7. Feedback & Rating
-                          _buildFeedbackRatingCard(),
-                          const SizedBox(height: 12),
-                          
-                          // 8. FAQs / Discussions
-                          _buildFaqsCard(faqs),
-                          const SizedBox(height: 12),
-                          
-                          // Breadcrumbs & Powered By Footer
-                          _buildBreadcrumbsAndFooter(event),
-                        ],
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 1. Top Banner Card (Edge-to-edge, rounded bottom)
+                        _buildBannerSection(event),
+                        _buildSectionSpacer(),
+                        
+                        // 2. Info & Stats block (Teal top border, full-width)
+                        _buildInfoStatsSection(event),
+                        _buildSectionSpacer(),
+                        
+                        // 3. Eligibility & Description
+                        _buildDescriptionSection(event),
+                        _buildSectionSpacer(),
+                        
+                        // 4. Stages & Timelines
+                        _buildStagesTimelineSection(timeline, event),
+                        _buildSectionSpacer(),
+                        
+                        // 5. Important dates & deadlines
+                        _buildImportantDatesSection(importantDates),
+                        _buildSectionSpacer(),
+                        
+                        // 6. Rewards and Prizes
+                        _buildRewardsSection(rewards),
+                        _buildSectionSpacer(),
+                        
+                        // 7. Feedback & Rating
+                        _buildFeedbackRatingSection(),
+                        _buildSectionSpacer(),
+                        
+                        // 8. FAQs / Discussions
+                        _buildFaqsSection(faqs),
+                        
+                        // Footer & Breadcrumbs
+                        _buildFooterSection(event),
+                      ],
                     ),
                   ),
                 ),
                 
                 // Sticky Bottom register bar
-                _buildBottomRegisterBar(event),
+                _buildStickyRegisterBar(event),
               ],
             ),
           ),
@@ -167,6 +163,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
+  Widget _buildSectionSpacer() {
+    return Container(
+      height: 10,
+      color: const Color(0xFFF3F2EF),
+    );
+  }
+
   Widget _buildSectionHeader(String title) {
     return Row(
       children: [
@@ -191,30 +194,24 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  // Card 1: High Fidelity Banner (Reproducing Coca-Cola visual layout)
-  Widget _buildHighFidelityBanner(Map<String, dynamic> event) {
+  // --- 1. BANNER SECTION ---
+  Widget _buildBannerSection(Map<String, dynamic> event) {
     final bool isCoke = event['title'].toString().contains('Coca-Cola');
     
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      clipBehavior: Clip.antiAlias,
+      color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Banner Top section with logos
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Brand Logo
+                    // Brand Logo text
                     if (isCoke)
                       const Text(
                         'Coca-Cola',
@@ -229,7 +226,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     else
                       const Icon(Icons.palette_outlined, color: Colors.blue, size: 28),
                       
-                    // Event/Mantra Logo Badge
+                    // Event/Mantra Badge
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
@@ -249,12 +246,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                // Title & Subtitle inside the banner
                 Text(
                   event['title'],
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1E1F22),
                   ),
@@ -265,12 +261,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       ? "Where tomorrow's business leaders are forged today."
                       : "A premium creative contest on Acadyk",
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(fontSize: 13, color: Colors.grey),
                 ),
                 const SizedBox(height: 12),
-                // MBA / Criteria Pill
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(20),
@@ -284,7 +279,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ],
             ),
           ),
-          // Geometric abstract graphics representation at bottom of banner
+          // Geometric abstract banner graphics
           _buildAbstractPattern(isCoke),
         ],
       ),
@@ -298,7 +293,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Left block: Red grid
           Expanded(
             flex: 2,
             child: Container(
@@ -312,7 +306,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ),
             ),
           ),
-          // Middle block: Orange star
           Expanded(
             flex: 2,
             child: Container(
@@ -322,7 +315,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ),
             ),
           ),
-          // Right block: Teal layout
           Expanded(
             flex: 2,
             child: Container(
@@ -337,27 +329,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  // Card 2: Main Info & Stats Card (Teal border line on top)
-  Widget _buildInfoStatsCard(Map<String, dynamic> event) {
+  // --- 2. INFO & STATS SECTION (Teal top border) ---
+  Widget _buildInfoStatsSection(Map<String, dynamic> event) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
-        ],
-      ),
+      color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Teal Top Border block
+          // Teal Top Border line
           Container(
             height: 4,
-            decoration: const BoxDecoration(
-              color: Color(0xFF007A87),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            ),
+            color: const Color(0xFF007A87),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -368,7 +350,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.blue.shade50,
                         borderRadius: BorderRadius.circular(12),
@@ -412,13 +394,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           const SizedBox(height: 6),
                           Text(
                             event['organizer'],
-                            style: TextStyle(fontSize: 13, color: Colors.grey[700], fontWeight: FontWeight.w500),
+                            style: TextStyle(fontSize: 13, color: Colors.grey[750], fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Mantra red logo container
+                    // Logo Box
                     Container(
                       width: 56,
                       height: 56,
@@ -441,7 +423,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 ),
                 const SizedBox(height: 20),
                 
-                // Team size & registered count stats
+                // Stats Row
                 Row(
                   children: [
                     Expanded(
@@ -484,9 +466,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                // Somraj Lodhi Registration row
+                // Registration details
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.grey[50],
                     border: Border.all(color: Colors.grey.shade200),
@@ -547,7 +529,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.emoji_events, color: Color(0xFFFFC107), size: 30),
+                      const Icon(Icons.emoji_events, color: Color(0xFFFFC107), size: 32),
                       Column(
                         children: [
                           const Text(
@@ -561,7 +543,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           ),
                         ],
                       ),
-                      const Icon(Icons.emoji_events, color: Color(0xFFFFC107), size: 30),
+                      const Icon(Icons.emoji_events, color: Color(0xFFFFC107), size: 32),
                     ],
                   ),
                 ),
@@ -573,15 +555,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  // Card 3: Eligibility & Guidelines
-  Widget _buildDescriptionCard(Map<String, dynamic> event) {
+  // --- 3. ELIGIBILITY & DESCRIPTION ---
+  Widget _buildDescriptionSection(Map<String, dynamic> event) {
     return Container(
+      color: Colors.white,
       padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -603,33 +581,28 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  // Card 4: Stages and Timelines (Dashed line & custom circular node layout)
-  Widget _buildStagesTimelineCard(List<Map<String, dynamic>> timeline, Map<String, dynamic> event) {
+  // --- 4. STAGES & TIMELINES ---
+  Widget _buildStagesTimelineSection(List<Map<String, dynamic>> timeline, Map<String, dynamic> event) {
     final bool isCoke = event['title'].toString().contains('Coca-Cola');
     
     return Container(
+      color: Colors.white,
       padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader('Stages and Timelines'),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           
-          // Timeline stack list
           Column(
             children: [
               ...timeline.map((stage) {
                 final int index = timeline.indexOf(stage);
                 final bool isLast = index == timeline.length - 1 && !isCoke;
-                return _buildStageTimelineRow(stage, isLast);
+                return _buildTimelineRow(stage, isLast);
               }),
               if (isCoke)
-                _buildStageTimelineRow({
+                _buildTimelineRow({
                   'day': 'Inter',
                   'month': 'VIEWS',
                   'title': 'Interviews',
@@ -644,24 +617,24 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  Widget _buildStageTimelineRow(Map<String, dynamic> stage, bool isLast) {
+  Widget _buildTimelineRow(Map<String, dynamic> stage, bool isLast) {
     final bool isLive = stage['isLive'] ?? false;
     final String day = stage['day'] ?? '1';
     final String month = stage['month'] ?? 'JAN';
-    final String dateStr = '${stage['startDate']} → ${stage['endDate']}';
+    final String dateRange = '${stage['startDate']} → ${stage['endDate']}';
 
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Left vertical timeline node track
+          // Left vertical dotted-like track
           Column(
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 32,
+                height: 32,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF007A87),
+                  color: Color(0xFF004B87),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -670,11 +643,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   children: [
                     Text(
                       day,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
                     ),
                     Text(
                       month,
-                      style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: Colors.white, fontSize: 8),
                     ),
                   ],
                 ),
@@ -683,7 +656,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: Colors.grey.shade300,
+                    color: Colors.blue.shade100,
                     margin: const EdgeInsets.symmetric(vertical: 4),
                   ),
                 ),
@@ -691,22 +664,22 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           ),
           const SizedBox(width: 14),
           
-          // Right content details block
+          // Right content details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Date range description text sitting above the card
+                // Date text aligned to the right of node
                 Text(
-                  dateStr,
-                  style: TextStyle(color: Colors.grey[750], fontSize: 11.5, fontWeight: FontWeight.bold),
+                  dateRange,
+                  style: TextStyle(color: Colors.grey[750], fontSize: 11, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
                 
-                // Timeline details Card
+                // Stage detail card
                 Container(
-                  margin: const EdgeInsets.only(bottom: 20),
-                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border.all(color: Colors.grey.shade200),
@@ -725,10 +698,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           ),
                           if (isLive)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: Colors.red.shade200),
                               ),
                               child: Row(
@@ -768,27 +741,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  // Card 5: Important dates & deadlines
-  Widget _buildImportantDatesCard(List<Map<String, dynamic>> dates) {
+  // --- 5. IMPORTANT DATES & DEADLINES ---
+  Widget _buildImportantDatesSection(List<Map<String, dynamic>> dates) {
     return Container(
+      color: Colors.white,
       padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader('Important dates & deadlines?'),
           const SizedBox(height: 16),
-          ...dates.map((date) => _buildDeadlineItem(date)),
+          ...dates.map((date) => _buildDeadlineItemRow(date)),
         ],
       ),
     );
   }
 
-  Widget _buildDeadlineItem(Map<String, dynamic> date) {
+  Widget _buildDeadlineItemRow(Map<String, dynamic> date) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(10),
@@ -803,8 +772,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             width: 36,
             padding: const EdgeInsets.symmetric(vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF007A87),
-              borderRadius: BorderRadius.circular(6),
+              color: const Color(0xFF0073B1),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               children: [
@@ -841,31 +810,25 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  // Card 6: Rewards and Prizes
-  Widget _buildRewardsCard(List<Map<String, dynamic>> rewards) {
+  // --- 6. REWARDS AND PRIZES ---
+  Widget _buildRewardsSection(List<Map<String, dynamic>> rewards) {
     return Container(
+      color: Colors.white,
       padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader('Rewards and Prizes'),
           const SizedBox(height: 16),
-          ...rewards.map((reward) => _buildPrizeCard(
-            amount: reward['amount'],
-            label: reward['label'],
-            isMerch: reward['isMerch']
-          )),
+          ...rewards.map((reward) => _buildRewardsCard(reward)),
         ],
       ),
     );
   }
 
-  Widget _buildPrizeCard({required String amount, required String label, bool isMerch = false}) {
+  Widget _buildRewardsCard(Map<String, dynamic> reward) {
+    final bool isMerch = reward['isMerch'] ?? false;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -876,8 +839,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       child: IntrinsicHeight(
         child: Row(
           children: [
+            // Left green/blue accent vertical block
             Container(
-              width: 5,
+              width: 6,
               decoration: BoxDecoration(
                 color: isMerch ? Colors.blue : Colors.greenAccent.shade400,
                 borderRadius: const BorderRadius.only(
@@ -886,9 +850,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 ),
               ),
             ),
+            // Cash column
             Container(
               width: 100,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -904,11 +869,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          amount,
+                          reward['amount'],
                           style: TextStyle(
                             color: Colors.green.shade800,
                             fontWeight: FontWeight.bold,
-                            fontSize: 14.5,
+                            fontSize: 14,
                           ),
                         ),
                         const SizedBox(height: 1),
@@ -925,6 +890,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
             ),
             Container(width: 1, color: Colors.grey.shade200),
+            // Prize name
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -933,7 +899,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      label,
+                      reward['label'],
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -957,15 +923,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  // Card 7: Feedback & Rating
-  Widget _buildFeedbackRatingCard() {
+  // --- 7. FEEDBACK & RATING ---
+  Widget _buildFeedbackRatingSection() {
     return Container(
+      color: Colors.white,
       padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1000,22 +962,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  // Card 8: FAQs / Discussions
-  Widget _buildFaqsCard(List<Map<String, String>> faqs) {
+  // --- 8. FAQS / DISCUSSIONS ---
+  Widget _buildFaqsSection(List<Map<String, String>> faqs) {
     return Container(
+      color: Colors.white,
       padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader('FAQs / Discussions'),
           const SizedBox(height: 12),
           
-          // Tab bar headers
           Row(
             children: [
               GestureDetector(
@@ -1158,11 +1115,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  // Footer: Breadcrumbs & Copyright branding (Replacing Unstop with Acadyk)
-  Widget _buildBreadcrumbsAndFooter(Map<String, dynamic> event) {
+  // --- FOOTER & BREADCRUMBS SECTION ---
+  Widget _buildFooterSection(Map<String, dynamic> event) {
     return Container(
-      color: Colors.transparent,
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      color: const Color(0xFFF3F2EF),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1180,7 +1137,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Center(
             child: Column(
               children: [
@@ -1188,8 +1145,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   'Powered By',
                   style: TextStyle(color: Colors.grey[500], fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5),
                 ),
-                const SizedBox(height: 4),
-                // Acadyk Logo representation
+                const SizedBox(height: 6),
+                // Acadyk Logo box representation
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1215,20 +1172,20 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildBottomRegisterBar(Map<String, dynamic> event) {
+  // --- STICKY REGISTER BAR ---
+  Widget _buildStickyRegisterBar(Map<String, dynamic> event) {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 20, top: 4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // "5 Days Left" floating center tab badge
+          // "5 Days Left" floating tab badge
           Transform.translate(
             offset: const Offset(0, 10),
             child: Container(
@@ -1257,6 +1214,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         builder: (context) => RegistrationFormScreen(
                           eventTitle: event['title'],
                           logoUrl: event['logoUrl'],
+                          organizer: event['organizer'],
                         ),
                       ),
                     );
