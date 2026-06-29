@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../../profile/presentation/screens/edit_status_screen.dart';
+
 
 class PostDetailScreen extends StatefulWidget {
   final String authorName;
@@ -493,16 +495,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         child: Row(
                           children: [
                             // User avatar
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                image: DecorationImage(
-                                  image: AssetImage('assets/images/somraj_avatar.jpg'),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                            const StatusAvatar(
+                              avatarAsset: 'assets/images/somraj_avatar.jpg',
+                              radius: 16,
                             ),
                             const SizedBox(width: 2),
                             const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF5E5E5E)),

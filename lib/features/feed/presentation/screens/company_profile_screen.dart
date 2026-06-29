@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'post_detail_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../profile/presentation/screens/edit_status_screen.dart';
+
 
 class CompanyProfileScreen extends StatefulWidget {
   final String companyName;
@@ -988,9 +990,9 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
           // Add a comment box
           Row(
             children: [
-              const CircleAvatar(
+              const StatusAvatar(
+                avatarAsset: 'assets/images/somraj_avatar.jpg',
                 radius: 18,
-                backgroundImage: AssetImage('assets/images/somraj_avatar.jpg'),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1128,7 +1130,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
             recognizer: TapGestureRecognizer()
               ..onTap = () {
                 Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const ProfileScreen(),
+                  builder: (_) => const ProfileScreen(isOwnProfile: false),
                 ));
               },
           ),

@@ -4,12 +4,16 @@ import 'settings_activity_screen.dart';
 import 'about_account_screen.dart';
 import '../../../feed/presentation/screens/create_startup_screen.dart';
 
+import 'edit_status_screen.dart';
+
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final bool isOwnProfile;
+  const ProfileScreen({super.key, this.isOwnProfile = true});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
+
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ScrollController _scrollController = ScrollController();
@@ -174,19 +178,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Positioned(
                 left: 16,
                 bottom: -40,
-                child: Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3.5),
-                    image: const DecorationImage(
-                      image: AssetImage('assets/images/somraj_avatar.jpg'),
-                      fit: BoxFit.cover,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 96,
+                      height: 96,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3.5),
+                      ),
+                      child: const StatusAvatar(
+                        avatarAsset: 'assets/images/somraj_avatar.jpg',
+                        radius: 44.5,
+                        isProfilePageAccountHolder: true, // Own profile = no status ring
+                      ),
                     ),
-                  ),
+                    if (widget.isOwnProfile)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: UserStatusState.statusNotifier,
+                          builder: (context, statusValue, child) {
+                            final displayEmoji = UserStatusState.emoji ?? '💬';
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const EditStatusScreen()),
+                                );
+                              },
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF161B22), // GitHub dark gray badge
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  displayEmoji,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
                 ),
               ),
+
             ],
           ),
 

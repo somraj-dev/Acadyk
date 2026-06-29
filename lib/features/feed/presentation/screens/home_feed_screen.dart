@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'company_profile_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../profile/presentation/screens/edit_status_screen.dart';
+
 import '../../../profile/presentation/screens/appearance_screen.dart';
 import '../../../profile/presentation/screens/about_account_screen.dart';
 import 'post_detail_screen.dart';
@@ -381,7 +383,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const ProfileScreen(),
+                builder: (_) => const ProfileScreen(isOwnProfile: false),
               ));
             },
             behavior: HitTestBehavior.opaque,
@@ -563,7 +565,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const ProfileScreen(),
+                builder: (_) => const ProfileScreen(isOwnProfile: false),
               ));
             },
             behavior: HitTestBehavior.opaque,
@@ -744,7 +746,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const ProfileScreen(),
+                builder: (_) => const ProfileScreen(isOwnProfile: false),
               ));
             },
             behavior: HitTestBehavior.opaque,
@@ -762,16 +764,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       Positioned(
                         top: 0,
                         right: 0,
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            image: DecorationImage(
-                              image: AssetImage('assets/images/somraj_avatar.jpg'),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
+                        child: const StatusAvatar(
+                          avatarAsset: 'assets/images/somraj_avatar.jpg',
+                          radius: 16,
                         ),
                       ),
                       // Bottom-left avatar (On top)
@@ -1612,9 +1607,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           // Add a comment box
           Row(
             children: [
-              const CircleAvatar(
+              const StatusAvatar(
+                avatarAsset: 'assets/images/somraj_avatar.jpg',
                 radius: 18,
-                backgroundImage: AssetImage('assets/images/somraj_avatar.jpg'),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1758,7 +1753,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             recognizer: TapGestureRecognizer()
               ..onTap = () {
                 Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const ProfileScreen(),
+                  builder: (_) => const ProfileScreen(isOwnProfile: false),
                 ));
               },
           ),
@@ -2050,21 +2045,21 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           GestureDetector(
             onTap: () => setState(() => _activeTab = 4),
             child: Container(
-              width: 30,
-              height: 30,
+              padding: const EdgeInsets.all(1.5),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: _activeTab == 4 ? Colors.black : Colors.transparent,
                   width: 1.5,
                 ),
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/somraj_avatar.jpg'),
-                  fit: BoxFit.cover,
-                ),
+              ),
+              child: const StatusAvatar(
+                avatarAsset: 'assets/images/somraj_avatar.jpg',
+                radius: 13.5,
               ),
             ),
           ),
+
         ],
       ),
     );
