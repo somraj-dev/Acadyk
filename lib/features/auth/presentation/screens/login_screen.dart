@@ -77,28 +77,30 @@ class _LoginScreenState extends State<LoginScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24.0),
           ),
-          padding: EdgeInsets.zero,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
         ),
-        child: Stack(
-          alignment: Alignment.center,
+        child: Row(
           children: [
-            Positioned(
-              left: 16,
-              child: logo,
-            ),
-            Text(
-              text,
-              style: const TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1F2937),
+            logo,
+            Expanded(
+              child: Text(
+                text,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1F2937),
+                ),
               ),
             ),
+            // Counter-balance the logo on the left to keep text centered
+            const SizedBox(width: 20.0),
           ],
         ),
       ),
     );
   }
+
 
   Widget _buildActionButton() {
     final bool isActive = _isEmailNotEmpty && (!_usePassword || _passwordController.text.trim().isNotEmpty);
