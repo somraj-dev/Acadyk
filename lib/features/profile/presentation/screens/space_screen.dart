@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:math';
-import 'dart:ui';
+import 'leaderboard_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 class SpaceScreen extends StatefulWidget {
   const SpaceScreen({super.key});
@@ -95,10 +98,314 @@ class _SpaceScreenState extends State<SpaceScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          const Icon(Icons.ios_share_outlined, size: 22, color: Color(0xFF191919)),
+          GestureDetector(
+            onTap: _showShareDialog,
+            behavior: HitTestBehavior.opaque,
+            child: const Icon(Icons.ios_share_outlined, size: 22, color: Color(0xFF191919)),
+          ),
           const SizedBox(width: 16),
           const Icon(Icons.more_horiz, size: 22, color: Color(0xFF191919)),
         ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SHARE DIALOG WITH OFFICIAL LOGOS
+  // ═══════════════════════════════════════════════════════════════
+  void _showShareDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          elevation: 10,
+          backgroundColor: Colors.white,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 380),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Share with Friends',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E293B),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Trading is more effective when you connect with friends!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w400,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Share you link',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Expanded(
+                              child: Text(
+                                'https://acadyk.com/team/stella-fernandez',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF475569),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () {
+                                Clipboard.setData(const ClipboardData(
+                                  text: 'https://acadyk.com/team/stella-fernandez',
+                                ));
+                                Navigator.of(context).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Link copied to clipboard!'),
+                                    backgroundColor: const Color(0xFF4F46E5),
+                                    behavior: SnackBarBehavior.floating,
+                                    margin: const EdgeInsets.all(16),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                );
+                              },
+                              child: const Icon(Icons.copy_rounded, size: 18, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Share to',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _socialItem('Facebook', _buildFacebookLogo(), 'https://www.facebook.com/sharer/sharer.php?u=https://acadyk.com/team/stella-fernandez'),
+                          _socialItem('X', _buildXLogo(), 'https://twitter.com/intent/tweet?url=https://acadyk.com/team/stella-fernandez&text=Check%20out%20Stella%20Fernandez%20team%20profile%20on%20Acadyk!'),
+                          _socialItem('Whatsapp', _buildWhatsappLogo(), 'https://api.whatsapp.com/send?text=Check%20out%20Stella%20Fernandez%20team%20profile%20on%20Acadyk!%20https://acadyk.com/team/stella-fernandez'),
+                          _socialItem('Telegram', _buildTelegramLogo(), 'https://t.me/share/url?url=https://acadyk.com/team/stella-fernandez&text=Check%20out%20Stella%20Fernandez%20team%20profile%20on%20Acadyk!'),
+                          _socialItem('Linkedin', _buildLinkedinLogo(), 'https://www.linkedin.com/sharing/share-offsite/?url=https://acadyk.com/team/stella-fernandez'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: -30,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFEEF2F6), width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.link_rounded, size: 28, color: Color(0xFF4F46E5)),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 14,
+                  right: 14,
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _socialItem(String label, Widget logoWidget, String url) {
+    return GestureDetector(
+      onTap: () async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          logoWidget,
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFacebookLogo() {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: const BoxDecoration(
+        color: Color(0xFF1877F2),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.bottomCenter,
+      padding: const EdgeInsets.only(top: 4),
+      child: const Text(
+        'f',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 32,
+          fontFamily: 'Roboto',
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildXLogo() {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: const Text(
+        '𝕏',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWhatsappLogo() {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: const BoxDecoration(
+        color: Color(0xFF25D366),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Stack(
+        alignment: Alignment.center,
+        children: const [
+          Icon(Icons.chat_bubble, size: 24, color: Colors.white),
+          Positioned(
+            top: 12,
+            left: 13,
+            child: Icon(Icons.phone, size: 9, color: Color(0xFF25D366)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTelegramLogo() {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: const BoxDecoration(
+        color: Color(0xFF229ED9),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.only(right: 3, top: 1),
+      child: Transform.rotate(
+        angle: -0.15,
+        child: const Icon(Icons.send_rounded, size: 22, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildLinkedinLogo() {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0077B5),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      alignment: Alignment.center,
+      child: const Text(
+        'in',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 22,
+          fontFamily: 'Arial',
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
@@ -121,111 +428,124 @@ class _SpaceScreenState extends State<SpaceScreen> {
                 fit: BoxFit.cover,
               ),
             ),
-            // Glassmorphic Overlay at the bottom
+            // Transparent Gradient Overlay at the bottom
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
-              child: ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.65),
-                      border: Border(
-                        top: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.7),
+                    ],
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Row 1: Rank/Rating tag + Avatars
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Row 1: Rank/Rating tag + Avatars
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFEF3C7).withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFFFDE68A), width: 1),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Icon(Icons.stars_rounded, size: 13, color: Color(0xFFD97706)),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Rank #24',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFFD97706),
-                                    ),
-                                  ),
-                                  Text(
-                                    '  \u00b7  ★ 4.8 Ratings',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFFB45309),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            _buildAvatarStack(),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        // Row 2: Stella Fernandez name
-                        const Text(
-                          'Stella Fernandez',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF111827),
-                            letterSpacing: -0.5,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFFDE68A), width: 1),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Row 3: Schedule + Join Now
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Expanded(
-                              child: Text(
-                                '10:00 AM \u2013 11:00 AM  \u00b7  Video Call',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.stars_rounded, size: 13, color: Color(0xFFD97706)),
+                              SizedBox(width: 4),
+                              Text(
+                                'Rank #24',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF374151),
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFD97706),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF3B82F6),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text(
-                                'Join Now',
+                              Text(
+                                '  \u00b7  ★ 4.8 Ratings',
                                 style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12.5,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600,
+                                  color: Color(0xFFB45309),
                                 ),
                               ),
+                            ],
+                          ),
+                        ),
+                        _buildAvatarStack(),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Row 2: Stella Fernandez name (White)
+                    const Text(
+                      'Stella Fernandez',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black45,
+                            blurRadius: 4,
+                            offset: Offset(0, 1.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Row 3: Schedule + Join Now
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            '10:00 AM \u2013 11:00 AM  \u00b7  Video Call',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w600,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black45,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3B82F6),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'Follow',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -515,43 +835,50 @@ class _SpaceScreenState extends State<SpaceScreen> {
   }
 
   Widget _buildRankingCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6), width: 1),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Text('Ranking',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
-              SizedBox(width: 4),
-              Icon(Icons.info_outline, size: 14, color: Color(0xFFD1D5DB)),
-            ],
-          ),
-          const SizedBox(height: 18),
-          const Text('#24',
-              style: TextStyle(
-                  fontSize: 40, fontWeight: FontWeight.w900, color: Color(0xFF111827), height: 1, letterSpacing: -1)),
-          const SizedBox(height: 6),
-          const Text('In National Ranking',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF))),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(14)),
-            child: const Text('\u2191 8 spots',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF10B981))),
-          ),
-          const SizedBox(height: 16),
-          const Text('Top 5% of all teams',
-              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w400, color: Color(0xFFD1D5DB))),
-        ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => const LeaderboardScreen(),
+        ));
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF3F4F6), width: 1),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Text('Ranking',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                SizedBox(width: 4),
+                Icon(Icons.info_outline, size: 14, color: Color(0xFFD1D5DB)),
+              ],
+            ),
+            const SizedBox(height: 18),
+            const Text('#24',
+                style: TextStyle(
+                    fontSize: 40, fontWeight: FontWeight.w900, color: Color(0xFF111827), height: 1, letterSpacing: -1)),
+            const SizedBox(height: 6),
+            const Text('In National Ranking',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF))),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(14)),
+              child: const Text('\u2191 8 spots',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF10B981))),
+            ),
+            const SizedBox(height: 16),
+            const Text('Top 5% of all teams',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w400, color: Color(0xFFD1D5DB))),
+          ],
+        ),
       ),
     );
   }
@@ -983,15 +1310,62 @@ class _DonutChartPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// CUSTOM PAINTER — Shield Badge
-// ═══════════════════════════════════════════════════════════════════
 class _ShieldBadgePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final w = size.width, h = size.height, cx = w / 2;
+    final w = size.width;
+    final h = size.height;
+    final cx = w / 2;
+    final cy = h / 2;
 
-    final shield = Path()
+    // 1. Background Radial Glow (Ambient light)
+    final glowPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFFC084FC).withValues(alpha: 0.35),
+          const Color(0xFFC084FC).withValues(alpha: 0.0),
+        ],
+      ).createShader(Rect.fromCircle(center: Offset(cx, cy), radius: w * 0.7));
+    canvas.drawCircle(Offset(cx, cy), w * 0.7, glowPaint);
+
+    // 2. Beveled Backing Ring (3D Glass base plate)
+    final ringPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color(0xFFDDD6FE).withValues(alpha: 0.8),
+          const Color(0xFFC4B5FD).withValues(alpha: 0.2),
+        ],
+      ).createShader(Rect.fromCircle(center: Offset(cx, cy + h * 0.05), radius: w * 0.42));
+
+    canvas.drawCircle(Offset(cx, cy + h * 0.05), w * 0.42, ringPaint);
+
+    // Inner glowing ring edge highlight
+    final ringStroke = Paint()
+      ..color = const Color(0xFFA5B4FC).withValues(alpha: 0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawCircle(Offset(cx, cy + h * 0.05), w * 0.42, ringStroke);
+
+    // 3. Shield Paths (Left and Right halves for chiseled look)
+    final leftShield = Path()
+      ..moveTo(cx, 0)
+      ..lineTo(cx, h)
+      ..quadraticBezierTo(w * 0.1, h * 0.8, w * 0.06, h * 0.48)
+      ..lineTo(w * 0.06, h * 0.16)
+      ..quadraticBezierTo(w * 0.08, 2, cx, 0)
+      ..close();
+
+    final rightShield = Path()
+      ..moveTo(cx, 0)
+      ..lineTo(cx, h)
+      ..quadraticBezierTo(w * 0.9, h * 0.8, w * 0.94, h * 0.48)
+      ..lineTo(w * 0.94, h * 0.16)
+      ..quadraticBezierTo(w * 0.92, 2, cx, 0)
+      ..close();
+
+    final fullShield = Path()
       ..moveTo(cx, 0)
       ..quadraticBezierTo(w * 0.92, 2, w * 0.94, h * 0.16)
       ..lineTo(w * 0.94, h * 0.48)
@@ -1001,38 +1375,77 @@ class _ShieldBadgePainter extends CustomPainter {
       ..quadraticBezierTo(w * 0.08, 2, cx, 0)
       ..close();
 
+    // 4. Draw Shield Shadows (3D depth drop shadow)
     canvas.drawPath(
-      shield,
+      fullShield.shift(const Offset(0, 4)),
+      Paint()
+        ..color = const Color(0xFF312E81).withValues(alpha: 0.3)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+    );
+
+    // 5. Draw Left (Lighter) and Right (Darker) Halves to simulate 3D chiseled depth
+    canvas.drawPath(
+      leftShield,
       Paint()
         ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [const Color(0xFF7C3AED), const Color(0xFF4F46E5)],
-        ).createShader(Rect.fromLTWH(0, 0, w, h)),
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [const Color(0xFF8B5CF6), const Color(0xFF6D28D9)],
+        ).createShader(Rect.fromLTWH(0, 0, cx, h)),
     );
 
     canvas.drawPath(
-      shield,
+      rightShield,
       Paint()
-        ..color = const Color(0xFF8B5CF6).withValues(alpha: 0.4)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2,
+        ..shader = LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [const Color(0xFF5B21B6), const Color(0xFF4C1D95)],
+        ).createShader(Rect.fromLTWH(cx, 0, cx, h)),
     );
 
-    final sc = Offset(cx, h * 0.42);
-    _star(canvas, sc, 12, 5.5, 5, const Color(0xFFFFD700));
+    // 6. Draw specular highlights (glowing 3D light border)
+    final highlightPaint = Paint()
+      ..color = const Color(0xFFDDD6FE).withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
 
-    canvas.drawCircle(
-      sc,
-      16,
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.12)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
+    canvas.drawPath(
+      Path()
+        ..moveTo(w * 0.06, h * 0.48)
+        ..lineTo(w * 0.06, h * 0.16)
+        ..quadraticBezierTo(w * 0.08, 2, cx, 0),
+      highlightPaint,
     );
+
+    // Dark inset border for the entire shield
+    canvas.drawPath(
+      fullShield,
+      Paint()
+        ..color = const Color(0xFF3B0764).withValues(alpha: 0.4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
+
+    // 7. Beveled Emblem Star
+    final starCenter = Offset(cx, h * 0.44);
+    final outerR = w * 0.22;
+    final innerR = w * 0.10;
+
+    // Star Drop Shadow
+    final starPath = _getStarPath(starCenter, outerR, innerR, 5);
+    canvas.drawPath(
+      starPath.shift(const Offset(0, 2.5)),
+      Paint()
+        ..color = const Color(0xFF1E1B4B).withValues(alpha: 0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5),
+    );
+
+    // Draw Gold Beveled Star
+    _drawBeveledStar(canvas, starCenter, outerR, innerR, 5);
   }
 
-  void _star(Canvas canvas, Offset c, double outer, double inner, int n, Color color) {
+  Path _getStarPath(Offset c, double outer, double inner, int n) {
     final path = Path();
     final step = pi / n;
     for (int i = 0; i < 2 * n; i++) {
@@ -1042,14 +1455,42 @@ class _ShieldBadgePainter extends CustomPainter {
       i == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);
     }
     path.close();
-    canvas.drawPath(path, Paint()..color = color);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.25)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5,
-    );
+    return path;
+  }
+
+  void _drawBeveledStar(Canvas canvas, Offset c, double outer, double inner, int n) {
+    final step = pi / n;
+    final pts = <Offset>[];
+    for (int i = 0; i < 2 * n; i++) {
+      final r = i.isEven ? outer : inner;
+      final a = i * step - pi / 2;
+      pts.add(Offset(c.dx + r * cos(a), c.dy + r * sin(a)));
+    }
+
+    // Colors for beveled facets (alternating light/dark gold)
+    final lightGold = Paint()..color = const Color(0xFFFDE68A);
+    final darkGold = Paint()..color = const Color(0xFFD97706);
+
+    for (int i = 0; i < n; i++) {
+      // Light facet
+      final p1 = pts[i * 2];
+      final p2 = pts[i * 2 + 1];
+      final f1 = Path()
+        ..moveTo(c.dx, c.dy)
+        ..lineTo(p1.dx, p1.dy)
+        ..lineTo(p2.dx, p2.dy)
+        ..close();
+      canvas.drawPath(f1, lightGold);
+
+      // Dark facet
+      final p3 = pts[(i * 2 + 2) % (2 * n)];
+      final f2 = Path()
+        ..moveTo(c.dx, c.dy)
+        ..lineTo(p2.dx, p2.dy)
+        ..lineTo(p3.dx, p3.dy)
+        ..close();
+      canvas.drawPath(f2, darkGold);
+    }
   }
 
   @override
