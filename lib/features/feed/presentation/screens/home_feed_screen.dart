@@ -4,6 +4,8 @@ import 'package:flutter/gestures.dart';
 import 'company_profile_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../profile/presentation/screens/edit_status_screen.dart';
+import '../../../profile/presentation/screens/story_view_screen.dart';
+
 
 import '../../../profile/presentation/screens/appearance_screen.dart';
 import '../../../profile/presentation/screens/about_account_screen.dart';
@@ -224,59 +226,95 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header Row
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const CompanyProfileScreen(companyName: 'Y Combinator'),
-              ));
-            },
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Row(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: Row(
               children: [
-                // YC Profile square logo
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF6600), // YC Orange
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'Y',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
+                // YC Profile square logo (with red status ring)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StoryViewScreen(
+                          name: 'ycombinator',
+                          avatarAsset: '',
+                          avatarText: 'Y',
+                          avatarBgColor: Color(0xFFFF6600),
+                          statusEmoji: '🚀',
+                          statusText: 'W26 Batch Open',
+                          statusSubtitle: 'Y Combinator winter batch applications are officially open. Submit your application today!',
+                          dateText: 'September 16th, 2026',
+                          isCompany: true,
+                          bannerColor: Color(0xFFFF6600),
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(2.0),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFEF4444), // Solid red ring
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(1.5),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFF6600), // YC Orange
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'Y',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Y Combinator',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14.0,
-                              color: Color(0xFF191919),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const CompanyProfileScreen(companyName: 'Y Combinator'),
+                      ));
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Y Combinator',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.0,
+                                color: Color(0xFF191919),
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 4),
-                          Icon(Icons.verified, size: 14, color: Color(0xFF5E5E5E)),
-                        ],
-                      ),
-                      Text(
-                        '21h • Edited',
-                        style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
-                      ),
-                    ],
+                            SizedBox(width: 4),
+                            Icon(Icons.verified, size: 14, color: Color(0xFF5E5E5E)),
+                          ],
+                        ),
+                        Text(
+                          '21h • Edited',
+                          style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 GestureDetector(
@@ -291,7 +329,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
                 ),
               ],
-            ),
             ),
           ),
           const SizedBox(height: 10),
@@ -380,70 +417,106 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header Row
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const ProfileScreen(isOwnProfile: false),
-              ));
-            },
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Row(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: Row(
               children: [
-                // TIME red square logo
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE50914), // TIME Red
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'TIME',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 9.5,
-                      fontFamily: 'serif',
+                // TIME red square logo (with red status ring)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StoryViewScreen(
+                          name: 'TIME',
+                          avatarAsset: '',
+                          avatarText: 'TIME',
+                          avatarBgColor: Color(0xFFE50914),
+                          statusEmoji: '📰',
+                          statusText: 'AI Special Issue',
+                          statusSubtitle: 'TIME\'s new special report covering the state of Artificial Intelligence is out now.',
+                          dateText: 'September 16th, 2026',
+                          isCompany: true,
+                          bannerColor: Color(0xFFE50914),
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(2.0),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFEF4444), // Solid red ring
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(1.5),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE50914), // TIME Red
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'TIME',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 8.5,
+                            fontFamily: 'serif',
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'TIME',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14.0,
-                              color: Color(0xFF191919),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const ProfileScreen(isOwnProfile: false),
+                      ));
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'TIME',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.0,
+                                color: Color(0xFF191919),
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 4),
-                          Icon(Icons.verified, size: 14, color: Color(0xFF5E5E5E)),
-                        ],
-                      ),
-                      Text(
-                        '2,484,746 followers',
-                        style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Hyped',
-                        style: TextStyle(
-                          color: Color(0xFF5E5E5E),
-                          fontSize: 11.0,
-                          fontWeight: FontWeight.bold,
+                            SizedBox(width: 4),
+                            Icon(Icons.verified, size: 14, color: Color(0xFF5E5E5E)),
+                          ],
                         ),
-                      ),
-                    ],
+                        Text(
+                          '2,484,746 followers',
+                          style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'Hyped',
+                          style: TextStyle(
+                            color: Color(0xFF5E5E5E),
+                            fontSize: 11.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 GestureDetector(
@@ -458,7 +531,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
                 ),
               ],
-            ),
             ),
           ),
           const SizedBox(height: 10),

@@ -2,9 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'edit_status_screen.dart';
 import 'profile_screen.dart';
+import '../../../feed/presentation/screens/company_profile_screen.dart';
 
 class StoryViewScreen extends StatefulWidget {
-  const StoryViewScreen({super.key});
+  final String? name;
+  final String? avatarAsset;
+  final String? avatarText;
+  final Color? avatarBgColor;
+  final String? statusEmoji;
+  final String? statusText;
+  final String? statusSubtitle;
+  final String? dateText;
+  final Color? bannerColor;
+  final bool isCompany;
+
+  const StoryViewScreen({
+    super.key,
+    this.name,
+    this.avatarAsset,
+    this.avatarText,
+    this.avatarBgColor,
+    this.statusEmoji,
+    this.statusText,
+    this.statusSubtitle,
+    this.dateText,
+    this.bannerColor,
+    this.isCompany = false,
+  });
 
   @override
   State<StoryViewScreen> createState() => _StoryViewScreenState();
@@ -43,8 +67,11 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final activeEmoji = UserStatusState.emoji ?? '🤕';
-    final activeText = UserStatusState.text ?? 'Out sick';
+    final displayName = widget.name ?? 'somraj_lodhi';
+    final hasAssetAvatar = widget.avatarAsset != null && widget.avatarAsset!.isNotEmpty;
+
+    final activeEmoji = widget.statusEmoji ?? (UserStatusState.emoji ?? '🤕');
+    final activeText = widget.statusText ?? (UserStatusState.text ?? 'Out sick');
     final activeExpiration = UserStatusState.expiration;
     final activeVisibleTo = UserStatusState.visibleTo;
 
@@ -55,6 +82,10 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
     final dateStr = '${months[now.month - 1]} ${now.day}th, ${now.year}';
+    final displayDate = widget.dateText ?? dateStr;
+
+    final displaySubtitle = widget.statusSubtitle ??
+        'A thought highlight shared by $displayName.\nVisible to: $activeVisibleTo. Expires: $activeExpiration.';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -68,13 +99,15 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                 // 1. STORY CARD BODY
                 Positioned.fill(
                   child: Container(
-                    margin: const EdgeInsets.only(top: 40, bottom: 80),
+                    margin: const EdgeInsets.only(top: 60, bottom: 80),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFEDF2F7), // Light blue-grey
-                          Color(0xFFF3E8FF), // Soft lavender
-                        ],
+                      gradient: LinearGradient(
+                        colors: widget.bannerColor != null
+                            ? [widget.bannerColor!.withOpacity(0.05), widget.bannerColor!.withOpacity(0.15)]
+                            : [
+                                const Color(0xFFEDF2F7), // Light blue-grey
+                                const Color(0xFFF3E8FF), // Soft lavender
+                              ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
@@ -130,7 +163,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
 
                         // Title
                         Text(
-                          '$activeText Highlight',
+                          activeText,
                           style: const TextStyle(
                             color: Color(0xFF111827),
                             fontSize: 32,
@@ -142,7 +175,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
 
                         // Subtitle
                         Text(
-                          'A thought highlight shared by Somraj Lodhi.\nVisible to: $activeVisibleTo. Expires: $activeExpiration.',
+                          displaySubtitle,
                           style: const TextStyle(
                             color: Color(0xFF4B5563),
                             fontSize: 15,
@@ -153,7 +186,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
 
                         // Date
                         Text(
-                          dateStr,
+                          displayDate,
                           style: const TextStyle(
                             color: Color(0xFF111827),
                             fontSize: 18,
@@ -251,12 +284,21 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                           child: GestureDetector(
                             onTap: () {
                               Navigator.pop(context); // Close story
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ProfileScreen(isOwnProfile: true),
-                                ),
-                              );
+                              if (widget.isCompany) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CompanyProfileScreen(companyName: displayName),
+                                  ),
+                                );
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ProfileScreen(isOwnProfile: displayName == 'somraj_lodhi'),
+                                  ),
+                                );
+                              }
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -274,19 +316,19 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Icon(Icons.link, color: Color(0xFF0A66C2), size: 20),
-                                  SizedBox(width: 6),
+                                children: [
+                                  const Icon(Icons.link, color: Color(0xFF0A66C2), size: 20),
+                                  const SizedBox(width: 6),
                                   Text(
-                                    'Tap to view profile',
-                                    style: TextStyle(
+                                    widget.isCompany ? 'Tap to view company' : 'Tap to view profile',
+                                    style: const TextStyle(
                                       color: Color(0xFF111827),
                                       fontSize: 14.5,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  SizedBox(width: 4),
-                                  Text('👉', style: TextStyle(fontSize: 14)),
+                                  const SizedBox(width: 4),
+                                  const Text('👉', style: TextStyle(fontSize: 14)),
                                 ],
                               ),
                             ),
@@ -332,14 +374,34 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                         // Profile row
                         Row(
                           children: [
-                            const CircleAvatar(
-                              radius: 16,
-                              backgroundImage: AssetImage('assets/images/somraj_avatar.jpg'),
-                            ),
+                            if (hasAssetAvatar)
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundImage: AssetImage(widget.avatarAsset!),
+                              )
+                            else
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: widget.avatarBgColor ?? Colors.grey,
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  widget.avatarText ?? displayName[0].toUpperCase(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: (widget.avatarText != null && widget.avatarText!.length > 2) ? 8 : 16,
+                                    fontFamily: (widget.avatarText != null && widget.avatarText!.length > 2) ? 'serif' : null,
+                                  ),
+                                ),
+                              ),
                             const SizedBox(width: 8),
-                            const Text(
-                              'somraj_lodhi',
-                              style: TextStyle(
+                            Text(
+                              displayName,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
