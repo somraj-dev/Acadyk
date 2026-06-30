@@ -3,12 +3,15 @@ import 'package:flutter/cupertino.dart';
 import 'settings_activity_screen.dart';
 import 'about_account_screen.dart';
 import '../../../feed/presentation/screens/create_startup_screen.dart';
-
+import '../../../chat/presentation/screens/direct_message_screen.dart';
 import 'edit_status_screen.dart';
+import 'connections_list_screen.dart';
+
 
 class ProfileScreen extends StatefulWidget {
   final bool isOwnProfile;
-  const ProfileScreen({super.key, this.isOwnProfile = true});
+  final Map<String, dynamic>? userData;
+  const ProfileScreen({super.key, this.isOwnProfile = true, this.userData});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -130,76 +133,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =============================================================
   // PROFILE HEADER CARD
   // =============================================================
+  bool _isFollowing = false;
+
+  // =============================================================
+  // PROFILE HEADER CARD
+  // =============================================================
   Widget _buildProfileHeaderCard() {
+    // Resolve dynamic values based on userData or defaults
+    final String name = widget.userData != null 
+        ? widget.userData!['name'] 
+        : (widget.isOwnProfile ? 'Somraj Lodhi' : 'Tanuj');
+
+    final String username = widget.userData != null 
+        ? '@${widget.userData!['name'].toString().replaceAll(' ', '')}' 
+        : (widget.isOwnProfile ? '@SomrajLodhi' : '@ImTanujSingh');
+
+    final String bio = widget.userData != null 
+        ? widget.userData!['headline'] 
+        : (widget.isOwnProfile 
+            ? 'Founder | Thinker | Quant Engineer. Covering worldwide action. DM for collabs.' 
+            : 'Cricket enthusiast 🇮🇳 🏏 Covering worldwide action. Sharing news and passionate commentary on every match. DM for collabs.');
+
+    final String location = widget.userData != null 
+        ? widget.userData!['location'] 
+        : 'India';
+
+    final String avatar = widget.userData != null 
+        ? widget.userData!['avatar'] 
+        : (widget.isOwnProfile ? 'assets/images/somraj_avatar.jpg' : 'assets/images/young_entrepreneur.jpg');
+
+    const Color textColor = Color(0xFF0F1419);
+    const Color textSecondary = Color(0xFF536471);
+
     return Container(
       color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner + Profile Photo
+          // Banner + Overlay Profile Photo Stack
           SizedBox(
-            height: 160,
+            height: 190,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Dark banner
+                // Banner Image
                 Container(
-                  height: 120,
+                  height: 140,
                   width: double.infinity,
-                  color: const Color(0xFF1A1A1A),
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'CONQUER.',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2.5,
-                          fontFamily: 'serif',
-                        ),
-                      ),
-                      const SizedBox(width: 40),
-                      // Edit banner icon
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.edit, size: 16, color: Colors.white),
-                      ),
-                    ],
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/team_celebration_banner.png'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
 
                 // Profile avatar overlapping the banner
                 Positioned(
                   left: 16,
-                  top: 64,
+                  bottom: 0,
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
                       Container(
-                        width: 96,
-                        height: 96,
+                        width: 86,
+                        height: 86,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 3.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
-                        child: const StatusAvatar(
-                          avatarAsset: 'assets/images/somraj_avatar.jpg',
-                          radius: 44.5,
-                          isProfilePageAccountHolder: true, // Own profile = no status ring
+                        child: CircleAvatar(
+                          radius: 40,
+                          backgroundImage: AssetImage(avatar),
                         ),
                       ),
                       if (widget.isOwnProfile)
                         Positioned(
-                          bottom: 0,
-                          right: 0,
+                          bottom: -2,
+                          right: -2,
                           child: ValueListenableBuilder<bool>(
                             valueListenable: UserStatusState.statusNotifier,
                             builder: (context, statusValue, child) {
@@ -218,6 +236,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: const Color(0xFF161B22), // GitHub dark gray badge
                                     shape: BoxShape.circle,
                                     border: Border.all(color: Colors.white, width: 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.15),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
@@ -236,110 +261,217 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-          // Space for the overlapping avatar
-          const SizedBox(height: 8),
-
-
-          // Edit profile icon row (right-aligned)
-          Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: GestureDetector(
-                onTap: () => _showProfileOptionsBottomSheet(context),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF5E5E5E), width: 1),
-                  ),
-                  child: const Icon(Icons.more_horiz, size: 18, color: Color(0xFF5E5E5E)),
-                ),
-              ),
-            ),
-          ),
-
-          // Name, badge, pronouns
+          // Action Buttons Row (right-aligned)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.only(right: 16.0, top: 12.0),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                const Text(
-                  'Somraj Lodhi',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF191919),
+                // Three dots button
+                GestureDetector(
+                  onTap: () => _showProfileOptionsBottomSheet(context),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFCFD9DE), width: 1),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.more_horiz, size: 18, color: textColor),
                   ),
                 ),
-                const SizedBox(width: 6),
-                const Icon(Icons.verified_user, size: 20, color: Color(0xFF5E5E5E)),
-                const SizedBox(width: 6),
-                Text(
-                  'He/Him',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                const SizedBox(width: 8),
+                // Chat bubble button
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DirectMessageScreen(
+                          name: name,
+                          handle: username,
+                          avatarColor: const Color(0xFF6366F1),
+                          avatarIcon: Icons.person,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFCFD9DE), width: 1),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.mail_outline_rounded, size: 18, color: textColor),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                 // Follow / Following pill button
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isFollowing = !_isFollowing;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _isFollowing ? const Color(0xFF272C30) : textColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _isFollowing ? 'Following' : 'Follow',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 12),
 
-          // Headline
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              'Founder | Thinker | Quant Engineer',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF191919),
-                height: 1.35,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
+          // User Information Section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Name + Verified Badge
+                Row(
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: textColor,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.verified, size: 20, color: Color(0xFF1DA1F2)), // Blue Twitter verification check
+                  ],
+                ),
+                const SizedBox(height: 2),
 
-          // Company + Education
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              'Quantaforze Corporation · Madhav Institute of Technology and Science, Gwalior',
-              style: TextStyle(
-                fontSize: 13.5,
-                color: Color(0xFF191919),
-                height: 1.35,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
+                // Username
+                Text(
+                  username,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 12),
 
-          // Location
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              'Indore, Madhya Pradesh, India',
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xFF5E5E5E),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
+                // Bio
+                Text(
+                  bio,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: textColor,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 12),
 
-          // Connections
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              '167 connections',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0A66C2),
-              ),
+                // Location + Joined Date Row
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, color: textSecondary, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      location,
+                      style: const TextStyle(color: textSecondary, fontSize: 13.5),
+                    ),
+                    const SizedBox(width: 14),
+                    const Icon(Icons.calendar_today_outlined, color: textSecondary, size: 14),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'Joined February 2020',
+                      style: TextStyle(color: textSecondary, fontSize: 13.5),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(Icons.keyboard_arrow_right, color: textSecondary, size: 14),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Following / Followers counts
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ConnectionsListScreen(
+                              initialTab: 'following',
+                              userName: name,
+                              userHandle: username,
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Row(
+                        children: [
+                          Text(
+                            '357',
+                            style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Following',
+                            style: TextStyle(color: textSecondary, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ConnectionsListScreen(
+                              initialTab: 'followers',
+                              userName: name,
+                              userHandle: username,
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Row(
+                        children: [
+                          Text(
+                            '197.3K',
+                            style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Followers',
+                            style: TextStyle(color: textSecondary, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Mutual followed by sub-label
+                const Text(
+                  'Not followed by anyone you’re following',
+                  style: TextStyle(color: textSecondary, fontSize: 13),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),

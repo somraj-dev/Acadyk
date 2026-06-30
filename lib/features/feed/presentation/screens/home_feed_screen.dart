@@ -2584,7 +2584,7 @@ class AcadykSearchDelegate extends SearchDelegate<String> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const ProfileScreen(isOwnProfile: false),
+                  builder: (_) => ProfileScreen(isOwnProfile: false, userData: user),
                 ),
               );
             },
