@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'story_view_screen.dart';
 
-
 class UserStatusState {
   static String? emoji;
   static String? text;
@@ -68,7 +67,7 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedEmoji = UserStatusState.emoji ?? '💬';
+    _selectedEmoji = UserStatusState.emoji ?? '🤕';
     _statusController = TextEditingController(text: UserStatusState.text ?? '');
     _isBusy = UserStatusState.isBusy;
     _expiration = UserStatusState.expiration;
@@ -84,7 +83,7 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
   void _showEmojiPicker() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF161B22),
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -97,7 +96,7 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
             children: [
               const Text(
                 'Select an emoji',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               GridView.builder(
@@ -137,22 +136,23 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const Color darkBg = Color(0xFF0D1117);
-    const Color cardBg = Color(0xFF161B22);
-    const Color borderCol = Color(0xFF30363D);
-    const Color textMuted = Color(0xFF8B949E);
+    const Color lightBg = Colors.white;
+    const Color cardBg = Color(0xFFF3F4F6);
+    const Color borderCol = Color(0xFFE5E7EB);
+    const Color textPrimary = Color(0xFF1F2937);
+    const Color textMuted = Color(0xFF6B7280);
 
     return Scaffold(
-      backgroundColor: darkBg,
+      backgroundColor: lightBg,
       appBar: AppBar(
-        backgroundColor: darkBg,
+        backgroundColor: lightBg,
         elevation: 0,
         title: const Text(
           'Edit status',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(color: textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
+          icon: const Icon(Icons.close, color: textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -171,14 +171,14 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
                 children: [
                   const Text(
                     "What's happening",
-                    style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 12),
 
                   // Input box with Emoji and TextField
                   Container(
                     decoration: BoxDecoration(
-                      color: darkBg,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: borderCol),
                     ),
@@ -205,7 +205,7 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
                           child: TextField(
                             controller: _statusController,
                             onChanged: (val) => setState(() {}),
-                            style: const TextStyle(color: Colors.white, fontSize: 15),
+                            style: const TextStyle(color: textPrimary, fontSize: 15),
                             decoration: const InputDecoration(
                               hintText: "What's happening",
                               hintStyle: TextStyle(color: textMuted),
@@ -252,7 +252,7 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
                               const SizedBox(width: 6),
                               Text(
                                 p['text']!,
-                                style: const TextStyle(color: Colors.white, fontSize: 13),
+                                style: const TextStyle(color: textPrimary, fontSize: 13),
                               ),
                             ],
                           ),
@@ -282,12 +282,12 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
                           padding: const EdgeInsets.only(top: 4.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
+                            children: [
+                              const Text(
                                 'Busy',
-                                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
                               ),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               Text(
                                 'When others mention you, assign you, or request your review, Acadyk will let them know that you have limited availability.',
                                 style: TextStyle(color: textMuted, fontSize: 12, height: 1.3),
@@ -305,7 +305,7 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
                   // Expiration Dropdown selector
                   const Text(
                     'Expiration',
-                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   _buildDropdownButton(
@@ -325,7 +325,7 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
                   // Visible to Dropdown selector
                   const Text(
                     'Visible to',
-                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   _buildDropdownButton(
@@ -350,7 +350,7 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: borderCol)),
-                color: darkBg,
+                color: Colors.white,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -361,7 +361,7 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
                       Navigator.pop(context);
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
+                      foregroundColor: textPrimary,
                       side: const BorderSide(color: borderCol),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
@@ -402,8 +402,9 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
-    const Color cardBg = Color(0xFF161B22);
-    const Color borderCol = Color(0xFF30363D);
+    const Color cardBg = Color(0xFFF3F4F6);
+    const Color borderCol = Color(0xFFE5E7EB);
+    const Color textPrimary = Color(0xFF1F2937);
 
     return Container(
       decoration: BoxDecoration(
@@ -415,15 +416,15 @@ class _EditStatusScreenState extends State<EditStatusScreen> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          dropdownColor: cardBg,
-          icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          dropdownColor: Colors.white,
+          icon: const Icon(Icons.arrow_drop_down, color: textPrimary),
+          style: const TextStyle(color: textPrimary, fontSize: 14),
           onChanged: onChanged,
           isExpanded: true,
           items: items.map((item) {
             return DropdownMenuItem<String>(
               value: item,
-              child: Text(item),
+              child: Text(item, style: const TextStyle(color: textPrimary)),
             );
           }).toList(),
         ),
@@ -499,4 +500,3 @@ class StatusAvatar extends StatelessWidget {
     );
   }
 }
-

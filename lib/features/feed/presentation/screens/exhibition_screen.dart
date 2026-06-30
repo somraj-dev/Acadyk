@@ -16,8 +16,9 @@ class ExhibitionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const bgColor = Color(0xFF0F0F10);
-    const cardBgColor = Color(0xFF1A1A1C);
+    const bgColor = Colors.white;
+    const cardBgColor = Color(0xFFF9FAFB);
+
 
     final List<Map<String, dynamic>> exhibitionItems = items ?? [
       {
@@ -358,13 +359,13 @@ class ExhibitionScreen extends StatelessWidget {
                 backgroundColor: bgColor,
                 elevation: 0,
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: const Icon(Icons.arrow_back, color: Color(0xFF1F2937)),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 title: Text(
                   title ?? 'Exhibition',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF1F2937),
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),
@@ -372,7 +373,7 @@ class ExhibitionScreen extends StatelessWidget {
                 centerTitle: true,
                 actions: [
                   IconButton(
-                    icon: const Icon(Icons.search, color: Colors.white),
+                    icon: const Icon(Icons.search, color: Color(0xFF1F2937)),
                     onPressed: () {},
                   ),
                 ],
@@ -427,9 +428,10 @@ class ExhibitionScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: cardBg,
           borderRadius: BorderRadius.circular(16.0),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 6,
               offset: const Offset(0, 3),
             ),
@@ -452,8 +454,8 @@ class ExhibitionScreen extends StatelessWidget {
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
                         height: item['height'] as double,
-                        color: Colors.grey.shade800,
-                        child: const Icon(Icons.broken_image, color: Colors.white),
+                        color: Colors.grey.shade200,
+                        child: Icon(Icons.broken_image, color: Colors.grey.shade500),
                       );
                     },
                   ),
@@ -461,11 +463,11 @@ class ExhibitionScreen extends StatelessWidget {
                 // Overlapping avatar at bottom-left corner of the image
                 Positioned(
                   left: 12,
-                  bottom: 8,
+                  bottom: -12, // slightly overlap out to look cool and premium
                   child: Container(
                     padding: const EdgeInsets.all(2.0),
                     decoration: const BoxDecoration(
-                      color: Colors.black,
+                      color: Colors.white,
                       shape: BoxShape.circle,
                     ),
                     child: CircleAvatar(
@@ -476,13 +478,14 @@ class ExhibitionScreen extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
             // Title / Caption
             Padding(
-              padding: const EdgeInsets.only(left: 12.0, right: 12.0, top: 12.0, bottom: 14.0),
+              padding: const EdgeInsets.only(left: 12.0, right: 12.0, top: 4.0, bottom: 14.0),
               child: Text(
                 item['title']!,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF1F2937),
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),

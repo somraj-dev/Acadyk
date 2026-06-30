@@ -88,12 +88,12 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
         'A thought highlight shared by $displayName.\nVisible to: $activeVisibleTo. Expires: $activeExpiration.';
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFFF3F2EF),
       body: SafeArea(
         child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 480),
-            color: Colors.black,
+            color: Colors.white,
             child: Stack(
               children: [
                 // 1. STORY CARD BODY
@@ -112,6 +112,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                         end: Alignment.bottomCenter,
                       ),
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
                     child: Column(
@@ -354,7 +355,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                           width: double.infinity,
                           height: 3,
                           decoration: BoxDecoration(
-                            color: Colors.white24,
+                            color: Colors.black.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(1.5),
                           ),
                           child: Align(
@@ -363,7 +364,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                               widthFactor: _progressController.value,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: const Color(0xFF0F4C81),
                                   borderRadius: BorderRadius.circular(1.5),
                                 ),
                               ),
@@ -402,21 +403,21 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                             Text(
                               displayName,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: Color(0xFF1F2937),
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const Spacer(),
                             IconButton(
-                              icon: const Icon(Icons.more_horiz, color: Colors.white, size: 22),
+                              icon: const Icon(Icons.more_horiz, color: Color(0xFF1F2937), size: 22),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                               onPressed: () {},
                             ),
                             const SizedBox(width: 8),
                             IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white, size: 22),
+                              icon: const Icon(Icons.close, color: Color(0xFF1F2937), size: 22),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                               onPressed: () => Navigator.pop(context),
@@ -442,15 +443,15 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                           child: Container(
                             height: 44,
                             decoration: BoxDecoration(
-                              color: Colors.transparent,
+                              color: const Color(0xFFF3F4F6),
                               borderRadius: BorderRadius.circular(22),
-                              border: Border.all(color: Colors.white54, width: 1.2),
+                              border: Border.all(color: const Color(0xFFD1D5DB), width: 1.2),
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             alignment: Alignment.centerLeft,
                             child: const Text(
                               'Send message',
-                              style: TextStyle(color: Colors.white70, fontSize: 14),
+                              style: TextStyle(color: Color(0xFF4B5563), fontSize: 14),
                             ),
                           ),
                         ),
@@ -463,7 +464,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                           },
                           child: Icon(
                             _isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-                            color: _isLiked ? Colors.red : Colors.white,
+                            color: _isLiked ? Colors.red : const Color(0xFF1F2937),
                             size: 28,
                           ),
                         ),
@@ -471,7 +472,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                         const Text(
                           'Ad',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Color(0xFF1F2937),
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),

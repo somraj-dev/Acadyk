@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'create_community/create_community_topic_screen.dart';
-import 'community_profile_screen.dart';
 import 'public_community_screen.dart';
 
 class DiscoverCommunitiesScreen extends StatelessWidget {
@@ -8,16 +7,16 @@ class DiscoverCommunitiesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const bgColor = Color(0xFF0B141A); // Exact dark background from screenshot
-    const textColor = Colors.white;
-    const secondaryTextColor = Color(0xFF8696A0); // Grayish blue text
+    const bgColor = Colors.white;
+    const textColor = Color(0xFF111827);
+    const secondaryTextColor = Color(0xFF6B7280);
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
         backgroundColor: bgColor,
         iconTheme: const IconThemeData(color: textColor),
-        titleSpacing: 0, // Align title closer to back button
+        titleSpacing: 0,
         title: const Text(
           'Discover communities',
           style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 20),
@@ -133,11 +132,11 @@ class DiscoverCommunitiesScreen extends StatelessWidget {
               const SizedBox(height: 28),
 
               // More like webdev
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Text(
                       'More like webdev',
                       style: TextStyle(
@@ -193,13 +192,13 @@ class DiscoverCommunitiesScreen extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             decoration: BoxDecoration(
-              color: const Color(0xFF0B141A),
-              border: Border.all(color: const Color(0xFF2A3942), width: 1.2),
+              color: const Color(0xFFF3F4F6),
+              border: Border.all(color: const Color(0xFFE5E7EB), width: 1.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               label,
-              style: const TextStyle(color: Color(0xFFE9EDEF), fontSize: 13, fontWeight: FontWeight.w500),
+              style: const TextStyle(color: Color(0xFF1F2937), fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),
         ),
@@ -233,77 +232,84 @@ class DiscoverCommunitiesScreen extends StatelessWidget {
         margin: const EdgeInsets.only(right: 12.0),
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          color: const Color(0xFF111A20), // Card background
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF1A262E), width: 1),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: Colors.white, // Fallback background if logo has transparency
-                backgroundImage: NetworkImage(imageUrl),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      visitors,
-                      style: const TextStyle(
-                        color: Color(0xFF8696A0),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: Colors.white,
+                  backgroundImage: NetworkImage(imageUrl),
                 ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2A3942), // Join button color
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Color(0xFF111827),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        visitors,
+                        style: const TextStyle(
+                          color: Color(0xFF6B7280),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                  minimumSize: const Size(60, 36),
                 ),
-                child: const Text('Join', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            description,
-            style: const TextStyle(
-              color: Color(0xFF8696A0),
-              fontSize: 13.5,
-              height: 1.4,
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F4C81),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    minimumSize: const Size(60, 36),
+                  ),
+                  child: const Text('Join', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                ),
+              ],
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              description,
+              style: const TextStyle(
+                color: Color(0xFF4B5563),
+                fontSize: 13.5,
+                height: 1.4,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

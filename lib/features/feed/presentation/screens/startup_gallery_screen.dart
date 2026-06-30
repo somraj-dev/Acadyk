@@ -9,24 +9,32 @@ class StartupGalleryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             // Header mimicking the Behance logo
-            Stack(
-              alignment: Alignment.center,
+            Row(
               children: [
-                const Text(
-                  'Startup Galary',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 22,
-                    letterSpacing: -0.5,
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                const Expanded(
+                  child: Center(
+                    child: Text(
+                      'Startup Galary',
+                      style: TextStyle(
+                        color: Color(0xFF111827),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
                   ),
                 ),
+                const SizedBox(width: 48), // Balance back button width
               ],
             ),
             const SizedBox(height: 24),
@@ -37,7 +45,7 @@ class StartupGalleryScreen extends StatelessWidget {
                 'What creative fields would\nyou like to see work from?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF1F2937),
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   height: 1.3,
