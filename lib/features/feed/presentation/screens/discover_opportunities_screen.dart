@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'event_detail_screen.dart';
+import 'filter_events_bottom_sheet.dart';
 import '../services/opportunities_manager.dart';
 
 class DiscoverOpportunitiesScreen extends StatefulWidget {
@@ -12,6 +13,13 @@ class DiscoverOpportunitiesScreen extends StatefulWidget {
 
 class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScreen> {
   // Opportunities now resolved dynamically from OpportunitiesManager
+  FilterSettings _filterSettings = FilterSettings(
+    eventType: 'Hackathon',
+    participationType: 'Individual',
+    topics: {'AI / ML', 'Sustainability'},
+  );
+
+  bool _isFilterApplied = false; // Show all by default until user applies filter
 
   final Set<int> _savedIndices = {};
   final Set<int> _likedIndices = {};
@@ -26,9 +34,9 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-            child: const Row(
+            child: Row(
               children: [
-                Text(
+                const Text(
                   'Discover Opportunities',
                   style: TextStyle(
                     color: Color(0xFF111827),
@@ -36,8 +44,24 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Spacer(),
-                Icon(Icons.tune_outlined, color: Color(0xFF4B5563), size: 24),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () async {
+                    final result = await showModalBottomSheet<FilterSettings>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => FilterEventsBottomSheet(initialSettings: _filterSettings),
+                    );
+                    if (result != null) {
+                      setState(() {
+                        _filterSettings = result;
+                        _isFilterApplied = true; // Set to true since filters were explicitly applied
+                      });
+                    }
+                  },
+                  child: const Icon(Icons.tune_outlined, color: Color(0xFF4B5563), size: 24),
+                ),
               ],
             ),
           ),
@@ -48,11 +72,174 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
             child: ValueListenableBuilder<List<Map<String, dynamic>>>(
               valueListenable: OpportunitiesManager.opportunitiesNotifier,
               builder: (context, currentOps, child) {
+                // Apply filters in real time only if the user explicitly clicked Apply Filters
+                final filteredOps = !_isFilterApplied ? currentOps : currentOps.where((op) {
+                  // 1. Event Type filter
+                  if (_filterSettings.eventType != null) {
+                    final filterType = _filterSettings.eventType!.toLowerCase();
+                    final title = op['title'].toString().toLowerCase();
+                    final tags = (op['tags'] as List).map((t) => t.toString().toLowerCase()).toList();
+                    
+                    if (filterType == 'hackathon') {
+                      if (!title.contains('hackathon') && !tags.contains('hackathon') && !title.contains('sprint') && !title.contains('challenge')) {
+                        return false;
+                      }
+                    } else if (filterType == 'workshop') {
+                      if (!title.contains('workshop') && !tags.contains('workshop') && !title.contains('bootcamp') && !tags.contains('workshop')) {
+                        return false;
+                      }
+                    } else if (filterType == 'conference') {
+                      if (!title.contains('conference') && !tags.contains('conference') && !title.contains('summit') && !tags.contains('conference')) {
+                        return false;
+                      }
+                    } else if (filterType == 'meetup') {
+                      if (!title.contains('meetup') && !tags.contains('meetup') && !title.contains('session')) {
+                        return false;
+                      }
+                    } else {
+                      // Other
+                      if (title.contains('hackathon') || title.contains('workshop') || title.contains('conference') || title.contains('summit')) {
+                        return false;
+                      }
+                    }
+                  }
+
+                  // 2. Participation Type filter
+                  if (_filterSettings.participationType != null) {
+                    final pType = _filterSettings.participationType!.toLowerCase();
+                    final teamText = op['teamSizeText'].toString().toLowerCase();
+                    if (pType == 'individual') {
+                      if (!teamText.contains('individual') && !teamText.contains('solo') && !teamText.contains('1 member')) {
+                        return false;
+                      }
+                    } else if (pType == 'team') {
+                      if (!teamText.contains('member') && !teamText.contains('team') && !teamText.contains('members')) {
+                        return false;
+                      }
+                    }
+                  }
+
+                  // 3. Prize Pool filter
+                  if (_filterSettings.prizePool != 'All') {
+                    final pool = op['prizePool'].toString().toLowerCase();
+                    if (_filterSettings.prizePool == '<\$1K') {
+                      if (pool.contains('₹') || pool.contains('25,000') || pool.contains('50,000')) {
+                        return false;
+                      }
+                    } else if (_filterSettings.prizePool == '\$1K - \$5K') {
+                      if (!pool.contains('25,000') && !pool.contains('3,25,000')) {
+                        return false;
+                      }
+                    } else if (_filterSettings.prizePool == '\$5K - \$10K') {
+                      if (!pool.contains('10,000')) {
+                        return false;
+                      }
+                    } else if (_filterSettings.prizePool == '\$10K+') {
+                      if (!pool.contains('25,000') && !pool.contains('50,000')) {
+                        return false;
+                      }
+                    }
+                  }
+
+                  // 4. Format filter
+                  if (_filterSettings.format != null) {
+                    final format = _filterSettings.format!.toLowerCase();
+                    final location = op['location'].toString().toLowerCase();
+                    final tags = (op['tags'] as List).map((t) => t.toString().toLowerCase()).toList();
+                    if (!location.contains(format) && !tags.contains(format)) {
+                      return false;
+                    }
+                  }
+
+                  // 5. Topics filter
+                  if (_filterSettings.topics.isNotEmpty) {
+                    bool matchesTopic = false;
+                    final title = op['title'].toString().toLowerCase();
+                    final tagline = op['tagline'].toString().toLowerCase();
+                    final tags = (op['tags'] as List).map((t) => t.toString().toLowerCase()).toList();
+                    
+                    for (var topic in _filterSettings.topics) {
+                      final t = topic.toLowerCase();
+                      if (t == 'ai / ml' && (title.contains('ai') || title.contains('ml') || title.contains('artificial') || tagline.contains('generative') || tags.contains('generative') || tags.contains('ai'))) {
+                        matchesTopic = true;
+                        break;
+                      }
+                      if (t == 'sustainability' && (title.contains('green') || title.contains('eco') || title.contains('sustain') || tagline.contains('climate') || tags.contains('sustainability') || tags.contains('green'))) {
+                        matchesTopic = true;
+                        break;
+                      }
+                      if (t == 'web development' && (title.contains('web') || tagline.contains('web') || tagline.contains('dapp') || tags.contains('web3') || tags.contains('web'))) {
+                        matchesTopic = true;
+                        break;
+                      }
+                      if (t == 'blockchain' && (title.contains('block') || tagline.contains('block') || tagline.contains('web3') || tags.contains('blockchain') || tags.contains('web3'))) {
+                        matchesTopic = true;
+                        break;
+                      }
+                      if (title.contains(t) || tagline.contains(t) || tags.contains(t)) {
+                        matchesTopic = true;
+                        break;
+                      }
+                    }
+                    if (!matchesTopic) {
+                      return false;
+                    }
+                  }
+
+                  return true;
+                }).toList();
+
+                if (filteredOps.isEmpty) {
+                  return Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(32),
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.filter_list_off, color: Colors.grey.shade400, size: 64),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No matching opportunities found',
+                          style: TextStyle(
+                            color: Color(0xFF111827),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Try resetting or adjusting your filter criteria to get better recommendations.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _filterSettings = FilterSettings(topics: {});
+                              _isFilterApplied = false;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F4C81),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            elevation: 0,
+                          ),
+                          child: const Text('Reset Filters', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  itemCount: currentOps.length,
+                  itemCount: filteredOps.length,
                   itemBuilder: (context, index) {
-                    final op = currentOps[index];
+                    final op = filteredOps[index];
                     return _buildOpportunityCard(op, index);
                   },
                 );

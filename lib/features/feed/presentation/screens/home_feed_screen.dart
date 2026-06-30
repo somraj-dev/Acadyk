@@ -2408,6 +2408,7 @@ class QuantaforzeLogoPainter extends CustomPainter {
 
 class AcadykSearchDelegate extends SearchDelegate<String> {
   final List<String> suggestions = [
+    'Somraj',
     'Y Combinator',
     'Horror Circus tarot deck',
     'Gandalf the White',
@@ -2415,6 +2416,65 @@ class AcadykSearchDelegate extends SearchDelegate<String> {
     'Alina Sprongole',
     'Startup Gallery',
     'Clubs',
+  ];
+
+  final List<Map<String, dynamic>> mockUsers = [
+    {
+      'name': 'Somraj Lodhi',
+      'headline': 'Founder | Thinker | Quant Engineer',
+      'location': 'Indore, Madhya Pradesh, India',
+      'avatar': 'assets/images/somraj_avatar.jpg',
+      'hiring': false,
+      'mutual': <String>[],
+    },
+    {
+      'name': 'Somraj Dev',
+      'headline': 'Entrepreneur | Founder @ Nexure Agents & Black Torque Media | AI A...',
+      'location': 'India',
+      'avatar': 'assets/images/user_avatar.jpg',
+      'hiring': false,
+      'mutual': <String>['assets/images/somraj_avatar.jpg', 'assets/images/dharmik_avatar.jpg'],
+    },
+    {
+      'name': 'Somraj Ghosh',
+      'headline': 'Founder & CEO @ Layrda',
+      'location': 'India',
+      'avatar': 'assets/images/somraj_avatar.jpg',
+      'hiring': true,
+      'mutual': <String>['assets/images/dharmik_avatar.jpg'],
+    },
+    {
+      'name': 'Somraj Chalukya',
+      'headline': 'Operational Specialist, Direct Apply Operations at Cialfo',
+      'location': 'Delhi, India',
+      'avatar': 'assets/images/user_avatar.jpg',
+      'hiring': false,
+      'mutual': <String>['assets/images/dharmik_avatar.jpg'],
+    },
+    {
+      'name': 'Somraj Singh Goyal',
+      'headline': 'TOSCA Automation Tester | Certified Tosca Product Consultant| Expertis...',
+      'location': 'Indore, Madhya Pradesh, India',
+      'avatar': 'assets/images/somraj_avatar.jpg',
+      'hiring': false,
+      'mutual': <String>[],
+    },
+    {
+      'name': 'Alina Sprongole',
+      'headline': 'Software Engineer @ Google | Tech Lead',
+      'location': 'Riga, Latvia',
+      'avatar': 'assets/images/alina_avatar.jpg',
+      'hiring': false,
+      'mutual': <String>['assets/images/somraj_avatar.jpg'],
+    },
+    {
+      'name': 'Dharmik Patel',
+      'headline': 'Full Stack Developer | Open Source Contributor',
+      'location': 'Gujarat, India',
+      'avatar': 'assets/images/dharmik_avatar.jpg',
+      'hiring': false,
+      'mutual': <String>['assets/images/somraj_avatar.jpg', 'assets/images/user_avatar.jpg'],
+    },
   ];
 
   @override
@@ -2459,13 +2519,203 @@ class AcadykSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF3F2EF),
-      child: Center(
-        child: Text(
-          'No results found for "$query"',
-          style: const TextStyle(color: Colors.black54, fontSize: 16),
+    final results = mockUsers
+        .where((user) =>
+            user['name'].toLowerCase().contains(query.toLowerCase()) ||
+            user['headline'].toLowerCase().contains(query.toLowerCase()))
+        .toList();
+
+    if (query.toLowerCase() == 'y combinator') {
+      return Container(
+        color: Colors.white,
+        child: ListTile(
+          leading: Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFF6600),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: const Text(
+              'Y',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+            ),
+          ),
+          title: const Text('Y Combinator', style: TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: const Text('Startup Accelerator - Mountain View, CA'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const CompanyProfileScreen(companyName: 'Y Combinator'),
+              ),
+            );
+          },
         ),
+      );
+    }
+
+    if (results.isEmpty) {
+      return Container(
+        color: Colors.white,
+        child: Center(
+          child: Text(
+            'No results found for "$query"',
+            style: const TextStyle(color: Colors.black54, fontSize: 16),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      color: Colors.white,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        itemCount: results.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          final user = results[index];
+          final bool hiring = user['hiring'] == true;
+          final List<String> mutual = List<String>.from(user['mutual']);
+
+          return InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ProfileScreen(isOwnProfile: false),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left: Avatar with stacked hiring banner if active
+                  Stack(
+                    alignment: Alignment.center,
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 62,
+                        height: 62,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: hiring ? const Color(0xFF7C3AED) : Colors.transparent,
+                            width: hiring ? 2.5 : 0,
+                          ),
+                        ),
+                        padding: EdgeInsets.all(hiring ? 2 : 0),
+                        child: CircleAvatar(
+                          radius: 28,
+                          backgroundImage: AssetImage(user['avatar']),
+                        ),
+                      ),
+                      if (hiring)
+                        Positioned(
+                          bottom: -4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF7C3AED),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              '#HIRING',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 7.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 14),
+                  // Right: Profile info details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user['name'],
+                          style: const TextStyle(
+                            color: Color(0xFF111827),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          user['headline'],
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF4B5563),
+                            fontSize: 13.5,
+                            height: 1.25,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          user['location'],
+                          style: const TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 13.5,
+                          ),
+                        ),
+                        if (mutual.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              // Stack of overlapping connection circular avatars
+                              SizedBox(
+                                width: 20.0 + (mutual.length - 1) * 12.0,
+                                height: 20,
+                                child: Stack(
+                                  children: List.generate(mutual.length, (i) {
+                                    return Positioned(
+                                      left: i * 12.0,
+                                      child: Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: Colors.white, width: 1.5),
+                                          image: DecorationImage(
+                                            image: AssetImage(mutual[i]),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${mutual.length} mutual connection${mutual.length > 1 ? 's' : ''}',
+                                style: const TextStyle(
+                                  color: Color(0xFF6B7280),
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

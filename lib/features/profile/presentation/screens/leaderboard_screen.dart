@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'filter_leaderboard_bottom_sheet.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -10,10 +11,101 @@ class LeaderboardScreen extends StatefulWidget {
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
   int _selectedFilterTab = 2; // National active by default
   final List<String> _filterTabs = ['Global', 'International', 'National', 'State', 'District', 'College'];
-  final String _selectedTimeRange = 'This Month';
+  
+  LeaderboardFilterSettings _filterSettings = LeaderboardFilterSettings();
+
+  // Unified Leaderboard mock dataset
+  final List<Map<String, dynamic>> _allTeams = [
+    // Ranks 1, 2, 3 (Podium)
+    {'rank': 1, 'name': 'Stella Fernandez', 'level': 'Level 7', 'xp': 6790, 'change': '↑ 24', 'changeColor': Color(0xFF10B981), 'badgeColor': Color(0xFFF59E0B), 'isUser': true, 'category': 'Tech Teams', 'eventType': 'Hackathon', 'levelNum': 7, 'verified': true, 'active': true},
+    {'rank': 2, 'name': 'Nexus Innovators', 'level': 'Level 6', 'xp': 4850, 'change': '↑ 12', 'changeColor': Color(0xFF10B981), 'badgeColor': Color(0xFF94A3B8), 'category': 'Tech Teams', 'eventType': 'Code Challenge', 'levelNum': 6, 'verified': true, 'active': true},
+    {'rank': 3, 'name': 'CodeCrafters', 'level': 'Level 6', 'xp': 4120, 'change': '↓ 5', 'changeColor': Color(0xFFEF4444), 'badgeColor': Color(0xFFD97706), 'category': 'Tech Teams', 'eventType': 'Hackathon', 'levelNum': 6, 'verified': false, 'active': true},
+    
+    // Top Performers
+    {'rank': 4, 'name': 'Tech Titans', 'level': 'Level 6', 'xp': 3960, 'change': '↑ 4', 'changeColor': Color(0xFF10B981), 'category': 'Tech Teams', 'eventType': 'Ideathon', 'levelNum': 6, 'verified': true, 'active': true},
+    {'rank': 5, 'name': 'Binary Brains', 'level': 'Level 5', 'xp': 3450, 'change': '↓ 2', 'changeColor': Color(0xFFEF4444), 'category': 'Tech Teams', 'eventType': 'Code Challenge', 'levelNum': 5, 'verified': true, 'active': true},
+    {'rank': 6, 'name': 'Alpha Team', 'level': 'Level 5', 'xp': 3120, 'change': '↑ 1', 'changeColor': Color(0xFF10B981), 'category': 'Non-Tech Teams', 'eventType': 'Designathon', 'levelNum': 5, 'verified': false, 'active': true},
+    
+    // Table Rows
+    {'rank': 7, 'name': 'Hack Mavericks', 'level': 'Level 5', 'xp': 2980, 'change': '↑ 8', 'changeColor': Color(0xFF10B981), 'category': 'Tech Teams', 'eventType': 'Hackathon', 'levelNum': 5, 'verified': true, 'active': true},
+    {'rank': 8, 'name': 'Innovation Hub', 'level': 'Level 5', 'xp': 2750, 'change': '↓ 3', 'changeColor': Color(0xFFEF4444), 'category': 'Non-Tech Teams', 'eventType': 'Ideathon', 'levelNum': 5, 'verified': true, 'active': true},
+    {'rank': 9, 'name': 'Dev Dynamos', 'level': 'Level 4', 'xp': 2450, 'change': '↑ 6', 'changeColor': Color(0xFF10B981), 'category': 'Tech Teams', 'eventType': 'Code Challenge', 'levelNum': 4, 'verified': true, 'active': true},
+    {'rank': 10, 'name': 'Problem Solvers', 'level': 'Level 4', 'xp': 2210, 'change': '↓ 1', 'changeColor': Color(0xFFEF4444), 'category': 'Non-Tech Teams', 'eventType': 'Other', 'levelNum': 4, 'verified': false, 'active': true},
+    {'rank': 11, 'name': 'Future Coders', 'level': 'Level 4', 'xp': 1980, 'change': '↑ 2', 'changeColor': Color(0xFF10B981), 'category': 'Tech Teams', 'eventType': 'Hackathon', 'levelNum': 4, 'verified': true, 'active': false},
+    {'rank': 12, 'name': 'Byte Builders', 'level': 'Level 4', 'xp': 1760, 'change': '—', 'changeColor': Color(0xFF94A3B8), 'category': 'Tech Teams', 'eventType': 'Designathon', 'levelNum': 4, 'verified': true, 'active': true},
+    {'rank': 13, 'name': 'Algorithm Army', 'level': 'Level 3', 'xp': 1540, 'change': '↓ 2', 'changeColor': Color(0xFFEF4444), 'category': 'Tech Teams', 'eventType': 'Hackathon', 'levelNum': 3, 'verified': false, 'active': true},
+    {'rank': 14, 'name': 'Stack Breakers', 'level': 'Level 3', 'xp': 1320, 'change': '—', 'changeColor': Color(0xFF94A3B8), 'category': 'Tech Teams', 'eventType': 'Other', 'levelNum': 3, 'verified': true, 'active': false},
+    {'rank': 15, 'name': 'Zero Bugs', 'level': 'Level 3', 'xp': 1120, 'change': '↑ 1', 'changeColor': Color(0xFF10B981), 'category': 'Tech Teams', 'eventType': 'Code Challenge', 'levelNum': 3, 'verified': true, 'active': true},
+  ];
+
+  // Resolve filtered and sorted lists in real time
+  List<Map<String, dynamic>> get _filteredTeams {
+    final list = _allTeams.where((team) {
+      // 1. Level/Scope simulated filters (We show different subsets to feel fully operational)
+      if (_filterSettings.levelScope != 'National') {
+        if (_filterSettings.levelScope == 'College' && team['rank'] % 2 == 0) return false;
+        if (_filterSettings.levelScope == 'Global' && team['rank'] > 8) return false;
+        if (_filterSettings.levelScope == 'State' && team['rank'] > 12) return false;
+      }
+
+      // 2. Team Background filter
+      if (team['category'] != _filterSettings.teamBackground) {
+        return false;
+      }
+
+      // 3. Event Type filter
+      if (_filterSettings.eventType != 'All Events') {
+        if (team['eventType'] != _filterSettings.eventType) {
+          return false;
+        }
+      }
+
+      // 4. Team Level filter
+      if (_filterSettings.teamLevel != 'All Levels') {
+        final targetLvl = _filterSettings.teamLevel;
+        if (targetLvl == 'Level 5+') {
+          if (team['levelNum'] < 5) return false;
+        } else {
+          final intLvl = int.tryParse(targetLvl.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          if (team['levelNum'] != intLvl) return false;
+        }
+      }
+
+      // 5. Verification status filter
+      if (_filterSettings.onlyShowVerified && !team['verified']) {
+        return false;
+      }
+
+      // 6. Active status filter
+      if (_filterSettings.hideInactive && !team['active']) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+
+    // Sorting logic
+    if (_filterSettings.sortBy == 'XP (High to Low)') {
+      list.sort((a, b) => (b['xp'] as int).compareTo(a['xp'] as int));
+    } else if (_filterSettings.sortBy == 'XP (Low to High)') {
+      list.sort((a, b) => (a['xp'] as int).compareTo(b['xp'] as int));
+    } else if (_filterSettings.sortBy == 'Level (High to Low)') {
+      list.sort((a, b) {
+        final cmp = (b['levelNum'] as int).compareTo(a['levelNum'] as int);
+        if (cmp != 0) return cmp;
+        return (b['xp'] as int).compareTo(a['xp'] as int);
+      });
+    } else if (_filterSettings.sortBy == 'Team Name (A-Z)') {
+      list.sort((a, b) => (a['name'] as String).compareTo(b['name'] as String));
+    }
+
+    return list;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final currentFiltered = _filteredTeams;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       body: SafeArea(
@@ -26,24 +118,30 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 _buildAppBar(),
                 _buildFilterTabs(),
                 Expanded(
-                  child: ListView(
-                    physics: const BouncingScrollPhysics(),
-                    children: [
-                      const SizedBox(height: 12),
-                      _buildRankingsUpdateHeader(),
-                      const SizedBox(height: 16),
-                      _buildPodiumSection(),
-                      const SizedBox(height: 24),
-                      _buildTopPerformersHeader(),
-                      const SizedBox(height: 12),
-                      _buildTopPerformersList(),
-                      const SizedBox(height: 20),
-                      _buildRankingsTable(),
-                      const SizedBox(height: 20),
-                      _buildBottomStatisticsBar(),
-                      const SizedBox(height: 32),
-                    ],
-                  ),
+                  child: currentFiltered.isEmpty
+                      ? _buildEmptyState()
+                      : ListView(
+                          physics: const BouncingScrollPhysics(),
+                          children: [
+                            const SizedBox(height: 12),
+                            _buildRankingsUpdateHeader(),
+                            const SizedBox(height: 16),
+                            _buildPodiumSection(currentFiltered),
+                            const SizedBox(height: 24),
+                            if (currentFiltered.length > 3) ...[
+                              _buildTopPerformersHeader(),
+                              const SizedBox(height: 12),
+                              _buildTopPerformersList(currentFiltered),
+                              const SizedBox(height: 20),
+                            ],
+                            if (currentFiltered.length > 6) ...[
+                              _buildRankingsTable(currentFiltered),
+                              const SizedBox(height: 20),
+                            ],
+                            _buildBottomStatisticsBar(),
+                            const SizedBox(height: 32),
+                          ],
+                        ),
                 ),
               ],
             ),
@@ -51,6 +149,49 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 24),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.emoji_events_outlined, color: Colors.grey.shade300, size: 72),
+          const SizedBox(height: 16),
+          const Text(
+            'No Teams Match Your Filters',
+            style: TextStyle(color: Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Try resetting or adjusting the leaderboard filters to view active teams.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF64748B), fontSize: 13.5),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _resetAllFilters,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4F46E5),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              elevation: 0,
+            ),
+            child: const Text('Reset Leaderboard Filters', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _resetAllFilters() {
+    setState(() {
+      _filterSettings = LeaderboardFilterSettings();
+      _selectedFilterTab = 2; // National
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -74,10 +215,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             ),
           ),
           const SizedBox(width: 14),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'Leaderboard',
                   style: TextStyle(
@@ -99,14 +240,33 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+          GestureDetector(
+            onTap: () async {
+              final result = await showModalBottomSheet<LeaderboardFilterSettings>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => FilterLeaderboardBottomSheet(initialSettings: _filterSettings),
+              );
+              if (result != null) {
+                setState(() {
+                  _filterSettings = result;
+                  final idx = _filterTabs.indexOf(result.levelScope);
+                  if (idx != -1) {
+                    _selectedFilterTab = idx;
+                  }
+                });
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: const Icon(Icons.filter_list_rounded, size: 22, color: Color(0xFF64748B)),
             ),
-            child: const Icon(Icons.filter_list_rounded, size: 22, color: Color(0xFF64748B)),
           ),
         ],
       ),
@@ -127,7 +287,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         itemBuilder: (context, index) {
           final isSelected = _selectedFilterTab == index;
           return GestureDetector(
-            onTap: () => setState(() => _selectedFilterTab = index),
+            onTap: () {
+              setState(() {
+                _selectedFilterTab = index;
+                _filterSettings = _filterSettings.copyWith(levelScope: _filterTabs[index]);
+              });
+            },
             child: Container(
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -187,7 +352,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             child: Row(
               children: [
                 Text(
-                  _selectedTimeRange,
+                  _filterSettings.rankingHistory,
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -207,7 +372,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   // ═══════════════════════════════════════════════════════════════
   // PODIUM SECTION (Ranks 2, 1, 3 side-by-side)
   // ═══════════════════════════════════════════════════════════════
-  Widget _buildPodiumSection() {
+  Widget _buildPodiumSection(List<Map<String, dynamic>> currentFiltered) {
+    if (currentFiltered.isEmpty) return const SizedBox.shrink();
+
+    final hasRank1 = currentFiltered.isNotEmpty;
+    final hasRank2 = currentFiltered.length > 1;
+    final hasRank3 = currentFiltered.length > 2;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -215,47 +386,54 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         children: [
           // Rank 2 - Left
           Expanded(
-            child: _buildPodiumCard(
-              rank: 2,
-              teamName: 'Nexus Innovators',
-              level: 'Level 6',
-              xp: '4,850 XP',
-              change: '↑ 12',
-              changeColor: const Color(0xFF10B981),
-              badgeColor: const Color(0xFF94A3B8),
-              customLogo: _buildTeamLogo('Nexus Innovators', size: 48),
-              glow: false,
-            ),
+            child: hasRank2
+                ? _buildPodiumCard(
+                    rank: 2,
+                    teamName: currentFiltered[1]['name'],
+                    level: currentFiltered[1]['level'],
+                    xp: '${currentFiltered[1]['xp']} XP',
+                    change: currentFiltered[1]['change'],
+                    changeColor: currentFiltered[1]['changeColor'] ?? const Color(0xFF10B981),
+                    badgeColor: const Color(0xFF94A3B8),
+                    customLogo: _buildTeamLogo(currentFiltered[1]['name'], size: 48),
+                    glow: false,
+                  )
+                : const SizedBox.shrink(),
           ),
           const SizedBox(width: 10),
           // Rank 1 - Center
           Expanded(
-            child: _buildPodiumCard(
-              rank: 1,
-              teamName: 'Stella Fernandez',
-              level: 'Level 7',
-              xp: '6,790 XP',
-              change: '↑ 24',
-              changeColor: const Color(0xFF10B981),
-              badgeColor: const Color(0xFFF59E0B),
-              avatarAsset: 'assets/images/user_avatar.jpg',
-              glow: true,
-            ),
+            child: hasRank1
+                ? _buildPodiumCard(
+                    rank: 1,
+                    teamName: currentFiltered[0]['name'],
+                    level: currentFiltered[0]['level'],
+                    xp: '${currentFiltered[0]['xp']} XP',
+                    change: currentFiltered[0]['change'],
+                    changeColor: currentFiltered[0]['changeColor'] ?? const Color(0xFF10B981),
+                    badgeColor: const Color(0xFFF59E0B),
+                    avatarAsset: currentFiltered[0]['isUser'] == true ? 'assets/images/user_avatar.jpg' : null,
+                    customLogo: currentFiltered[0]['isUser'] != true ? _buildTeamLogo(currentFiltered[0]['name'], size: 56) : null,
+                    glow: true,
+                  )
+                : const SizedBox.shrink(),
           ),
           const SizedBox(width: 10),
           // Rank 3 - Right
           Expanded(
-            child: _buildPodiumCard(
-              rank: 3,
-              teamName: 'CodeCrafters',
-              level: 'Level 6',
-              xp: '4,120 XP',
-              change: '↓ 5',
-              changeColor: const Color(0xFFEF4444),
-              badgeColor: const Color(0xFFD97706),
-              customLogo: _buildTeamLogo('CodeCrafters', size: 48),
-              glow: false,
-            ),
+            child: hasRank3
+                ? _buildPodiumCard(
+                    rank: 3,
+                    teamName: currentFiltered[2]['name'],
+                    level: currentFiltered[2]['level'],
+                    xp: '${currentFiltered[2]['xp']} XP',
+                    change: currentFiltered[2]['change'],
+                    changeColor: currentFiltered[2]['changeColor'] ?? const Color(0xFFEF4444),
+                    badgeColor: const Color(0xFFD97706),
+                    customLogo: _buildTeamLogo(currentFiltered[2]['name'], size: 48),
+                    glow: false,
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
       ),
@@ -453,12 +631,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     );
   }
 
-  Widget _buildTopPerformersList() {
-    final performers = [
-      {'name': 'Tech Titans', 'level': 'Level 6', 'xp': '3,960 XP'},
-      {'name': 'Binary Brains', 'level': 'Level 5', 'xp': '3,450 XP'},
-      {'name': 'Alpha Team', 'level': 'Level 5', 'xp': '3,120 XP'},
-    ];
+  Widget _buildTopPerformersList(List<Map<String, dynamic>> currentFiltered) {
+    if (currentFiltered.length <= 3) return const SizedBox.shrink();
+    final performers = currentFiltered.sublist(3, currentFiltered.length < 6 ? currentFiltered.length : 6);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -492,7 +667,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${p['level']}  \u00b7  ${p['xp']}',
+                      '${p['level']}  \u00b7  ${p['xp']} XP',
                       style: const TextStyle(
                         fontSize: 10.5,
                         color: Color(0xFF64748B),
@@ -512,18 +687,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   // ═══════════════════════════════════════════════════════════════
   // RANKINGS DETAILED TABLE
   // ═══════════════════════════════════════════════════════════════
-  Widget _buildRankingsTable() {
-    final listData = [
-      {'rank': '7', 'name': 'Hack Mavericks', 'level': 'Level 5', 'xp': '2,980 XP', 'change': '↑ 8', 'changeColor': const Color(0xFF10B981)},
-      {'rank': '8', 'name': 'Innovation Hub', 'level': 'Level 5', 'xp': '2,750 XP', 'change': '↓ 3', 'changeColor': const Color(0xFFEF4444)},
-      {'rank': '9', 'name': 'Dev Dynamos', 'level': 'Level 4', 'xp': '2,450 XP', 'change': '↑ 6', 'changeColor': const Color(0xFF10B981)},
-      {'rank': '10', 'name': 'Problem Solvers', 'level': 'Level 4', 'xp': '2,210 XP', 'change': '↓ 1', 'changeColor': const Color(0xFFEF4444)},
-      {'rank': '11', 'name': 'Future Coders', 'level': 'Level 4', 'xp': '1,980 XP', 'change': '↑ 2', 'changeColor': const Color(0xFF10B981)},
-      {'rank': '12', 'name': 'Byte Builders', 'level': 'Level 4', 'xp': '1,760 XP', 'change': '\u2014', 'changeColor': const Color(0xFF94A3B8)},
-      {'rank': '13', 'name': 'Algorithm Army', 'level': 'Level 3', 'xp': '1,540 XP', 'change': '↓ 2', 'changeColor': const Color(0xFFEF4444)},
-      {'rank': '14', 'name': 'Stack Breakers', 'level': 'Level 3', 'xp': '1,320 XP', 'change': '\u2014', 'changeColor': const Color(0xFF94A3B8)},
-      {'rank': '15', 'name': 'Zero Bugs', 'level': 'Level 3', 'xp': '1,120 XP', 'change': '↑ 1', 'changeColor': const Color(0xFF10B981)},
-    ];
+  Widget _buildRankingsTable(List<Map<String, dynamic>> currentFiltered) {
+    if (currentFiltered.length <= 6) return const SizedBox.shrink();
+    final listData = currentFiltered.sublist(6);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -549,6 +715,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           ),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
           ...listData.map((row) {
+            final teamIndex = currentFiltered.indexOf(row) + 1;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
@@ -556,7 +723,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   SizedBox(
                     width: 30,
                     child: Text(
-                      row['rank'] as String,
+                      '$teamIndex',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -606,7 +773,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   SizedBox(
                     width: 70,
                     child: Text(
-                      row['xp'] as String,
+                      '${row['xp']} XP',
                       textAlign: TextAlign.right,
                       style: const TextStyle(
                         fontSize: 12.5,
