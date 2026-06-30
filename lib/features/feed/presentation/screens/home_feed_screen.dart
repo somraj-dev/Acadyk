@@ -130,10 +130,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: const BoxDecoration(
-                                    color: Color(0xFF1E1F22), // Dark grey circle
+                                    color: Color(0xFFF3F4F6), // Light grey circle
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(CupertinoIcons.search, color: Colors.white, size: 16),
+                                  child: const Icon(CupertinoIcons.search, color: Colors.black87, size: 16),
                                 ),
                               ),
                               const SizedBox(width: 12),

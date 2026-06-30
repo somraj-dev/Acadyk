@@ -18,7 +18,9 @@ class DirectMessageScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const bgColor = Color(0xFF000000);
+    const bgColor = Colors.white;
+    const textPrimary = Color(0xFF111827);
+    const textSecondary = Color(0xFF6B7280);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -26,7 +28,7 @@ class DirectMessageScreen extends StatelessWidget {
         backgroundColor: bgColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
@@ -44,7 +46,7 @@ class DirectMessageScreen extends StatelessWidget {
                 Text(
                   name,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -52,7 +54,7 @@ class DirectMessageScreen extends StatelessWidget {
                 Text(
                   handle,
                   style: const TextStyle(
-                    color: Color(0xFFA0A0A0),
+                    color: textSecondary,
                     fontSize: 12,
                   ),
                 ),
@@ -61,9 +63,9 @@ class DirectMessageScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.add_circle_outline, color: Colors.white), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.phone_outlined, color: Colors.white), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.videocam_outlined, color: Colors.white, size: 28), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.add_circle_outline, color: textPrimary), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.phone_outlined, color: textPrimary), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.videocam_outlined, color: textPrimary, size: 28), onPressed: () {}),
           const SizedBox(width: 8),
         ],
       ),
@@ -81,9 +83,9 @@ class DirectMessageScreen extends StatelessWidget {
                 const SizedBox(height: 2),
                 _buildSentMessage('Me chutiya hu corrupt nhi'),
                 const SizedBox(height: 8),
-                Align(
+                const Align(
                   alignment: Alignment.centerRight,
-                  child: const Text('💔💔', style: TextStyle(fontSize: 32)),
+                  child: Text('💔💔', style: TextStyle(fontSize: 32)),
                 ),
                 const SizedBox(height: 24),
                 _buildReceivedMessage('Me bhi', showAvatar: false),
@@ -167,12 +169,12 @@ class DirectMessageScreen extends StatelessWidget {
                     constraints: const BoxConstraints(maxWidth: 260),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: const BoxDecoration(
-                      color: Color(0xFF262626), // Dark grey received bubble
+                      color: Color(0xFFF3F4F6), // Soft grey received bubble
                       borderRadius: BorderRadius.all(Radius.circular(20)),
                     ),
                     child: Text(
                       text,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                      style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16),
                     ),
                   ),
                   if (hasHeartReaction)
@@ -182,9 +184,9 @@ class DirectMessageScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF262626),
+                          color: const Color(0xFFF3F4F6),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.black, width: 2),
+                          border: Border.all(color: Colors.white, width: 2),
                         ),
                         child: const Text('❤️', style: TextStyle(fontSize: 12)),
                       ),
@@ -196,7 +198,7 @@ class DirectMessageScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4.0, left: 4.0),
                   child: Text(
                     bottomHint,
-                    style: const TextStyle(color: Color(0xFFA0A0A0), fontSize: 12),
+                    style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
                   ),
                 ),
             ],
@@ -214,7 +216,7 @@ class DirectMessageScreen extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.only(bottom: 4.0, right: 8.0),
-            child: Text('You replied', style: TextStyle(color: Color(0xFFA0A0A0), fontSize: 12)),
+            child: Text('You replied', style: TextStyle(color: Color(0xFF6B7280), fontSize: 12)),
           ),
           // Quoted Bubble
           Container(
@@ -222,7 +224,7 @@ class DirectMessageScreen extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 4),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: const BoxDecoration(
-              color: Color(0xFF1A1A1A), // Darker grey for quote
+              color: Color(0xFFE5E7EB), // Light grey quote
               borderRadius: BorderRadius.all(Radius.circular(16)),
             ),
             child: Row(
@@ -231,13 +233,13 @@ class DirectMessageScreen extends StatelessWidget {
                 Expanded(
                   child: Text(
                     replyText,
-                    style: const TextStyle(color: Color(0xFF888888), fontSize: 14),
+                    style: const TextStyle(color: Color(0xFF4B5563), fontSize: 14),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(width: 3, height: 30, color: const Color(0xFF333333)), // Vertical grey line
+                Container(width: 3, height: 30, color: const Color(0xFF9CA3AF)), // Vertical grey line
               ],
             ),
           ),
@@ -266,7 +268,7 @@ class DirectMessageScreen extends StatelessWidget {
 
   Widget _buildBottomInputBar() {
     return Container(
-      color: const Color(0xFF000000),
+      color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       child: SafeArea(
         child: Row(
@@ -288,22 +290,22 @@ class DirectMessageScreen extends StatelessWidget {
                 height: 40,
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF262626),
+                  color: const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 alignment: Alignment.centerLeft,
-                child: const Text('Message...', style: TextStyle(color: Color(0xFFA0A0A0), fontSize: 16)),
+                child: const Text('Message...', style: TextStyle(color: Color(0xFF6B7280), fontSize: 16)),
               ),
             ),
             const SizedBox(width: 8),
             // Right Icons
-            const Icon(Icons.mic_none_outlined, color: Colors.white, size: 26),
+            const Icon(Icons.mic_none_outlined, color: Color(0xFF1F2937), size: 26),
             const SizedBox(width: 12),
-            const Icon(Icons.image_outlined, color: Colors.white, size: 26),
+            const Icon(Icons.image_outlined, color: Color(0xFF1F2937), size: 26),
             const SizedBox(width: 12),
-            const Icon(Icons.sticky_note_2_outlined, color: Colors.white, size: 26),
+            const Icon(Icons.sticky_note_2_outlined, color: Color(0xFF1F2937), size: 26),
             const SizedBox(width: 12),
-            const Icon(Icons.add_circle_outline, color: Colors.white, size: 26),
+            const Icon(Icons.add_circle_outline, color: Color(0xFF1F2937), size: 26),
           ],
         ),
       ),
