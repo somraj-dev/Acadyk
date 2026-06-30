@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
+import 'discover_opportunities_screen.dart';
+import 'select_opportunity_screen.dart';
 import 'company_profile_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../profile/presentation/screens/edit_status_screen.dart';
@@ -62,149 +64,160 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               drawer: _buildProfileDrawer(),
               body: Column(
                 children: [
-                  // 1. Top App Bar (Instagram style, Light Theme)
-                  Container(
-                    color: Colors.white, // Light background
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Left: Avatar and Plus
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  _scaffoldKey.currentState?.openDrawer();
-                                },
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    image: DecorationImage(
-                                      image: AssetImage('assets/images/alina_avatar.jpg'),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                        // Center: Acadyk Text and Down Arrow
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              'Acadyk',
-                              style: TextStyle(
-                                color: Colors.black, // Dark text for bright mode
-                                fontSize: 32, // Slightly larger for Billabong
-                                fontFamily: 'Billabong', // Exact Instagram style font
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 1.0,
-                              ),
-                            ),
-                            const SizedBox(width: 4), // Small gap between 'k' and arrow
-                            const Icon(Icons.keyboard_arrow_down, color: Colors.black87, size: 24),
-                          ],
-                        ),
-                        
-                        // Right: Heart
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  showSearch(
-                                    context: context,
-                                    delegate: AcadykSearchDelegate(),
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFF3F4F6), // Light grey circle
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(CupertinoIcons.search, color: Colors.black87, size: 16),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (_) => const NotificationScreen(),
-                                  ));
-                                },
-                                behavior: HitTestBehavior.opaque,
-                                child: Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    const Icon(CupertinoIcons.heart, color: Colors.black87, size: 28),
-                                    Positioned(
-                                      top: -1,
-                                      right: -2,
-                                      child: Container(
-                                        width: 10,
-                                        height: 10,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.redAccent,
-                                          shape: BoxShape.circle,
-                                        ),
+                  if (_activeTab == 0) ...[
+                    // 1. Top App Bar (Instagram style, Light Theme)
+                    Container(
+                      color: Colors.white, // Light background
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Left: Avatar and Plus
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    _scaffoldKey.currentState?.openDrawer();
+                                  },
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      image: DecorationImage(
+                                        image: AssetImage('assets/images/alina_avatar.jpg'),
+                                        fit: BoxFit.cover,
                                       ),
                                     ),
-                                  ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          // Center: Acadyk Text and Down Arrow
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Acadyk',
+                                style: TextStyle(
+                                  color: Colors.black, // Dark text for bright mode
+                                  fontSize: 32, // Slightly larger for Billabong
+                                  fontFamily: 'Billabong', // Exact Instagram style font
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 1.0,
                                 ),
                               ),
+                              const SizedBox(width: 4), // Small gap between 'k' and arrow
+                              const Icon(Icons.keyboard_arrow_down, color: Colors.black87, size: 24),
                             ],
                           ),
+                          
+                          // Right: Heart
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    showSearch(
+                                      context: context,
+                                      delegate: AcadykSearchDelegate(),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFF3F4F6), // Light grey circle
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(CupertinoIcons.search, color: Colors.black87, size: 16),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(MaterialPageRoute(
+                                      builder: (_) => const NotificationScreen(),
+                                    ));
+                                  },
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      const Icon(CupertinoIcons.heart, color: Colors.black87, size: 28),
+                                      Positioned(
+                                        top: -1,
+                                        right: -2,
+                                        child: Container(
+                                          width: 10,
+                                          height: 10,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.redAccent,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: Color(0xFFE0E0E0)),
+
+                    // 2. Scrollable List of Posts (re-ordered and curated)
+                    Expanded(
+                      child: Container(
+                        color: const Color(0xFFF3F2EF),
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            // Post 1: Y Combinator
+                            _buildYCPostCard(),
+
+                            // Post 2: TIME
+                            _buildTIMEPostCard(),
+
+                            // Post 3: Alina Sprongole
+                            _buildAlinaPostCard(),
+
+                            // Post 4: P Dharmik
+                            _buildDharmikPostCard(),
+
+                            // Post 5: Repost Card
+                            _buildRepostCard(),
+
+                            const SizedBox(height: 16.0),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ] else if (_activeTab == 1) ...[
+                    const Expanded(
+                      child: DiscoverOpportunitiesScreen(),
+                    ),
+                  ] else if (_activeTab == 4) ...[
+                    const Expanded(
+                      child: ProfileScreen(isOwnProfile: true),
+                    ),
+                  ] else ...[
+                    const Spacer(),
+                  ],
+
+                  // 3. Bottom Tab Bar
                   const Divider(height: 1, color: Color(0xFFE0E0E0)),
-
-                // 2. Scrollable List of Posts (re-ordered and curated)
-                Expanded(
-                  child: Container(
-                    color: const Color(0xFFF3F2EF),
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        // Post 1: Y Combinator
-                        _buildYCPostCard(),
-
-                        // Post 2: TIME
-                        _buildTIMEPostCard(),
-
-                        // Post 3: Alina Sprongole
-                        _buildAlinaPostCard(),
-
-
-                        // Post 4: P Dharmik
-                        _buildDharmikPostCard(),
-
-                        // Post 5: Repost Card
-                        _buildRepostCard(),
-
-                        const SizedBox(height: 16.0),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // 3. Bottom Tab Bar
-                const Divider(height: 1, color: Color(0xFFE0E0E0)),
-                _buildBottomNavBar(),
-              ],
-            ),
+                  _buildBottomNavBar(),
+                ],
+              ),
           ),
           ),
         ),
@@ -2002,10 +2015,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       label: 'Collage',
                       onTap: () {
                         Navigator.pop(context); // Close bottom sheet
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Collage creation coming soon!'),
-                            duration: Duration(seconds: 2),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SelectOpportunityScreen(),
                           ),
                         );
                       },
