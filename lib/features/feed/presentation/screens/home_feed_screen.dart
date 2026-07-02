@@ -2026,10 +2026,16 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       },
                     ),
                     _buildTopActionIcon(
-                      CupertinoIcons.qrcode_viewfinder,
-                      'QR code',
+                      CupertinoIcons.paperplane,
+                      'Share',
                       onTap: () {
                         Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SharePostScreen(),
+                          ),
+                        );
                       },
                     ),
                   ],
@@ -4141,6 +4147,279 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
       ),
     );
   }
+}
+
+class SharePostScreen extends StatelessWidget {
+  const SharePostScreen({super.key});
+
+  final List<Map<String, dynamic>> users = const [
+    {'name': 'ਆਯੂਸ਼', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
+    {'name': 'ANURAG GURJAR💖', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
+    {'name': 'Vandna', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
+    {'name': 'ujjwal', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
+    {'name': 'The club🔥', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
+    {'name': 'Gaurav Rajawat', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': true},
+    {'name': 'vishal', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
+    {'name': 'Tanishk pal', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
+    {'name': 'संकल्प सिंह', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': true},
+    {'name': 'm.s.lodhi5', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
+    {'name': 'Abhay Gupta', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
+    {'name': 'Tannya♠', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: Colors.white,
+            child: Column(
+              children: [
+                // Search bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F2EF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          height: 44,
+                          alignment: Alignment.center,
+                          child: TextField(
+                            style: const TextStyle(color: Colors.black),
+                            decoration: InputDecoration(
+                              icon: Icon(Icons.search, color: Colors.grey[600], size: 20),
+                              hintText: 'Search',
+                              hintStyle: TextStyle(color: Colors.grey[600], fontSize: 15),
+                              border: InputBorder.none,
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Grid of users
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 24,
+                      childAspectRatio: 0.85,
+                    ),
+                    itemCount: users.length,
+                    itemBuilder: (context, index) {
+                      final u = users[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Post shared with ${u['name']}!'),
+                              backgroundColor: const Color(0xFF262626),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        child: Column(
+                          children: [
+                            Stack(
+                              children: [
+                                CircleAvatar(
+                                  radius: 36,
+                                  backgroundColor: const Color(0xFFECECE8),
+                                  backgroundImage: AssetImage(u['avatar']),
+                                ),
+                                if (u['isOnline'] == true)
+                                  Positioned(
+                                    right: 2,
+                                    bottom: 2,
+                                    child: Container(
+                                      width: 14,
+                                      height: 14,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF4CAF50),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 2),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Expanded(
+                              child: Text(
+                                u['name'],
+                                style: const TextStyle(
+                                  color: Color(0xFF191919),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // Bottom bar
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8F9FA),
+                    border: Border(
+                      top: BorderSide(color: Color(0xFFECECE8), width: 1.0),
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildBottomAction(
+                        context,
+                        icon: Icons.link,
+                        label: 'Copy link',
+                        color: const Color(0xFFEBEBEB),
+                        iconColor: const Color(0xFF191919),
+                        onTap: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Link copied to clipboard!'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                      ),
+                      _buildBottomAction(
+                        context,
+                        label: 'WhatsApp',
+                        color: const Color(0xFF25D366),
+                        customIcon: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            CustomPaint(
+                              size: const Size(28, 28),
+                              painter: _WhatsAppBubblePainter(),
+                            ),
+                            Transform.translate(
+                              offset: const Offset(0.5, -0.5),
+                              child: Transform.rotate(
+                                angle: -0.15,
+                                child: const Icon(
+                                  Icons.phone,
+                                  color: Color(0xFF25D366),
+                                  size: 15,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                      _buildBottomAction(
+                        context,
+                        icon: Icons.download,
+                        label: 'Download',
+                        color: const Color(0xFFEBEBEB),
+                        iconColor: const Color(0xFF191919),
+                        onTap: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Saved to gallery!'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomAction(BuildContext context, {
+    Widget? customIcon,
+    IconData? icon,
+    required String label,
+    required Color color,
+    Color? iconColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: customIcon ?? Icon(icon, color: iconColor, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WhatsAppBubblePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    path.addOval(Rect.fromLTWH(w * 0.1, h * 0.1, w * 0.8, h * 0.8));
+    path.moveTo(w * 0.28, h * 0.72);
+    path.lineTo(w * 0.16, h * 0.86);
+    path.lineTo(w * 0.36, h * 0.79);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 

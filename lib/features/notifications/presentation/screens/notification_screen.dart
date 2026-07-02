@@ -90,11 +90,12 @@ class NotificationScreen extends StatelessWidget {
                         separatorBuilder: (context, index) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final item = notificationsList[index];
-                          final isInvite = item['type'] == 'invite';
+                          final isActionable = item['type'] == 'invite' || item['type'] == 'collab';
 
                           Widget? contentWidget;
-                          if (isInvite) {
+                          if (isActionable) {
                             final status = item['status'] ?? 'pending';
+                            final isCollab = item['type'] == 'collab';
                             if (status == 'pending') {
                               contentWidget = Padding(
                                 padding: const EdgeInsets.only(top: 12),
@@ -104,8 +105,8 @@ class NotificationScreen extends StatelessWidget {
                                       onPressed: () {
                                         StartupManager.updateNotificationStatus(item['id']!, 'declined');
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Co-founder invitation declined.'),
+                                          SnackBar(
+                                            content: Text(isCollab ? 'Collaboration invitation declined.' : 'Co-founder invitation declined.'),
                                             backgroundColor: Colors.black,
                                           ),
                                         );
@@ -125,7 +126,9 @@ class NotificationScreen extends StatelessWidget {
                                         StartupManager.updateNotificationStatus(item['id']!, 'accepted');
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
-                                            content: Text('Joined startup as co-founder with ${item['senderName'] ?? 'Somraj lodhi'}!'),
+                                            content: Text(isCollab 
+                                                ? 'Accepted collaboration with ${item['username'] ?? 'user'}!'
+                                                : 'Joined startup as co-founder with ${item['senderName'] ?? 'Somraj lodhi'}!'),
                                             backgroundColor: Colors.green,
                                           ),
                                         );
@@ -143,29 +146,29 @@ class NotificationScreen extends StatelessWidget {
                                 ),
                               );
                             } else if (status == 'accepted') {
-                              contentWidget = const Padding(
-                                padding: EdgeInsets.only(top: 8.0),
+                              contentWidget = Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.check_circle, color: Colors.green, size: 16),
-                                    SizedBox(width: 4),
+                                    const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      'Accepted invitation to join',
-                                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13),
+                                      isCollab ? 'Accepted collaboration' : 'Accepted invitation to join',
+                                      style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13),
                                     ),
                                   ],
                                 ),
                               );
                             } else {
-                              contentWidget = const Padding(
-                                padding: EdgeInsets.only(top: 8.0),
+                              contentWidget = Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.cancel, color: Colors.red, size: 16),
-                                    SizedBox(width: 4),
+                                    const Icon(Icons.cancel, color: Colors.red, size: 16),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      'Declined invitation',
-                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
+                                      isCollab ? 'Declined collaboration' : 'Declined invitation',
+                                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
                                     ),
                                   ],
                                 ),
