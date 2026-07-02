@@ -1,5 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import 'package:acadyk/common/providers/profile_provider.dart';
+import 'package:acadyk/common/services/storage_service.dart';
+import 'package:acadyk/common/services/post_service.dart';
+import 'package:acadyk/common/services/supabase_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -10,6 +16,8 @@ class CreatePostScreen extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _textController = TextEditingController();
+  File? _pickedImage;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -19,6 +27,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profileProvider = Provider.of<ProfileProvider>(context);
+    final profile = profileProvider.profile;
+    final avatarUrl = profile?.profilePhotoUrl;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -38,32 +50,70 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         icon: const Icon(Icons.close, color: Colors.black87, size: 28),
                         onPressed: () => Navigator.pop(context),
                       ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0D8BF2),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        onPressed: () {
-                          // Return the post text if not empty
-                          if (_textController.text.trim().isNotEmpty) {
-                            Navigator.pop(context, _textController.text);
-                          } else {
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: const Text(
-                          'Post',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0D8BF2),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              onPressed: () async {
+                                final text = _textController.text.trim();
+                                if (text.isEmpty && _pickedImage == null) return;
+
+                                setState(() {
+                                  _isLoading = true;
+                                });
+
+                                try {
+                                  String? uploadedUrl;
+                                  if (_pickedImage != null && profile != null) {
+                                    uploadedUrl = await StorageService.uploadPostImage(
+                                      profile.id,
+                                      _pickedImage!,
+                                    );
+                                  }
+
+                                  await PostService.createPost(
+                                    text,
+                                    postType: _pickedImage != null ? 'image' : 'text',
+                                    imageUrl: uploadedUrl,
+                                  );
+
+                                  if (mounted) {
+                                    Navigator.pop(context, true);
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error creating post: $e')),
+                                    );
+                                  }
+                                } finally {
+                                  if (mounted) {
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+                                  }
+                                }
+                              },
+                              child: const Text(
+                                'Post',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                     ],
                   ),
                 ),
@@ -78,9 +128,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // User Avatar
-                          const CircleAvatar(
+                          CircleAvatar(
                             radius: 20,
-                            backgroundImage: AssetImage('assets/images/somraj_avatar.jpg'),
+                            backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                                ? NetworkImage(avatarUrl) as ImageProvider
+                                : const AssetImage('assets/images/somraj_avatar.jpg'),
                           ),
                           const SizedBox(width: 12),
                           // Text Input
@@ -100,6 +152,43 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           ),
                         ],
                       ),
+                      if (_pickedImage != null) ...[
+                        const SizedBox(height: 16),
+                        Stack(
+                          children: [
+                            Container(
+                              height: 240,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                image: DecorationImage(
+                                  image: FileImage(_pickedImage!),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _pickedImage = null;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.close, color: Colors.white, size: 18),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -137,16 +226,26 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
-                            children: const [
-                              Icon(CupertinoIcons.photo, color: Color(0xFF0D8BF2), size: 22),
-                              SizedBox(width: 20),
-                              Icon(Icons.gif_box_outlined, color: Color(0xFF0D8BF2), size: 22),
-                              SizedBox(width: 20),
-                              Icon(CupertinoIcons.list_bullet, color: Color(0xFF0D8BF2), size: 22),
-                              SizedBox(width: 20),
-                              Icon(CupertinoIcons.location, color: Color(0xFF0D8BF2), size: 22),
-                              SizedBox(width: 20),
-                              Icon(CupertinoIcons.flag, color: Color(0xFF0D8BF2), size: 20),
+                            children: [
+                              GestureDetector(
+                                onTap: () async {
+                                  final file = await StorageService.pickImage();
+                                  if (file != null) {
+                                    setState(() {
+                                      _pickedImage = file;
+                                    });
+                                  }
+                                },
+                                child: const Icon(CupertinoIcons.photo, color: Color(0xFF0D8BF2), size: 22),
+                              ),
+                              const SizedBox(width: 20),
+                              const Icon(Icons.gif_box_outlined, color: Color(0xFF0D8BF2), size: 22),
+                              const SizedBox(width: 20),
+                              const Icon(CupertinoIcons.list_bullet, color: Color(0xFF0D8BF2), size: 22),
+                              const SizedBox(width: 20),
+                              const Icon(CupertinoIcons.location, color: Color(0xFF0D8BF2), size: 22),
+                              const SizedBox(width: 20),
+                              const Icon(CupertinoIcons.flag, color: Color(0xFF0D8BF2), size: 20),
                             ],
                           ),
                           Row(

@@ -6,6 +6,8 @@ import '../../../feed/presentation/screens/create_startup_screen.dart';
 import '../../../chat/presentation/screens/direct_message_screen.dart';
 import 'edit_status_screen.dart';
 import 'connections_list_screen.dart';
+import 'package:acadyk/common/services/supabase_service.dart';
+import 'package:acadyk/common/services/storage_service.dart';
 
 
 class ProfileScreen extends StatefulWidget {
@@ -123,33 +125,153 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // =============================================================
-  // PROFILE HEADER CARD
-  // =============================================================
   bool _isFollowing = false;
+  String? _profileName;
+  String? _profileBio;
+  String? _profileLocation;
+  String? _profilePhotoUrl;
+  String? _coverPhotoUrl;
 
-  // =============================================================
-  // PROFILE HEADER CARD
-  // =============================================================
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  void _loadProfileData() async {
+    if (widget.userData != null) {
+      _profileName = widget.userData!['name'];
+      _profileBio = widget.userData!['headline'];
+      _profileLocation = widget.userData!['location'];
+      _profilePhotoUrl = widget.userData!['avatar'];
+      _coverPhotoUrl = widget.userData!['cover_photo_url'];
+    } else {
+      _profileName = widget.isOwnProfile ? 'Somraj Lodhi' : 'Tanuj';
+      _profileBio = widget.isOwnProfile 
+          ? 'Founder | Thinker | Quant Engineer. Covering worldwide action. DM for collabs.' 
+          : 'Cricket enthusiast 🇮🇳 🏏 Covering worldwide action. Sharing news and passionate commentary on every match. DM for collabs.';
+      _profileLocation = 'India';
+    }
+
+    try {
+      final userId = widget.isOwnProfile
+          ? SupabaseService.client.auth.currentUser?.id
+          : widget.userData?['id'];
+      if (userId != null) {
+        final data = await SupabaseService.client
+            .from('profiles')
+            .select()
+            .eq('id', userId)
+            .maybeSingle();
+        if (data != null && mounted) {
+          setState(() {
+            _profileName = data['full_name'];
+            _profileBio = data['bio'];
+            _profileLocation = data['location'];
+            _profilePhotoUrl = data['profile_photo_url'];
+            _coverPhotoUrl = data['cover_photo_url'];
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading profile: $e');
+    }
+  }
+
+  void _showEditProfileDialog(BuildContext context, String currentName, String currentBio, String currentLocation) {
+    final nameCtrl = TextEditingController(text: currentName);
+    final bioCtrl = TextEditingController(text: currentBio);
+    final locCtrl = TextEditingController(text: currentLocation);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Profile'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Full Name'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: bioCtrl,
+                  decoration: const InputDecoration(labelText: 'Bio'),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: locCtrl,
+                  decoration: const InputDecoration(labelText: 'Location'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newName = nameCtrl.text.trim();
+                final newBio = bioCtrl.text.trim();
+                final newLoc = locCtrl.text.trim();
+
+                setState(() {
+                  _profileName = newName;
+                  _profileBio = newBio;
+                  _profileLocation = newLoc;
+                });
+
+                Navigator.pop(context);
+
+                try {
+                  final currentUser = SupabaseService.client.auth.currentUser;
+                  if (currentUser != null) {
+                    await SupabaseService.client.from('profiles').update({
+                      'full_name': newName,
+                      'bio': newBio,
+                      'location': newLoc,
+                    }).eq('id', currentUser.id);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Profile updated successfully!')),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to save profile: $e')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildProfileHeaderCard() {
     // Resolve dynamic values based on userData or defaults
-    final String name = widget.userData != null 
-        ? widget.userData!['name'] 
-        : (widget.isOwnProfile ? 'Somraj Lodhi' : 'Tanuj');
+    final String name = _profileName ?? (widget.isOwnProfile ? 'Somraj Lodhi' : 'Tanuj');
 
     final String username = widget.userData != null 
         ? '@${widget.userData!['name'].toString().replaceAll(' ', '')}' 
         : (widget.isOwnProfile ? '@SomrajLodhi' : '@ImTanujSingh');
 
-    final String bio = widget.userData != null 
-        ? widget.userData!['headline'] 
-        : (widget.isOwnProfile 
-            ? 'Founder | Thinker | Quant Engineer. Covering worldwide action. DM for collabs.' 
-            : 'Cricket enthusiast 🇮🇳 🏏 Covering worldwide action. Sharing news and passionate commentary on every match. DM for collabs.');
+    final String bio = _profileBio ?? (widget.isOwnProfile 
+        ? 'Founder | Thinker | Quant Engineer. Covering worldwide action. DM for collabs.' 
+        : 'Cricket enthusiast 🇮🇳 🏏 Covering worldwide action. Sharing news and passionate commentary on every match. DM for collabs.');
 
-    final String location = widget.userData != null 
-        ? widget.userData!['location'] 
-        : 'India';
+    final String location = _profileLocation ?? 'India';
 
     final String avatar = widget.userData != null 
         ? widget.userData!['avatar'] 
@@ -170,13 +292,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
               clipBehavior: Clip.none,
               children: [
                 // Banner Image
-                Container(
-                  height: 140,
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/images/team_celebration_banner.png'),
-                      fit: BoxFit.cover,
+                GestureDetector(
+                  onTap: widget.isOwnProfile
+                      ? () async {
+                          final file = await StorageService.pickImage();
+                          if (file != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Uploading cover photo...')),
+                            );
+                            final url = await StorageService.uploadCoverPhoto(
+                              SupabaseService.client.auth.currentUser!.id,
+                              file,
+                            );
+                            if (url != null) {
+                              await SupabaseService.client.from('profiles').update({
+                                'cover_photo_url': url,
+                              }).eq('id', SupabaseService.client.auth.currentUser!.id);
+                              setState(() {
+                                _coverPhotoUrl = url;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Cover photo updated successfully!')),
+                              );
+                            }
+                          }
+                        }
+                      : null,
+                  child: Container(
+                    height: 140,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty)
+                            ? NetworkImage(_coverPhotoUrl!) as ImageProvider
+                            : const AssetImage('assets/images/team_celebration_banner.png'),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
@@ -202,9 +353,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                         ),
-                        child: CircleAvatar(
-                          radius: 40,
-                          backgroundImage: AssetImage(avatar),
+                        child: GestureDetector(
+                          onTap: widget.isOwnProfile
+                              ? () async {
+                                  final file = await StorageService.pickImage();
+                                  if (file != null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Uploading profile photo...')),
+                                    );
+                                    final url = await StorageService.uploadProfilePhoto(
+                                      SupabaseService.client.auth.currentUser!.id,
+                                      file,
+                                    );
+                                    if (url != null) {
+                                      await SupabaseService.client.from('profiles').update({
+                                        'profile_photo_url': url,
+                                      }).eq('id', SupabaseService.client.auth.currentUser!.id);
+                                      setState(() {
+                                        _profilePhotoUrl = url;
+                                      });
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Profile photo updated successfully!')),
+                                      );
+                                    }
+                                  }
+                                }
+                              : null,
+                          child: CircleAvatar(
+                            radius: 40,
+                            backgroundImage: (_profilePhotoUrl != null && _profilePhotoUrl!.isNotEmpty)
+                                ? NetworkImage(_profilePhotoUrl!) as ImageProvider
+                                : AssetImage(avatar),
+                          ),
                         ),
                       ),
                       if (widget.isOwnProfile)
@@ -302,29 +482,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                 // Follow / Following pill button
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isFollowing = !_isFollowing;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _isFollowing ? const Color(0xFF272C30) : textColor,
-                      borderRadius: BorderRadius.circular(20),
+                 // Follow / Following pill button or Edit Profile
+                if (widget.isOwnProfile)
+                  GestureDetector(
+                    onTap: () => _showEditProfileDialog(context, name, bio, location),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F4C81),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Edit Profile',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
+                        ),
+                      ),
                     ),
-                    child: Text(
-                      _isFollowing ? 'Following' : 'Follow',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                  )
+                else
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isFollowing = !_isFollowing;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _isFollowing ? const Color(0xFF272C30) : textColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _isFollowing ? 'Following' : 'Follow',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),

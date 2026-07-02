@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:acadyk/common/services/event_service.dart';
 import 'registration_success_screen.dart';
 import 'celebration_success_screen.dart';
 
 class RegistrationFormScreen extends StatefulWidget {
+  final String eventId;
   final String eventTitle;
   final String logoUrl;
   final String organizer;
 
   const RegistrationFormScreen({
     super.key,
+    required this.eventId,
     required this.eventTitle,
     required this.logoUrl,
     required this.organizer,
@@ -572,7 +575,7 @@ class _RegistrationFormScreenState extends State<RegistrationFormScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (!_agreeToTerms) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -583,15 +586,42 @@ class _RegistrationFormScreenState extends State<RegistrationFormScreen> {
                 return;
               }
               if (_formKey.currentState!.validate()) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => RegistrationSuccessScreen(
-                      eventTitle: widget.eventTitle,
-                      logoUrl: widget.logoUrl,
-                      organizer: widget.organizer,
+                final details = {
+                  'first_name': _firstNameController.text.trim(),
+                  'last_name': _lastNameController.text.trim(),
+                  'email': _emailController.text.trim(),
+                  'phone': _mobileController.text.trim(),
+                  'institute': _instituteController.text.trim(),
+                  'gender': _selectedGender,
+                  'user_type': _selectedUserType,
+                  'course': _selectedCourse,
+                  'specialization': _selectedSpecialization,
+                  'grad_year': _selectedGradYear,
+                };
+                
+                final success = await EventService.registerForEvent(widget.eventId, details);
+                if (success && mounted) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => RegistrationSuccessScreen(
+                        eventTitle: widget.eventTitle,
+                        logoUrl: widget.logoUrl,
+                        organizer: widget.organizer,
+                      ),
                     ),
-                  ),
-                );
+                  ).then((_) {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop(true);
+                    }
+                  });
+                } else if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to register. Please try again.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(

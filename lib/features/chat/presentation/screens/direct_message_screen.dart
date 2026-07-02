@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:acadyk/common/services/message_service.dart';
+import 'package:acadyk/common/services/supabase_service.dart';
 
-class DirectMessageScreen extends StatelessWidget {
+class DirectMessageScreen extends StatefulWidget {
   final String name;
   final String handle;
   final Color avatarColor;
   final IconData avatarIcon;
   final Color iconColor;
+  final String? conversationId;
+  final String? targetUserId;
 
   const DirectMessageScreen({
     super.key,
@@ -14,13 +18,86 @@ class DirectMessageScreen extends StatelessWidget {
     required this.avatarColor,
     required this.avatarIcon,
     this.iconColor = Colors.white,
+    this.conversationId,
+    this.targetUserId,
   });
+
+  @override
+  State<DirectMessageScreen> createState() => _DirectMessageScreenState();
+}
+
+class _DirectMessageScreenState extends State<DirectMessageScreen> {
+  final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  List<Map<String, dynamic>> _messages = [];
+  String? _activeConversationId;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeConversationId = widget.conversationId;
+    _initializeChat();
+  }
+
+  Future<void> _initializeChat() async {
+    if (_activeConversationId == null && widget.targetUserId != null) {
+      setState(() {
+        _isLoading = true;
+      });
+      final convId = await MessageService.createConversation(widget.targetUserId!);
+      if (mounted) {
+        setState(() {
+          _activeConversationId = convId;
+          _isLoading = false;
+        });
+      }
+    }
+    _loadMessages();
+  }
+
+  Future<void> _loadMessages() async {
+    if (_activeConversationId == null) return;
+    try {
+      final data = await MessageService.getMessages(_activeConversationId!);
+      if (mounted) {
+        setState(() {
+          _messages = data;
+        });
+        _scrollToBottom();
+      }
+    } catch (_) {}
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty || _activeConversationId == null) return;
+    _controller.clear();
+
+    final response = await MessageService.sendMessage(_activeConversationId!, text);
+    if (response != null) {
+      _loadMessages();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     const bgColor = Colors.white;
     const textPrimary = Color(0xFF111827);
     const textSecondary = Color(0xFF6B7280);
+    final currentUserId = SupabaseService.client.auth.currentUser?.id;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -36,15 +113,15 @@ class DirectMessageScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundColor: avatarColor,
-              child: Icon(avatarIcon, color: iconColor, size: 20),
+              backgroundColor: widget.avatarColor,
+              child: Icon(widget.avatarIcon, color: widget.iconColor, size: 20),
             ),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  widget.name,
                   style: const TextStyle(
                     color: textPrimary,
                     fontSize: 16,
@@ -52,7 +129,7 @@ class DirectMessageScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  handle,
+                  widget.handle,
                   style: const TextStyle(
                     color: textSecondary,
                     fontSize: 12,
@@ -69,199 +146,47 @@ class DirectMessageScreen extends StatelessWidget {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              children: [
-                _buildSentMessage('Ek ye madarchod corrupt aadami h'),
-                const SizedBox(height: 16),
-                _buildReceivedMessage('Sabbi corrupt h bhai', showAvatar: true),
-                const SizedBox(height: 16),
-                _buildSentMessage('Me nhi hu'),
-                const SizedBox(height: 2),
-                _buildSentMessage('Me chutiya hu corrupt nhi'),
-                const SizedBox(height: 8),
-                const Align(
-                  alignment: Alignment.centerRight,
-                  child: Text('💔💔', style: TextStyle(fontSize: 32)),
-                ),
-                const SizedBox(height: 24),
-                _buildReceivedMessage('Me bhi', showAvatar: false),
-                const SizedBox(height: 2),
-                _buildReceivedMessage(
-                  'Khair corruption is only bad when I am not involved so yeah',
-                  showAvatar: true,
-                  bottomHint: 'Double-tap to ❤️',
-                ),
-                const SizedBox(height: 24),
-                _buildReplyMessage(
-                  replyText: 'Khair corruption is only bad when I am not involved so yeah',
-                  sentText: 'Sahi kaha mera bhi yahi hisab h',
-                  isGradient: true,
-                ),
-                const SizedBox(height: 2),
-                _buildSentMessage('Hamesa sw'),
-                const SizedBox(height: 16),
-                _buildReceivedMessage(
-                  'Same same',
-                  showAvatar: true,
-                  hasHeartReaction: true,
-                ),
-              ],
-            ),
-          ),
-          _buildBottomInputBar(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSentMessage(String text) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 260),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: const BoxDecoration(
-          color: Color(0xFFD300C5), // Vibrant pink/magenta
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-            bottomLeft: Radius.circular(20),
-            bottomRight: Radius.circular(4),
-          ),
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReceivedMessage(String text, {required bool showAvatar, String? bottomHint, bool hasHeartReaction = false}) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (showAvatar)
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0, bottom: 4.0),
-              child: CircleAvatar(
-                radius: 14,
-                backgroundColor: avatarColor,
-                child: Icon(avatarIcon, color: iconColor, size: 18),
-              ),
-            )
-          else
-            const SizedBox(width: 36), // Placeholder for missing avatar
-            
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    constraints: const BoxConstraints(maxWidth: 260),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF3F4F6), // Soft grey received bubble
-                      borderRadius: BorderRadius.all(Radius.circular(20)),
-                    ),
-                    child: Text(
-                      text,
-                      style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16),
-                    ),
-                  ),
-                  if (hasHeartReaction)
-                    Positioned(
-                      bottom: -10,
-                      left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: const Text('❤️', style: TextStyle(fontSize: 12)),
-                      ),
-                    ),
-                ],
-              ),
-              if (bottomHint != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0, left: 4.0),
-                  child: Text(
-                    bottomHint,
-                    style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReplyMessage({required String replyText, required String sentText, bool isGradient = false}) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(bottom: 4.0, right: 8.0),
-            child: Text('You replied', style: TextStyle(color: Color(0xFF6B7280), fontSize: 12)),
-          ),
-          // Quoted Bubble
-          Container(
-            constraints: const BoxConstraints(maxWidth: 240),
-            margin: const EdgeInsets.only(bottom: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: const BoxDecoration(
-              color: Color(0xFFE5E7EB), // Light grey quote
-              borderRadius: BorderRadius.all(Radius.circular(16)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
               children: [
                 Expanded(
-                  child: Text(
-                    replyText,
-                    style: const TextStyle(color: Color(0xFF4B5563), fontSize: 14),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final msg = _messages[index];
+                      final isMe = msg['sender_id'] == currentUserId;
+                      return _buildMessageRow(msg['content'] ?? '', isMe);
+                    },
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(width: 3, height: 30, color: const Color(0xFF9CA3AF)), // Vertical grey line
+                _buildBottomInputBar(),
               ],
             ),
+    );
+  }
+
+  Widget _buildMessageRow(String text, bool isMe) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Align(
+        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isMe ? const Color(0xFF3B82F6) : const Color(0xFFF3F4F6),
+            borderRadius: BorderRadius.circular(16),
           ),
-          // Reply Sent Bubble
-          Container(
-            constraints: const BoxConstraints(maxWidth: 260),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: isGradient ? const LinearGradient(
-                colors: [Color(0xFF5A45FF), Color(0xFF9030FF)], // Blue to purple
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ) : null,
-              color: isGradient ? null : const Color(0xFFD300C5),
-              borderRadius: const BorderRadius.all(Radius.circular(20)),
-            ),
-            child: Text(
-              sentText,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+          child: Text(
+            text,
+            style: TextStyle(
+              color: isMe ? Colors.white : Colors.black87,
+              fontSize: 15,
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -273,18 +198,16 @@ class DirectMessageScreen extends StatelessWidget {
       child: SafeArea(
         child: Row(
           children: [
-            // Camera Button
             Container(
               width: 40,
               height: 40,
               decoration: const BoxDecoration(
-                color: Color(0xFF3B82F6), // Blue
+                color: Color(0xFF3B82F6),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.camera_alt, color: Colors.white, size: 22),
             ),
             const SizedBox(width: 8),
-            // Input Field Pill
             Expanded(
               child: Container(
                 height: 40,
@@ -293,19 +216,23 @@ class DirectMessageScreen extends StatelessWidget {
                   color: const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                alignment: Alignment.centerLeft,
-                child: const Text('Message...', style: TextStyle(color: Color(0xFF6B7280), fontSize: 16)),
+                child: TextField(
+                  controller: _controller,
+                  decoration: const InputDecoration(
+                    hintText: 'Message...',
+                    hintStyle: TextStyle(color: Color(0xFF6B7280), fontSize: 16),
+                    border: InputBorder.none,
+                    isDense: true,
+                  ),
+                  style: const TextStyle(fontSize: 16, color: Colors.black),
+                  onSubmitted: (_) => _sendMessage(),
+                ),
               ),
             ),
-            const SizedBox(width: 8),
-            // Right Icons
-            const Icon(Icons.mic_none_outlined, color: Color(0xFF1F2937), size: 26),
-            const SizedBox(width: 12),
-            const Icon(Icons.image_outlined, color: Color(0xFF1F2937), size: 26),
-            const SizedBox(width: 12),
-            const Icon(Icons.sticky_note_2_outlined, color: Color(0xFF1F2937), size: 26),
-            const SizedBox(width: 12),
-            const Icon(Icons.add_circle_outline, color: Color(0xFF1F2937), size: 26),
+            IconButton(
+              icon: const Icon(Icons.send, color: Color(0xFF3B82F6)),
+              onPressed: _sendMessage,
+            ),
           ],
         ),
       ),

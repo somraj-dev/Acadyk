@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:acadyk/common/providers/auth_provider.dart';
 import '../../../../common/widgets/logo_widget.dart';
 import '../../../../common/widgets/google_logo.dart';
 import '../../../feed/presentation/screens/home_feed_screen.dart';
+import '../../../../common/services/supabase_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -102,18 +106,75 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
+  bool _isSignUp = false;
+  bool _isLoading = false;
+
   Widget _buildActionButton() {
     final bool isActive = _isEmailNotEmpty && (!_usePassword || _passwordController.text.trim().isNotEmpty);
     return SizedBox(
       width: double.infinity,
       height: 48,
       child: ElevatedButton(
-        onPressed: isActive
-            ? () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
-                );
+        onPressed: (isActive && !_isLoading)
+            ? () async {
+                final email = _emailController.text.trim();
+                final password = _passwordController.text.trim();
+
+                setState(() {
+                  _isLoading = true;
+                });
+
+                try {
+                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                  if (_usePassword) {
+                    if (_isSignUp) {
+                      await authProvider.signUp(
+                        email: email,
+                        password: password,
+                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Registration successful! Please check your email for verification.')),
+                        );
+                        setState(() {
+                          _isSignUp = false;
+                        });
+                      }
+                    } else {
+                      await authProvider.signIn(
+                        email: email,
+                        password: password,
+                      );
+                      // AuthProvider will automatically trigger routing to HomeFeedScreen via Consumer in main.dart
+                    }
+                  } else {
+                    // OTP Flow
+                    await SupabaseService.client.auth.signInWithOtp(
+                      email: email,
+                      emailRedirectTo: 'io.supabase.acadyk://login-callback/',
+                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('OTP magic link sent to your email! Please check your inbox.')),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${e.toString()}'),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
+                } finally {
+                  if (mounted) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  }
+                }
               }
             : null,
         style: ElevatedButton.styleFrom(
@@ -124,14 +185,20 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(8.0),
           ),
         ),
-        child: Text(
-          _usePassword ? 'Login' : 'Continue with OTP',
-          style: TextStyle(
-            color: isActive ? Colors.white : const Color(0xFF9CA3AF),
-            fontSize: 15.0,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        child: _isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              )
+            : Text(
+                _usePassword ? (_isSignUp ? 'Sign Up' : 'Login') : 'Continue with OTP',
+                style: TextStyle(
+                  color: isActive ? Colors.white : const Color(0xFF9CA3AF),
+                  fontSize: 15.0,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
       ),
     );
   }
@@ -179,22 +246,38 @@ class _LoginScreenState extends State<LoginScreen> {
                 _buildSocialButton(
                   logo: const GoogleLogo(size: 20.0, transparent: true),
                   text: 'Login with Google',
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
-                    );
+                  onTap: () async {
+                    try {
+                      await SupabaseService.client.auth.signInWithOAuth(
+                        OAuthProvider.google,
+                        redirectTo: 'io.supabase.acadyk://login-callback/',
+                      );
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Google login error: $e')),
+                        );
+                      }
+                    }
                   },
                 ),
                 const SizedBox(height: 12.0),
                 _buildSocialButton(
                   logo: const LinkedInLogo(size: 20.0),
                   text: 'Continue with LinkedIn',
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
-                    );
+                  onTap: () async {
+                    try {
+                      await SupabaseService.client.auth.signInWithOAuth(
+                        OAuthProvider.linkedin,
+                        redirectTo: 'io.supabase.acadyk://login-callback/',
+                      );
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('LinkedIn login error: $e')),
+                        );
+                      }
+                    }
                   },
                 ),
                 const SizedBox(height: 24.0),
@@ -339,6 +422,75 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+                if (_usePassword) ...[
+                  const SizedBox(height: 12.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (!_isSignUp)
+                        TextButton(
+                          onPressed: () async {
+                            final email = _emailController.text.trim();
+                            if (email.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please enter your email to reset password.')),
+                              );
+                              return;
+                            }
+                            try {
+                              await SupabaseService.client.auth.resetPasswordForEmail(email);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Password reset link sent to your email!')),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+                                );
+                              }
+                            }
+                          },
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              color: Color(0xFF0F4C81),
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _isSignUp = !_isSignUp;
+                          });
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          _isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up",
+                          style: const TextStyle(
+                            color: Color(0xFF0F4C81),
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 24.0),
 
                 _buildActionButton(),

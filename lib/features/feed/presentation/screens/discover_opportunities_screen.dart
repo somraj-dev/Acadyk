@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'event_detail_screen.dart';
 import 'filter_events_bottom_sheet.dart';
 import '../services/opportunities_manager.dart';
+import 'home_feed_screen.dart';
 
 class DiscoverOpportunitiesScreen extends StatefulWidget {
   const DiscoverOpportunitiesScreen({super.key});
@@ -23,6 +24,12 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
 
   final Set<int> _savedIndices = {};
   final Set<int> _likedIndices = {};
+
+  @override
+  void initState() {
+    super.initState();
+    OpportunitiesManager.loadFromSupabase();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -265,11 +272,32 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
           // 1. Header: Avatar + Title + Badge + More Vert
           Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: const Color(0xFFE5E7EB),
-                backgroundImage: op['logoUrl'] != null ? NetworkImage(op['logoUrl']) : null,
-                child: op['logoUrl'] == null ? const Icon(Icons.business, color: Color(0xFF6B7280)) : null,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF3B82F6),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: ClipOval(
+                  child: Image.network(
+                    op['logoUrl'] ?? '',
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: const Color(0xFF3B82F6),
+                        alignment: Alignment.center,
+                        child: Text(
+                          (op['organizer'] ?? op['title'] ?? 'D')[0],
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -307,7 +335,9 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
               ),
               IconButton(
                 icon: const Icon(Icons.more_vert, color: Color(0xFF4B5563)),
-                onPressed: () {},
+                onPressed: () {
+                  _showOpportunityOptionsBottomSheet(context, op['title']!, op['organizer']!);
+                },
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -327,98 +357,107 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
           const SizedBox(height: 12),
 
           // 3. Card Banner Image + Translucent Overlay Box
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12.0),
-                child: Image.network(
-                  op['bannerUrl']!,
-                  height: 180,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, err, stack) {
-                    return Container(
-                      height: 180,
-                      color: Colors.grey.shade100,
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
-                    );
-                  },
-                ),
-              ),
-              // Glass/translucent Overlay at the bottom
-              Positioned(
-                bottom: 12,
-                left: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.65),
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  child: Row(
-                    children: [
-                      // Date
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_today_outlined, color: Colors.white, size: 16),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                op['dates']!,
-                                style: const TextStyle(color: Colors.white, fontSize: 10, height: 1.2),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Divider
-                      Container(width: 1, height: 20, color: Colors.white24, margin: const EdgeInsets.symmetric(horizontal: 6)),
-                      // Location
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.location_on_outlined, color: Colors.white, size: 16),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                op['location']!,
-                                style: const TextStyle(color: Colors.white, fontSize: 10, height: 1.2),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Divider
-                      Container(width: 1, height: 20, color: Colors.white24, margin: const EdgeInsets.symmetric(horizontal: 6)),
-                      // Team
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.people_outline, color: Colors.white, size: 16),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                op['teamSizeText']!,
-                                style: const TextStyle(color: Colors.white, fontSize: 10, height: 1.2),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+          GestureDetector(
+            onDoubleTap: () {
+              setState(() {
+                if (isLiked) {
+                  _likedIndices.remove(index);
+                } else {
+                  _likedIndices.add(index);
+                }
+              });
+            },
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: Image.network(
+                    op['bannerUrl']!,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, err, stack) {
+                      return Container(
+                        height: 180,
+                        color: Colors.grey.shade100,
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                      );
+                    },
                   ),
                 ),
-              ),
-            ],
+                // Glass/translucent Overlay at the bottom
+                Positioned(
+                  bottom: 12,
+                  left: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.65),
+                      borderRadius: BorderRadius.circular(8.0),
+                      border: Border.all(color: Colors.white.withOpacity(0.15), width: 0.8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        // Date Info
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(CupertinoIcons.calendar, color: Colors.white, size: 18),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  op['dates']!,
+                                  style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.2),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Location Info
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(CupertinoIcons.location, color: Colors.white, size: 18),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  op['location']!,
+                                  style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.2),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Team Info
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(CupertinoIcons.group, color: Colors.white, size: 18),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  op['teamSizeText']!,
+                                  style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.2),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -564,6 +603,141 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showOpportunityOptionsBottomSheet(BuildContext context, String title, String company) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 12.0, bottom: 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildTopActionIcon(
+                      CupertinoIcons.bookmark,
+                      'Save',
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                    _buildTopActionIcon(
+                      CupertinoIcons.repeat,
+                      'Repost',
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                    _buildTopActionIcon(
+                      CupertinoIcons.paperplane,
+                      'Share',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SharePostScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    children: [
+                      _buildListAction(CupertinoIcons.eye_slash, 'Hide', onTap: () {
+                        Navigator.pop(context);
+                      }),
+                      const SizedBox(height: 20),
+                      _buildListAction(CupertinoIcons.person, 'About this account', onTap: () {
+                        Navigator.pop(context);
+                      }),
+                      const SizedBox(height: 20),
+                      _buildListAction(CupertinoIcons.exclamationmark_bubble, 'Report', color: const Color(0xFFED4956), onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ReportPostScreen(),
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTopActionIcon(IconData icon, String label, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F2EF),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Icon(icon, color: Colors.black87, size: 22),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E), fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListAction(IconData icon, String label, {Color? color, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          Icon(icon, color: color ?? const Color(0xFF5E5E5E), size: 22),
+          const SizedBox(width: 16),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color ?? const Color(0xFF191919),
+            ),
           ),
         ],
       ),

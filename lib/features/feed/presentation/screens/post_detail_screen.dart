@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:acadyk/common/services/post_service.dart';
+import 'package:acadyk/common/services/supabase_service.dart';
 import '../../../profile/presentation/screens/edit_status_screen.dart';
 
 
@@ -10,6 +12,7 @@ class PostDetailScreen extends StatefulWidget {
   final String timeAgo;
   final String postText;
   final String? connectionDegree;
+  final Map<String, dynamic>? post;
 
   const PostDetailScreen({
     super.key,
@@ -19,6 +22,7 @@ class PostDetailScreen extends StatefulWidget {
     required this.timeAgo,
     required this.postText,
     this.connectionDegree,
+    this.post,
   });
 
   @override
@@ -42,9 +46,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _comments = [
-      {
-        'name': 'Christian Pickett',
+    _comments = [];
+    if (widget.post != null) {
+      _loadRealComments();
+    } else {
+      _comments = [
+        {
+          'name': 'Christian Pickett',
         'isAuthor': true,
         'headline': 'Co-founder @ Orthogonal (YC W26)',
         'timeAgo': '1d',
@@ -98,6 +106,73 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         'replies': <Map<String, dynamic>>[],
       }
     ];
+    }
+  }
+
+  void _loadRealComments() async {
+    final dbComments = await PostService.getComments(widget.post!['id'].toString());
+    if (mounted) {
+      setState(() {
+        _comments = dbComments.map((c) {
+          final author = c['profiles'] as Map<String, dynamic>? ?? {};
+          return {
+            'id': c['id'].toString(),
+            'name': author['full_name'] ?? 'Acadyk User',
+            'isAuthor': author['id'] == widget.post!['user_id'],
+            'headline': author['bio'] ?? 'Member',
+            'avatar': author['profile_photo_url'],
+            'timeAgo': 'Just now',
+            'connectionDegree': null,
+            'body': c['content'] ?? '',
+            'likes': c['likes_count'] ?? 0,
+            'hasLiked': false,
+            'replies': <Map<String, dynamic>>[],
+          };
+        }).toList();
+      });
+    }
+  }
+
+  void _submitComment(String text) async {
+    if (widget.post != null) {
+      await PostService.addComment(widget.post!['id'].toString(), text);
+      _loadRealComments();
+    } else {
+      setState(() {
+        if (_replyingToCommentIndex != null) {
+          final parentComment = _comments[_replyingToCommentIndex!];
+          final replies = parentComment['replies'] as List;
+          final replyText = (_replyingToName != null && _replyingToName != parentComment['name'])
+              ? '$_replyingToName $text'
+              : text;
+          replies.add({
+            'name': 'Somraj lodhi',
+            'headline': 'Founder & Builder @ Acadyk',
+            'avatar': 'assets/images/somraj_avatar.jpg',
+            'timeAgo': 'Just now',
+            'connectionDegree': '1st',
+            'body': replyText,
+            'likes': 0,
+            'hasLiked': false,
+          });
+          _replyingToCommentIndex = null;
+          _replyingToName = null;
+        } else {
+          _comments.add({
+            'name': 'Somraj lodhi',
+            'isAuthor': false,
+            'headline': 'Founder & Builder @ Acadyk',
+            'timeAgo': 'Just now',
+            'connectionDegree': '1st',
+            'body': text,
+            'likes': 0,
+            'hasLiked': false,
+            'replies': <Map<String, dynamic>>[],
+          });
+        }
+      });
+    }
+    _commentInputCtrl.clear();
   }
 
   @override
@@ -525,41 +600,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                   style: const TextStyle(fontSize: 14, color: Colors.black),
                                   onSubmitted: (val) {
                                     if (val.trim().isNotEmpty) {
-                                      final text = val.trim();
-                                      setState(() {
-                                        if (_replyingToCommentIndex != null) {
-                                          final parentComment = _comments[_replyingToCommentIndex!];
-                                          final replies = parentComment['replies'] as List;
-                                          final replyText = (_replyingToName != null && _replyingToName != parentComment['name'])
-                                              ? '$_replyingToName $text'
-                                              : text;
-                                          replies.add({
-                                            'name': 'Somraj lodhi',
-                                            'headline': 'Founder & Builder @ Acadyk',
-                                            'avatar': 'assets/images/somraj_avatar.jpg',
-                                            'timeAgo': 'Just now',
-                                            'connectionDegree': '1st',
-                                            'body': replyText,
-                                            'likes': 0,
-                                            'hasLiked': false,
-                                          });
-                                          _replyingToCommentIndex = null;
-                                          _replyingToName = null;
-                                        } else {
-                                          _comments.add({
-                                            'name': 'Somraj lodhi',
-                                            'isAuthor': false,
-                                            'headline': 'Founder & Builder @ Acadyk',
-                                            'timeAgo': 'Just now',
-                                            'connectionDegree': '1st',
-                                            'body': text,
-                                            'likes': 0,
-                                            'hasLiked': false,
-                                            'replies': <Map<String, dynamic>>[],
-                                          });
-                                        }
-                                        _commentInputCtrl.clear();
-                                      });
+                                      _submitComment(val.trim());
                                     }
                                   },
                                 ),
@@ -571,41 +612,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                               onTap: () {
                                 final val = _commentInputCtrl.text;
                                 if (val.trim().isNotEmpty) {
-                                  final text = val.trim();
-                                  setState(() {
-                                    if (_replyingToCommentIndex != null) {
-                                      final parentComment = _comments[_replyingToCommentIndex!];
-                                      final replies = parentComment['replies'] as List;
-                                      final replyText = (_replyingToName != null && _replyingToName != parentComment['name'])
-                                          ? '$_replyingToName $text'
-                                          : text;
-                                      replies.add({
-                                        'name': 'Somraj lodhi',
-                                        'headline': 'Founder & Builder @ Acadyk',
-                                        'avatar': 'assets/images/somraj_avatar.jpg',
-                                        'timeAgo': 'Just now',
-                                        'connectionDegree': '1st',
-                                        'body': replyText,
-                                        'likes': 0,
-                                        'hasLiked': false,
-                                      });
-                                      _replyingToCommentIndex = null;
-                                      _replyingToName = null;
-                                    } else {
-                                      _comments.add({
-                                        'name': 'Somraj lodhi',
-                                        'isAuthor': false,
-                                        'headline': 'Founder & Builder @ Acadyk',
-                                        'timeAgo': 'Just now',
-                                        'connectionDegree': '1st',
-                                        'body': text,
-                                        'likes': 0,
-                                        'hasLiked': false,
-                                        'replies': <Map<String, dynamic>>[],
-                                      });
-                                    }
-                                    _commentInputCtrl.clear();
-                                  });
+                                  _submitComment(val.trim());
                                 }
                               },
                               child: const Icon(Icons.send, color: Color(0xFF0A66C2), size: 22),

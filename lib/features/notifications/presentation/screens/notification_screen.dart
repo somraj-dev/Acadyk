@@ -1,8 +1,51 @@
 import 'package:flutter/material.dart';
-import '../../../feed/presentation/services/startup_manager.dart';
+import 'package:acadyk/common/services/notification_service.dart';
+import 'package:acadyk/common/services/supabase_service.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
+
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  List<Map<String, dynamic>> _notifications = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final data = await NotificationService.getNotifications();
+      if (mounted) {
+        setState(() {
+          _notifications = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _markAllAsRead() async {
+    try {
+      await NotificationService.markAllAsRead();
+      _loadNotifications();
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +82,7 @@ class NotificationScreen extends StatelessWidget {
                         ],
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: _markAllAsRead,
                         child: Row(
                           children: const [
                             Icon(Icons.done_all, color: Color(0xFF4F46E5), size: 18),
@@ -66,13 +109,13 @@ class NotificationScreen extends StatelessWidget {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildTab('View all', '12', isActive: true),
+                        _buildTab('View all', '${_notifications.length}', isActive: true),
                         const SizedBox(width: 8),
-                        _buildTab('Mentions', '6'),
+                        _buildTab('Mentions', '0'),
                         const SizedBox(width: 8),
-                        _buildTab('Followers', '4'),
+                        _buildTab('Followers', '0'),
                         const SizedBox(width: 8),
-                        _buildTab('Invites', '2'),
+                        _buildTab('Invites', '0'),
                       ],
                     ),
                   ),
@@ -81,133 +124,62 @@ class NotificationScreen extends StatelessWidget {
 
                 // Notifications List
                 Expanded(
-                  child: ValueListenableBuilder<List<Map<String, dynamic>>>(
-                    valueListenable: StartupManager.notifications,
-                    builder: (context, notificationsList, child) {
-                      return ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-                        itemCount: notificationsList.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final item = notificationsList[index];
-                          final isActionable = item['type'] == 'invite' || item['type'] == 'collab';
-
-                          Widget? contentWidget;
-                          if (isActionable) {
-                            final status = item['status'] ?? 'pending';
-                            final isCollab = item['type'] == 'collab';
-                            if (status == 'pending') {
-                              contentWidget = Padding(
-                                padding: const EdgeInsets.only(top: 12),
-                                child: Row(
-                                  children: [
-                                    OutlinedButton(
-                                      onPressed: () {
-                                        StartupManager.updateNotificationStatus(item['id']!, 'declined');
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(isCollab ? 'Collaboration invitation declined.' : 'Co-founder invitation declined.'),
-                                            backgroundColor: Colors.black,
-                                          ),
-                                        );
-                                      },
-                                      style: OutlinedButton.styleFrom(
-                                        side: const BorderSide(color: Color(0xFFD1D5DB)),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        foregroundColor: const Color(0xFF374151),
-                                        minimumSize: const Size(0, 36),
-                                      ),
-                                      child: const Text('Decline', style: TextStyle(fontWeight: FontWeight.w600)),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        StartupManager.updateNotificationStatus(item['id']!, 'accepted');
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(isCollab 
-                                                ? 'Accepted collaboration with ${item['username'] ?? 'user'}!'
-                                                : 'Joined startup as co-founder with ${item['senderName'] ?? 'Somraj lodhi'}!'),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF4F46E5),
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        minimumSize: const Size(0, 36),
-                                      ),
-                                      child: const Text('Accept', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            } else if (status == 'accepted') {
-                              contentWidget = Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.check_circle, color: Colors.green, size: 16),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      isCollab ? 'Accepted collaboration' : 'Accepted invitation to join',
-                                      style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            } else {
-                              contentWidget = Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.cancel, color: Colors.red, size: 16),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      isCollab ? 'Declined collaboration' : 'Declined invitation',
-                                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                          } else if (item['content'] != null) {
-                            contentWidget = Container(
-                              margin: const EdgeInsets.only(top: 8),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF3F4F6),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _notifications.isEmpty
+                          ? const Center(
                               child: Text(
-                                item['content']!,
-                                style: const TextStyle(
-                                  color: Color(0xFF374151),
-                                  fontSize: 14,
-                                  height: 1.4,
-                                ),
+                                'No notifications yet.',
+                                style: TextStyle(color: Color(0xFF6B7280)),
                               ),
-                            );
-                          }
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                              itemCount: _notifications.length,
+                              separatorBuilder: (context, index) => const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final item = _notifications[index];
+                                final sender = item['sender'] as Map<String, dynamic>? ?? {};
+                                final senderName = sender['full_name'] ?? 'Acadyk User';
+                                final senderAvatar = sender['profile_photo_url'] ?? 'assets/images/somraj_avatar.jpg';
+                                final senderUsername = sender['username'] ?? 'user';
+                                final isUnread = !(item['is_read'] ?? false);
+                                final title = item['title'] ?? 'Notification';
+                                final body = item['body'] ?? '';
 
-                          return _buildNotificationItem(
-                            avatarUrl: item['avatarUrl']!,
-                            username: item['username']!,
-                            actionText: item['actionText']!,
-                            timeText: item['timeText']!,
-                            timeAgo: item['timeAgo']!,
-                            isUnread: item['isUnread'] ?? false,
-                            contentWidget: contentWidget,
-                            badgeIcon: item['type'] == 'like' ? Icons.favorite : null,
-                            badgeColor: item['type'] == 'like' ? const Color(0xFF4F46E5) : null,
-                          );
-                        },
-                      );
-                    },
-                  ),
+                                Widget? contentWidget;
+                                if (body.isNotEmpty) {
+                                  contentWidget = Container(
+                                    margin: const EdgeInsets.only(top: 8),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF3F4F6),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      body,
+                                      style: const TextStyle(
+                                        color: Color(0xFF374151),
+                                        fontSize: 14,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                return _buildNotificationItem(
+                                  avatarUrl: senderAvatar,
+                                  username: senderUsername,
+                                  actionText: title,
+                                  timeText: 'Just now',
+                                  timeAgo: 'Just now',
+                                  isUnread: isUnread,
+                                  contentWidget: contentWidget,
+                                  badgeIcon: item['type'] == 'like' ? Icons.favorite : null,
+                                  badgeColor: item['type'] == 'like' ? const Color(0xFF4F46E5) : null,
+                                );
+                              },
+                            ),
                 ),
               ],
             ),
@@ -305,7 +277,9 @@ class NotificationScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: AssetImage(avatarUrl),
+                    image: avatarUrl.startsWith('http')
+                        ? NetworkImage(avatarUrl) as ImageProvider
+                        : AssetImage(avatarUrl),
                     fit: BoxFit.cover,
                   ),
                 ),

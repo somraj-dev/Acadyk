@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../common/services/supabase_service.dart';
 
 class OpportunitiesManager {
   static final ValueNotifier<List<Map<String, dynamic>>> opportunitiesNotifier = ValueNotifier<List<Map<String, dynamic>>>(_defaultOpportunities);
@@ -380,5 +381,17 @@ class OpportunitiesManager {
     final list = List<Map<String, dynamic>>.from(opportunitiesNotifier.value);
     list.insert(0, op);
     opportunitiesNotifier.value = list;
+  }
+
+  static void loadFromSupabase() async {
+    try {
+      final response = await SupabaseService.client
+          .from('events')
+          .select()
+          .order('created_at', ascending: false);
+      opportunitiesNotifier.value = List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error loading opportunities: $e');
+    }
   }
 }

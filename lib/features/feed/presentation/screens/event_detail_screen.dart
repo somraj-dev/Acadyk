@@ -1212,6 +1212,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     final result = await Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => RegistrationFormScreen(
+                          eventId: event['id']?.toString() ?? '',
                           eventTitle: event['title'],
                           logoUrl: event['logoUrl'],
                           organizer: event['organizer'],
