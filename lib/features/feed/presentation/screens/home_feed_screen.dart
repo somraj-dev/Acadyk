@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
+import 'dart:math';
 import 'discover_opportunities_screen.dart';
 import 'select_opportunity_screen.dart';
 import 'company_profile_screen.dart';
@@ -33,10 +34,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // Dynamic feedback and comment state
   final Map<String, bool> _likedPosts = {};
   final Map<String, int> _likesCountOverride = {};
+  final Map<String, bool> _bookmarkedPosts = {};
+  final Map<String, bool> _followedAccounts = {};
+  final Map<String, bool> _newlyFollowedInSession = {};
   final Map<String, bool> _commentsExpanded = {};
   final Map<String, List<Map<String, dynamic>>> _customComments = {};
   final TextEditingController _commentInputCtrl = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
+
+  final List<Map<String, dynamic>> _dynamicReposts = [];
 
   String? _replyingToPostId;
   int? _replyingToCommentIndex;
@@ -181,6 +187,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         child: ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           children: [
+                            // Dynamic reposts from the user
+                            ..._dynamicReposts.map((repost) => _buildDynamicRepostCard(repost)),
+
                             // Post 1: Y Combinator
                             _buildYCPostCard(),
 
@@ -318,27 +327,38 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 color: Color(0xFF191919),
                               ),
                             ),
-                            SizedBox(width: 4),
-                            Icon(Icons.verified, size: 14, color: Color(0xFF5E5E5E)),
+                            const SizedBox(width: 4),
+                            PremiumBadge(type: 'gold'),
                           ],
                         ),
                         Text(
-                          '21h • Edited',
+                          'Startup Supporters',
                           style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
                         ),
                       ],
                     ),
                   ),
                 ),
+                 _buildFollowButton('ycombinator'),
+                 const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: () => _showPostOptionsBottomSheet(context, {
-                    'name': 'Y Combinator',
-                    'avatarText': 'Y',
-                    'avatarColor': const Color(0xFFFF6600),
-                    'dateJoined': 'March 2005',
-                    'location': 'United States',
-                    'sharedFollowers': 24,
-                  }),
+                  onTap: () => _showPostOptionsBottomSheet(
+                    context: context,
+                    postId: 'warp_post',
+                    authorName: 'Y Combinator',
+                    authorHeadline: 'W26 Batch Open',
+                    authorAvatar: 'Y',
+                    postText: 'Warp has raised \$60 million in Series B funding to automate payroll, HR, tax compliance, and employee onboarding.',
+                    postImage: 'assets/images/warp_team.jpg',
+                    accountData: {
+                      'name': 'Y Combinator',
+                      'avatarText': 'Y',
+                      'avatarColor': const Color(0xFFFF6600),
+                      'dateJoined': 'March 2005',
+                      'location': 'United States',
+                      'sharedFollowers': 24,
+                    },
+                  ),
                   child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
                 ),
               ],
@@ -399,10 +419,22 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           const SizedBox(height: 10),
 
           // Image (Warp team)
-          Image.asset(
-            'assets/images/warp_team.jpg',
-            fit: BoxFit.cover,
-            width: double.infinity,
+          InstagrammableImage(
+            onDoubleTap: () {
+              final isLiked = _likedPosts['warp_post'] ?? false;
+              final likesCount = _likesCountOverride['warp_post'] ?? 537;
+              setState(() {
+                if (!isLiked) {
+                  _likedPosts['warp_post'] = true;
+                  _likesCountOverride['warp_post'] = likesCount + 1;
+                }
+              });
+            },
+            child: Image.asset(
+              'assets/images/warp_team.jpg',
+              fit: BoxFit.cover,
+              width: double.infinity,
+            ),
           ),
           const SizedBox(height: 10),
 
@@ -510,8 +542,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 color: Color(0xFF191919),
                               ),
                             ),
-                            SizedBox(width: 4),
-                            Icon(Icons.verified, size: 14, color: Color(0xFF5E5E5E)),
+                            const SizedBox(width: 4),
+                            const PremiumBadge(type: 'silver'),
                           ],
                         ),
                         Text(
@@ -521,7 +553,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          'Hyped',
+                          'News & Media Publisher',
                           style: TextStyle(
                             color: Color(0xFF5E5E5E),
                             fontSize: 11.0,
@@ -532,15 +564,26 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     ),
                   ),
                 ),
+                _buildFollowButton('time'),
+                const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: () => _showPostOptionsBottomSheet(context, {
-                    'name': 'TIME',
-                    'avatarText': 'TIME',
-                    'avatarColor': const Color(0xFFE50914),
-                    'dateJoined': 'October 2010',
-                    'location': 'United States',
-                    'sharedFollowers': 12,
-                  }),
+                  onTap: () => _showPostOptionsBottomSheet(
+                    context: context,
+                    postId: 'time_post',
+                    authorName: 'TIME',
+                    authorHeadline: '2,484,746 followers',
+                    authorAvatar: 'TIME',
+                    postText: 'TIME CEO Jessica Sibley sits down with Alisha Moopen, Managing Director & Group CEO of... more',
+                    postImage: 'assets/images/time_handshake.jpg',
+                    accountData: {
+                      'name': 'TIME',
+                      'avatarText': 'TIME',
+                      'avatarColor': const Color(0xFFE50914),
+                      'dateJoined': 'October 2010',
+                      'location': 'United States',
+                      'sharedFollowers': 12,
+                    },
+                  ),
                   child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
                 ),
               ],
@@ -573,53 +616,65 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           const SizedBox(height: 10),
 
           // Image (TIME video frame with play overlays)
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Image.asset(
-                'assets/images/time_handshake.jpg',
-                fit: BoxFit.cover,
-                width: double.infinity,
-              ),
-              // Center Play button
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  shape: BoxShape.circle,
+          InstagrammableImage(
+            onDoubleTap: () {
+              final isLiked = _likedPosts['time_post'] ?? false;
+              final likesCount = _likesCountOverride['time_post'] ?? 1204;
+              setState(() {
+                if (!isLiked) {
+                  _likedPosts['time_post'] = true;
+                  _likesCountOverride['time_post'] = likesCount + 1;
+                }
+              });
+            },
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Image.asset(
+                  'assets/images/time_handshake.jpg',
+                  fit: BoxFit.cover,
+                  width: double.infinity,
                 ),
-                padding: const EdgeInsets.all(12.0),
-                child: const Icon(Icons.play_arrow, size: 28, color: Colors.white),
-              ),
-              // Top-right video duration overlay
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
+                // Center Play button
+                Container(
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.75),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 2.0),
-                  child: const Text(
-                    '07:35',
-                    style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              // Bottom-right speaker/volume mute overlay
-              Positioned(
-                bottom: 10,
-                right: 10,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
+                    color: Colors.black.withValues(alpha: 0.55),
                     shape: BoxShape.circle,
                   ),
-                  padding: const EdgeInsets.all(5.0),
-                  child: const Icon(Icons.volume_mute, size: 14, color: Colors.white),
+                  padding: const EdgeInsets.all(12.0),
+                  child: const Icon(Icons.play_arrow, size: 28, color: Colors.white),
                 ),
-              ),
-            ],
+                // Top-right video duration overlay
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 2.0),
+                    child: const Text(
+                      '07:35',
+                      style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                // Bottom-right speaker/volume mute overlay
+                Positioned(
+                  bottom: 10,
+                  right: 10,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(5.0),
+                    child: const Icon(Icons.volume_mute, size: 14, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 10),
 
@@ -686,27 +741,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          // Gold LinkedIn premium square icon
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFC5A059),
-                              borderRadius: BorderRadius.circular(1.5),
-                            ),
-                            child: const Text(
-                              'in',
-                              style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold),
-                            ),
-                          ),
+                          const PremiumBadge(type: 'bronze'),
                           const SizedBox(width: 4),
+
                           const Text('• 1st', style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 12)),
                         ],
-                      ),
-                      const Text(
-                        'Co-founder & CEO of Vibe Skills | Plu...',
-                        style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       const Text(
                         'Visit my website',
@@ -717,20 +756,31 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         ),
                       ),
                       const Text(
-                        '1h • ',
+                        'Vibe Skills',
                         style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.0),
                       ),
                     ],
                   ),
                 ),
+                _buildFollowButton('alina'),
+                const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: () => _showPostOptionsBottomSheet(context, {
-                    'name': 'Alina Sprongole',
-                    'avatarUrl': 'assets/images/alina_avatar.jpg',
-                    'dateJoined': 'November 2020',
-                    'location': 'India',
-                    'sharedFollowers': 2,
-                  }),
+                  onTap: () => _showPostOptionsBottomSheet(
+                    context: context,
+                    postId: 'alina_post',
+                    authorName: 'Alina Sprongole',
+                    authorHeadline: 'Co-founder & CEO of Vibe Skills',
+                    authorAvatar: 'assets/images/alina_avatar.jpg',
+                    postText: 'A \$24M seed valuation is a death sentence. Carta just released their Q1 2026 data. The...',
+                    postImage: 'assets/images/valuation_sentence.jpg',
+                    accountData: {
+                      'name': 'Alina Sprongole',
+                      'avatarUrl': 'assets/images/alina_avatar.jpg',
+                      'dateJoined': 'November 2020',
+                      'location': 'India',
+                      'sharedFollowers': 2,
+                    },
+                  ),
                   child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
                 ),
               ],
@@ -764,10 +814,22 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           const SizedBox(height: 10),
 
           // Image (crossed-out valuation poster)
-          Image.asset(
-            'assets/images/valuation_sentence.jpg',
-            fit: BoxFit.cover,
-            width: double.infinity,
+          InstagrammableImage(
+            onDoubleTap: () {
+              final isLiked = _likedPosts['alina_post'] ?? false;
+              final likesCount = _likesCountOverride['alina_post'] ?? 23;
+              setState(() {
+                if (!isLiked) {
+                  _likedPosts['alina_post'] = true;
+                  _likesCountOverride['alina_post'] = likesCount + 1;
+                }
+              });
+            },
+            child: Image.asset(
+              'assets/images/valuation_sentence.jpg',
+              fit: BoxFit.cover,
+              width: double.infinity,
+            ),
           ),
           const SizedBox(height: 10),
 
@@ -912,13 +974,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         ],
                       ),
                       Text(
-                        'Solid business? Your LinkedIn should...',
-                        style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        '14h • ',
+                        'Acadyk',
                         style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.0),
                       ),
                     ],
@@ -955,52 +1011,64 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           const SizedBox(height: 10),
 
           // Image (portrait with double badges overlays)
-          Stack(
-            children: [
-              Image.asset(
-                'assets/images/young_entrepreneur.jpg',
-                fit: BoxFit.cover,
-                width: double.infinity,
-              ),
-              // Bottom-left yellow badge
-              Positioned(
-                bottom: 12,
-                left: 12,
-                child: Container(
-                  color: const Color(0xFFFFF176), // Bright Yellow
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  child: const Text(
-                    'DAY ONE',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11.0,
-                      letterSpacing: 0.5,
+          InstagrammableImage(
+            onDoubleTap: () {
+              final isLiked = _likedPosts['collab_post'] ?? false;
+              final likesCount = _likesCountOverride['collab_post'] ?? 1492;
+              setState(() {
+                if (!isLiked) {
+                  _likedPosts['collab_post'] = true;
+                  _likesCountOverride['collab_post'] = likesCount + 1;
+                }
+              });
+            },
+            child: Stack(
+              children: [
+                Image.asset(
+                  'assets/images/young_entrepreneur.jpg',
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                ),
+                // Bottom-left yellow badge
+                Positioned(
+                  bottom: 12,
+                  left: 12,
+                  child: Container(
+                    color: const Color(0xFFFFF176), // Bright Yellow
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    child: const Text(
+                      'DAY ONE',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11.0,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              // Top-right yellow badge (Money & Power)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  color: const Color(0xFFFFF176), // Bright Yellow
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  child: const Text(
-                    'MONEY &\nPOWER',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10.0,
-                      height: 1.1,
-                      letterSpacing: 0.5,
+                // Top-right yellow badge (Money & Power)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    color: const Color(0xFFFFF176), // Bright Yellow
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    child: const Text(
+                      'MONEY &\nPOWER',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10.0,
+                        height: 1.1,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 10),
 
@@ -1081,14 +1149,25 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     ],
                   ),
                 ),
+                _buildFollowButton('gokul'),
+                const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: () => _showPostOptionsBottomSheet(context, {
-                    'name': 'Gokul Rajaram',
-                    'avatarUrl': 'assets/images/dharmik_avatar.jpg',
-                    'dateJoined': 'Jan 2010',
-                    'location': 'United States',
-                    'sharedFollowers': 50,
-                  }),
+                  onTap: () => _showPostOptionsBottomSheet(
+                    context: context,
+                    postId: 'openai_post',
+                    authorName: 'Rahul Thathoo',
+                    authorHeadline: 'Engineering @ OpenAI',
+                    authorAvatar: 'assets/images/alina_avatar.jpg',
+                    postText: 'Rahul Thathoo: Engineering @ OpenAI. I enjoyed the podcast featuring Nikesh Arora with Harry Stebbings on 20VC...',
+                    postImage: 'assets/images/young_entrepreneur.jpg',
+                    accountData: {
+                      'name': 'Gokul Rajaram',
+                      'avatarUrl': 'assets/images/dharmik_avatar.jpg',
+                      'dateJoined': 'Jan 2010',
+                      'location': 'United States',
+                      'sharedFollowers': 50,
+                    },
+                  ),
                   child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
                 ),
               ],
@@ -1158,21 +1237,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             ],
                           ),
                         ),
-                        // + Follow Button
-                        Row(
-                          children: [
-                            const Icon(Icons.add, color: Color(0xFF0A66C2), size: 20),
-                            const SizedBox(width: 2),
-                            const Text(
-                              'Follow',
-                              style: TextStyle(
-                                color: Color(0xFF0A66C2),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.0,
-                              ),
-                            ),
-                          ],
-                        ),
+                        _buildFollowButton('rahul'),
                       ],
                     ),
                   ),
@@ -1211,15 +1276,27 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   const SizedBox(height: 12),
 
                   // Inner Image
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(8.0),
-                      bottomRight: Radius.circular(8.0),
-                    ),
-                    child: Image.asset(
-                      'assets/images/young_entrepreneur.jpg',
-                      fit: BoxFit.cover,
-                      width: double.infinity,
+                  InstagrammableImage(
+                    onDoubleTap: () {
+                      final isLiked = _likedPosts['openai_post'] ?? false;
+                      final likesCount = _likesCountOverride['openai_post'] ?? 892;
+                      setState(() {
+                        if (!isLiked) {
+                          _likedPosts['openai_post'] = true;
+                          _likesCountOverride['openai_post'] = likesCount + 1;
+                        }
+                      });
+                    },
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(8.0),
+                        bottomRight: Radius.circular(8.0),
+                      ),
+                      child: Image.asset(
+                        'assets/images/young_entrepreneur.jpg',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                      ),
                     ),
                   ),
                 ],
@@ -1253,6 +1330,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }) {
     final isLiked = _likedPosts[postId] ?? false;
     final likesCount = _likesCountOverride[postId] ?? defaultLikes;
+    final isBookmarked = _bookmarkedPosts[postId] ?? false;
     
     // Dynamic comments count calculation
     final commentsList = _customComments[postId];
@@ -1338,7 +1416,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               ),
             ],
           ),
-          const Icon(CupertinoIcons.bookmark, size: 24, color: Colors.black87),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _bookmarkedPosts[postId] = !isBookmarked;
+              });
+            },
+            child: Icon(
+              isBookmarked ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
+              size: 24,
+              color: isBookmarked ? const Color(0xFF1E88E5) : Colors.black87,
+            ),
+          ),
         ],
       ),
     );
@@ -1723,15 +1812,19 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           if (_replyingToPostId == postId && _replyingToCommentIndex != null) {
                             final parentComment = comments[_replyingToCommentIndex!];
                             final reps = parentComment['replies'] as List;
+                            final replyText = (_replyingToName != null && _replyingToName != parentComment['name'])
+                                ? '$_replyingToName $text'
+                                : text;
                             reps.add({
                               'name': 'Somraj lodhi',
                               'headline': 'Founder & Builder @ Acadyk',
                               'avatar': 'assets/images/somraj_avatar.jpg',
                               'timeText': 'Just now',
-                              'body': text,
+                              'body': replyText,
                               'likes': 0,
                               'hasLiked': false,
                             });
+                            _customComments[postId] = comments;
                             _replyingToPostId = null;
                             _replyingToCommentIndex = null;
                             _replyingToName = null;
@@ -1768,15 +1861,19 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       if (_replyingToPostId == postId && _replyingToCommentIndex != null) {
                         final parentComment = comments[_replyingToCommentIndex!];
                         final reps = parentComment['replies'] as List;
+                        final replyText = (_replyingToName != null && _replyingToName != parentComment['name'])
+                            ? '$_replyingToName $text'
+                            : text;
                         reps.add({
                           'name': 'Somraj lodhi',
                           'headline': 'Founder & Builder @ Acadyk',
                           'avatar': 'assets/images/somraj_avatar.jpg',
                           'timeText': 'Just now',
-                          'body': text,
+                          'body': replyText,
                           'likes': 0,
                           'hasLiked': false,
                         });
+                        _customComments[postId] = comments;
                         _replyingToPostId = null;
                         _replyingToCommentIndex = null;
                         _replyingToName = null;
@@ -1852,7 +1949,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // POST OPTIONS BOTTOM SHEET
   // -------------------------------------------------------------
 
-  void _showPostOptionsBottomSheet(BuildContext context, Map<String, dynamic> accountData) {
+  void _showPostOptionsBottomSheet({
+    required BuildContext context,
+    required String postId,
+    required String authorName,
+    required String authorHeadline,
+    required String authorAvatar,
+    required String postText,
+    required String? postImage,
+    required Map<String, dynamic> accountData,
+  }) {
+    final isSaved = _bookmarkedPosts[postId] ?? false;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white, // Bright theme matching the app
@@ -1880,9 +1988,50 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildTopActionIcon(CupertinoIcons.bookmark, 'Save'),
-                    _buildTopActionIcon(CupertinoIcons.repeat, 'Repost'),
-                    _buildTopActionIcon(CupertinoIcons.qrcode_viewfinder, 'QR code'),
+                    _buildTopActionIcon(
+                      isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
+                      'Save',
+                      color: isSaved ? const Color(0xFF1E88E5) : Colors.black,
+                      onTap: () {
+                        setState(() {
+                          _bookmarkedPosts[postId] = !isSaved;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                    _buildTopActionIcon(
+                      CupertinoIcons.repeat,
+                      'Repost',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RepostScreen(
+                              postId: postId,
+                              authorName: authorName,
+                              authorHeadline: authorHeadline,
+                              authorAvatar: authorAvatar,
+                              postText: postText,
+                              postImage: postImage,
+                            ),
+                          ),
+                        ).then((result) {
+                          if (result != null && result is Map<String, dynamic>) {
+                            setState(() {
+                              _dynamicReposts.insert(0, result);
+                            });
+                          }
+                        });
+                      },
+                    ),
+                    _buildTopActionIcon(
+                      CupertinoIcons.qrcode_viewfinder,
+                      'QR code',
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -1906,6 +2055,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       const SizedBox(height: 20),
                       _buildListAction(CupertinoIcons.exclamationmark_bubble, 'Report', color: const Color(0xFFED4956), onTap: () {
                         Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ReportPostScreen(),
+                          ),
+                        );
                       }),
                       const SizedBox(height: 8),
                     ],
@@ -1919,24 +2074,28 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     );
   }
 
-  Widget _buildTopActionIcon(IconData icon, String label) {
-    return Column(
-      children: [
-        Container(
-          width: 65,
-          height: 65,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF2F2F2), // Light grey for blocks
-            borderRadius: BorderRadius.circular(18), // Slightly less rounded
+  Widget _buildTopActionIcon(IconData icon, String label, {Color color = Colors.black, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        children: [
+          Container(
+            width: 65,
+            height: 65,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2F2F2), // Light grey for blocks
+              borderRadius: BorderRadius.circular(18), // Slightly less rounded
+            ),
+            child: Icon(icon, color: color, size: 28),
           ),
-          child: Icon(icon, color: Colors.black, size: 28),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w400),
-        ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w400),
+          ),
+        ],
+      ),
     );
   }
 
@@ -2086,7 +2245,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         children: [
           // Home
           GestureDetector(
-            onTap: () => setState(() => _activeTab = 0),
+            onTap: () => setState(() {
+              _activeTab = 0;
+              _newlyFollowedInSession.clear();
+            }),
             child: Icon(
               CupertinoIcons.house,
               color: _activeTab == 0 ? Colors.black : const Color(0xFF737373),
@@ -2095,7 +2257,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           ),
           // Search
           GestureDetector(
-            onTap: () => setState(() => _activeTab = 1),
+            onTap: () => setState(() {
+              _activeTab = 1;
+              _newlyFollowedInSession.clear();
+            }),
             child: Icon(
               CupertinoIcons.search,
               color: _activeTab == 1 ? Colors.black : const Color(0xFF737373),
@@ -2116,6 +2281,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           // Message/Chat
           GestureDetector(
             onTap: () {
+              setState(() {
+                _newlyFollowedInSession.clear();
+              });
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const MessageCenterScreen()),
               );
@@ -2140,7 +2308,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               avatarAsset: 'assets/images/somraj_avatar.jpg',
               radius: 13.5,
               enableTapToViewStory: false,
-              onDefaultTap: () => setState(() => _activeTab = 4),
+              onDefaultTap: () => setState(() {
+                _activeTab = 4;
+                _newlyFollowedInSession.clear();
+              }),
             ),
           ),
 
@@ -2371,6 +2542,247 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFollowButton(String accountId) {
+    final isFollowed = _followedAccounts[accountId] ?? false;
+    final isNewlyFollowed = _newlyFollowedInSession[accountId] ?? false;
+
+    if (isFollowed && !isNewlyFollowed) {
+      return const SizedBox.shrink();
+    }
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (isFollowed) {
+            _followedAccounts[accountId] = false;
+            _newlyFollowedInSession[accountId] = false;
+          } else {
+            _followedAccounts[accountId] = true;
+            _newlyFollowedInSession[accountId] = true;
+          }
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isFollowed ? const Color(0xFFE5E7EB) : const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(16),
+          border: isFollowed ? Border.all(color: const Color(0xFFD1D5DB)) : null,
+        ),
+        child: Text(
+          isFollowed ? 'Following' : 'Follow',
+          style: TextStyle(
+            color: isFollowed ? Colors.black87 : Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDynamicRepostCard(Map<String, dynamic> repost) {
+    final postId = '${repost['postId']}_repost';
+    final hasImage = repost['postImage'] != null;
+
+    return Container(
+      color: Colors.white,
+      margin: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Outer Header (Reposter)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/somraj_avatar.jpg'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Somraj lodhi',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.0,
+                              color: Color(0xFF191919),
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '• You',
+                            style: TextStyle(
+                              color: Color(0xFF5E5E5E),
+                              fontSize: 13.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        'Founder & Builder @ Acadyk',
+                        style: TextStyle(
+                          color: Color(0xFF5E5E5E),
+                          fontSize: 12.0,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Reposter Text / Comment
+          if (repost['comment'] != null && (repost['comment'] as String).isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Text(
+                repost['comment'],
+                style: const TextStyle(color: Color(0xFF191919), fontSize: 15.0, height: 1.3),
+              ),
+            ),
+          const SizedBox(height: 12),
+
+          // Inner Card (Original Post)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 1.0),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Inner Header
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: repost['authorAvatar'].startsWith('assets') ? Colors.transparent : const Color(0xFF0A66C2),
+                            shape: BoxShape.circle,
+                            image: repost['authorAvatar'].startsWith('assets')
+                                ? DecorationImage(
+                                    image: AssetImage(repost['authorAvatar']),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: repost['authorAvatar'].startsWith('assets')
+                              ? null
+                              : Text(
+                                  repost['authorAvatar'],
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                repost['authorName'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13.0,
+                                  color: Color(0xFF191919),
+                                ),
+                              ),
+                              Text(
+                                repost['authorHeadline'],
+                                style: const TextStyle(
+                                  color: Color(0xFF5E5E5E),
+                                  fontSize: 11.5,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Inner Text
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: Text(
+                      repost['postText'],
+                      style: const TextStyle(color: Color(0xFF191919), fontSize: 13.0, height: 1.4),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Inner Image (if preview was not removed)
+                  if (hasImage && repost['showImage'] != false)
+                    InstagrammableImage(
+                      onDoubleTap: () {
+                        final isLiked = _likedPosts[postId] ?? false;
+                        final likesCount = _likesCountOverride[postId] ?? 0;
+                        setState(() {
+                          if (!isLiked) {
+                            _likedPosts[postId] = true;
+                            _likesCountOverride[postId] = likesCount + 1;
+                          }
+                        });
+                      },
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(8.0),
+                          bottomRight: Radius.circular(8.0),
+                        ),
+                        child: Image.asset(
+                          repost['postImage'],
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Action/Engagement row
+          _buildPostActionRow(
+            postId: postId,
+            defaultLikes: 0,
+            defaultComments: 0,
+          ),
+          if (_commentsExpanded[postId] == true) ...[
+            _buildCommentsSection(postId),
+          ],
+        ],
       ),
     );
   }
@@ -2808,4 +3220,927 @@ class _ReplyThreadPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+class InstagrammableImage extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onDoubleTap;
+
+  const InstagrammableImage({
+    super.key,
+    required this.child,
+    required this.onDoubleTap,
+  });
+
+  @override
+  State<InstagrammableImage> createState() => _InstagrammableImageState();
+}
+
+class _InstagrammableImageState extends State<InstagrammableImage> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _showHeart = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 0.0, end: 1.2).chain(CurveTween(curve: Curves.easeOut)), weight: 40),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.2, end: 1.0).chain(CurveTween(curve: Curves.easeIn)), weight: 20),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.0).chain(CurveTween(curve: Curves.linear)), weight: 20),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeIn)), weight: 20),
+    ]).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleDoubleTap() {
+    widget.onDoubleTap();
+    setState(() {
+      _showHeart = true;
+    });
+    _controller.reset();
+    _controller.forward().then((_) {
+      if (mounted) {
+        setState(() {
+          _showHeart = false;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onDoubleTap: _handleDoubleTap,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          widget.child,
+          if (_showHeart)
+            AnimatedBuilder(
+              animation: _scaleAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: const Icon(
+                    CupertinoIcons.heart_fill,
+                    color: Colors.white,
+                    size: 80,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black45,
+                        blurRadius: 12,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+}
+
+class RepostScreen extends StatefulWidget {
+  final String postId;
+  final String authorName;
+  final String authorHeadline;
+  final String authorAvatar;
+  final String postText;
+  final String? postImage;
+
+  const RepostScreen({
+    super.key,
+    required this.postId,
+    required this.authorName,
+    required this.authorHeadline,
+    required this.authorAvatar,
+    required this.postText,
+    this.postImage,
+  });
+
+  @override
+  State<RepostScreen> createState() => _RepostScreenState();
+}
+
+class _RepostScreenState extends State<RepostScreen> {
+  final TextEditingController _commentCtrl = TextEditingController();
+  bool _showPreview = true;
+
+  @override
+  void dispose() {
+    _commentCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: Colors.white,
+            child: Column(
+              children: [
+                // 1. Top Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.black87, size: 28),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D8BF2),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context, {
+                            'postId': widget.postId,
+                            'authorName': widget.authorName,
+                            'authorHeadline': widget.authorHeadline,
+                            'authorAvatar': widget.authorAvatar,
+                            'postText': widget.postText,
+                            'postImage': widget.postImage,
+                            'comment': _commentCtrl.text,
+                            'showImage': _showPreview,
+                          });
+                        },
+                        child: const Text(
+                          'Repost',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: Color(0xFFECECE8)),
+
+                // 2. Content (Input and Preview)
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16.0),
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // User Avatar
+                          const CircleAvatar(
+                            radius: 20,
+                            backgroundImage: AssetImage('assets/images/somraj_avatar.jpg'),
+                          ),
+                          const SizedBox(width: 12),
+                          // Text Input
+                          Expanded(
+                            child: TextField(
+                              controller: _commentCtrl,
+                              maxLines: null,
+                              decoration: const InputDecoration(
+                                hintText: 'Add a comment...',
+                                hintStyle: TextStyle(color: Color(0xFF9CA3AF), fontSize: 16.0),
+                                border: InputBorder.none,
+                                isDense: true,
+                              ),
+                              style: const TextStyle(fontSize: 16.0, color: Colors.black),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Post Preview Container
+                      if (_showPreview)
+                        Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: const Color(0xFFE0E0E0), width: 1.0),
+                                borderRadius: BorderRadius.circular(12.0),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Original author details
+                                  Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: widget.authorAvatar.startsWith('assets') ? Colors.transparent : const Color(0xFF0A66C2),
+                                            shape: BoxShape.circle,
+                                            image: widget.authorAvatar.startsWith('assets')
+                                                ? DecorationImage(
+                                                    image: AssetImage(widget.authorAvatar),
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : null,
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: widget.authorAvatar.startsWith('assets')
+                                              ? null
+                                              : Text(
+                                                  widget.authorAvatar,
+                                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                                ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                widget.authorName,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13.0,
+                                                  color: Color(0xFF191919),
+                                                ),
+                                              ),
+                                              Text(
+                                                widget.authorHeadline,
+                                                style: const TextStyle(
+                                                  color: Color(0xFF5E5E5E),
+                                                  fontSize: 11.5,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Original post text
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                                    child: Text(
+                                      widget.postText,
+                                      style: const TextStyle(color: Color(0xFF191919), fontSize: 13.0, height: 1.4),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+
+                                  // Original post image
+                                  if (widget.postImage != null)
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.only(
+                                        bottomLeft: Radius.circular(12.0),
+                                        bottomRight: Radius.circular(12.0),
+                                      ),
+                                      child: Image.asset(
+                                        widget.postImage!,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            
+                            // Top-right grey X close button
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _showPreview = false;
+                                  });
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: const Icon(Icons.close, color: Colors.white, size: 16),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+
+                // 3. Bottom controls
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Divider(height: 1, color: Color(0xFFECECE8)),
+                    
+                    // Reply permission option
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Row(
+                        children: const [
+                          Icon(CupertinoIcons.globe, color: Color(0xFF0D8BF2), size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            'Everyone can reply',
+                            style: TextStyle(
+                              color: Color(0xFF0D8BF2),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: Color(0xFFECECE8)),
+
+                    // Bottom icons row
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(CupertinoIcons.photo, color: Color(0xFF0D8BF2), size: 22),
+                              SizedBox(width: 20),
+                              Icon(Icons.gif_box_outlined, color: Color(0xFF0D8BF2), size: 22),
+                              SizedBox(width: 20),
+                              Icon(CupertinoIcons.list_bullet, color: Color(0xFF0D8BF2), size: 22),
+                              SizedBox(width: 20),
+                              Icon(CupertinoIcons.location, color: Color(0xFF0D8BF2), size: 22),
+                              SizedBox(width: 20),
+                              Icon(CupertinoIcons.flag, color: Color(0xFF0D8BF2), size: 20),
+                            ],
+                          ),
+                          Row(
+                            children: const [
+                              Icon(CupertinoIcons.circle, color: Color(0xFFE5E7EB), size: 22),
+                              SizedBox(width: 16),
+                              Icon(CupertinoIcons.add_circled, color: Color(0xFF0D8BF2), size: 22),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumBadge extends StatelessWidget {
+  final String type; // 'gold', 'silver', 'bronze'
+  final double size;
+
+  const PremiumBadge({
+    super.key,
+    required this.type,
+    this.size = 18,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color outerColor;
+    Color innerColor;
+    Color crownColor;
+    List<Color> gradientColors;
+
+    if (type == 'gold') {
+      outerColor = const Color(0xFFFFB300);
+      innerColor = const Color(0xFFFFD54F);
+      crownColor = const Color(0xFFE65100);
+      gradientColors = [
+        const Color(0xFFFFD700),
+        const Color(0xFFFFA000),
+      ];
+    } else if (type == 'silver') {
+      outerColor = const Color(0xFF78909C);
+      innerColor = const Color(0xFFB0BEC5);
+      crownColor = const Color(0xFF37474F);
+      gradientColors = [
+        const Color(0xFFECEFF1),
+        const Color(0xFF90A4AE),
+      ];
+    } else { // bronze
+      outerColor = const Color(0xFF8D6E63);
+      innerColor = const Color(0xFFBCAAA4);
+      crownColor = const Color(0xFF4E342E);
+      gradientColors = [
+        const Color(0xFFD7CCC8),
+        const Color(0xFF8D6E63),
+      ];
+    }
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: outerColor.withValues(alpha: 0.3),
+            blurRadius: 4,
+            spreadRadius: 0.5,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: CustomPaint(
+        painter: _HexagonBadgePainter(
+          outerColor: outerColor,
+          innerColor: innerColor,
+          crownColor: crownColor,
+          gradientColors: gradientColors,
+        ),
+      ),
+    );
+  }
+}
+
+class _HexagonBadgePainter extends CustomPainter {
+  final Color outerColor;
+  final Color innerColor;
+  final Color crownColor;
+  final List<Color> gradientColors;
+
+  const _HexagonBadgePainter({
+    required this.outerColor,
+    required this.innerColor,
+    required this.crownColor,
+    required this.gradientColors,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final w = size.width;
+    final h = size.height;
+    final radius = size.width / 2;
+
+    // Draw base shadow
+    final shadowPath = _getHexagonPath(center, radius);
+    canvas.drawShadow(shadowPath, Colors.black.withValues(alpha: 0.15), 2.0, true);
+
+    // 1. Outer Hexagon (Bevel Edge)
+    final outerPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          outerColor.withValues(alpha: 0.5),
+          crownColor.withValues(alpha: 0.3),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(shadowPath, outerPaint);
+
+    // 2. Middle Hexagon (Main body)
+    final midHexagonPath = _getHexagonPath(center, radius * 0.9);
+    final midPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: gradientColors,
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(midHexagonPath, midPaint);
+
+    // 3. Inner Hexagon (Well defined border inset)
+    final innerHexagonPath = _getHexagonPath(center, radius * 0.76);
+    final innerBorderPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.25)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawPath(innerHexagonPath, innerBorderPaint);
+
+    // Inner background
+    final innerPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          gradientColors[0].withValues(alpha: 0.8),
+          gradientColors[1].withValues(alpha: 0.95),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(innerHexagonPath, innerPaint);
+
+    // 4. Glossy Highlight Overlay (Glass Reflection Effect)
+    final glossPath = Path();
+    glossPath.moveTo(w * 0.1, h * 0.5);
+    glossPath.lineTo(w * 0.5, h * 0.1);
+    glossPath.lineTo(w * 0.9, h * 0.5);
+    glossPath.arcToPoint(Offset(w * 0.1, h * 0.5), radius: Radius.circular(radius * 0.8), clockwise: false);
+    glossPath.close();
+
+    final glossPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: 0.45),
+          Colors.white.withValues(alpha: 0.0),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(glossPath, glossPaint);
+
+    // 5. Stylized Detailed Crown and V inside
+    final crownPath = Path();
+    crownPath.moveTo(w * 0.30, h * 0.62);
+    crownPath.lineTo(w * 0.24, h * 0.44); // left tip
+    crownPath.lineTo(w * 0.38, h * 0.50);
+    crownPath.lineTo(w * 0.50, h * 0.38); // center tip
+    crownPath.lineTo(w * 0.62, h * 0.50);
+    crownPath.lineTo(w * 0.76, h * 0.44); // right tip
+    crownPath.lineTo(w * 0.70, h * 0.62);
+    crownPath.close();
+
+    final crownPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: 0.95),
+          Colors.white.withValues(alpha: 0.7),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(crownPath, crownPaint);
+
+    // Crown Base Band
+    final bandPath = Path();
+    bandPath.moveTo(w * 0.32, h * 0.65);
+    bandPath.lineTo(w * 0.68, h * 0.65);
+    bandPath.lineTo(w * 0.66, h * 0.68);
+    bandPath.lineTo(w * 0.34, h * 0.68);
+    bandPath.close();
+    canvas.drawPath(bandPath, crownPaint);
+
+    // Draw 'V' text inside
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'V',
+        style: TextStyle(
+          color: crownColor,
+          fontSize: size.width * 0.22,
+          fontWeight: FontWeight.w900,
+          fontFamily: 'Roboto',
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height * 0.38),
+    );
+
+    // Tips
+    final tipPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(w * 0.24, h * 0.44), w * 0.045, tipPaint);
+    canvas.drawCircle(Offset(w * 0.50, h * 0.38), w * 0.045, tipPaint);
+    canvas.drawCircle(Offset(w * 0.76, h * 0.44), w * 0.045, tipPaint);
+  }
+
+  Path _getHexagonPath(Offset center, double radius) {
+    final path = Path();
+    for (int i = 0; i < 6; i++) {
+      final angle = (i * 60 - 30) * (3.1415926535 / 180);
+      final x = center.dx + radius * cos(angle);
+      final y = center.dy + radius * sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class ReportPostScreen extends StatefulWidget {
+  const ReportPostScreen({super.key});
+
+  @override
+  State<ReportPostScreen> createState() => _ReportPostScreenState();
+}
+
+class _ReportPostScreenState extends State<ReportPostScreen> {
+  int _currentStep = 0; // 0: Select reason, 1: Submit review
+  String? _selectedReason;
+  bool _receiveUpdates = false;
+
+  final List<String> reasons = const [
+    'Harassment',
+    'Fraud or scam',
+    'Spam',
+    'Misinformation',
+    'Hateful speech',
+    'Threats or violence',
+    'Self-harm',
+    'Graphic content',
+    'Dangerous or extremist organizations',
+    'Sexual content',
+    'Fake account',
+    'Hacked account',
+    'Child exploitation',
+    'Restricted goods and services',
+    'Nonconsensual intimate imagery',
+  ];
+
+  final Map<String, String> reasonDescriptions = const {
+    'Harassment': 'Content that insults, defames, bullies, or harasses individuals.',
+    'Fraud or scam': 'Content that promotes fake financial opportunities, scams, or fraudulent services.',
+    'Spam': 'Repetitive, unsolicited, or low-quality commercial content.',
+    'Misinformation': 'Inaccurate, false, or misleading claims that cause public harm.',
+    'Hateful speech': 'Content that attacks or incites hatred against groups based on protected characteristics.',
+    'Threats or violence': 'Direct statements of intent to commit acts of violence against people or property.',
+    'Self-harm': 'Encouraging, depicting, or providing instructions on suicide or self-injury.',
+    'Graphic content': 'Excessively violent, bloody, or disturbing media.',
+    'Dangerous or extremist organizations': 'Promoting terror groups, violent extremism, or hate organizations.',
+    'Sexual content': 'Explicit imagery, sexual solicitation, or pornography.',
+    'Fake account': 'Accounts pretending to be someone else or using false details.',
+    'Hacked account': 'Accounts displaying signs of unauthorized access or takeovers.',
+    'Child exploitation': 'Depicting, promoting, or facilitating harm against children.',
+    'Restricted goods and services': 'Content that attempts to sell restricted or regulated goods and services, including solicitation of escort services, prostitution and content that depicts and/or promotes sex trafficking or human trafficking',
+    'Nonconsensual intimate imagery': 'Sharing intimate photos or videos without the consent of the subject.',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+                  child: Row(
+                    children: [
+                      // Back arrow (only visible on step 1)
+                      if (_currentStep == 1)
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 28),
+                          onPressed: () {
+                            setState(() {
+                              _currentStep = 0;
+                            });
+                          },
+                        )
+                      else
+                        const SizedBox(width: 48), // Balances the close icon
+                      
+                      const Expanded(
+                        child: Text(
+                          'Report this post',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF191919),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.black87, size: 28),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: Color(0xFFECECE8)),
+
+                // 2. Content
+                Expanded(
+                  child: _currentStep == 0 ? _buildReasonSelectionView() : _buildSubmitReviewView(),
+                ),
+
+                // 3. Bottom persistent button
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0D8BF2),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    onPressed: _currentStep == 0
+                        ? (_selectedReason != null ? () => setState(() => _currentStep = 1) : null)
+                        : _submitReport,
+                    child: Text(
+                      _currentStep == 0 ? 'Next' : 'Submit report',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReasonSelectionView() {
+    return ListView(
+      padding: const EdgeInsets.all(20.0),
+      children: [
+        const Text(
+          'Select your reporting reason',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF191919),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        Wrap(
+          spacing: 10,
+          runSpacing: 12,
+          children: reasons.map((reason) {
+            final isSelected = _selectedReason == reason;
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedReason = reason;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF007A5A) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFF007A5A) : const Color(0xFFCCCCCC),
+                    width: 1.0,
+                  ),
+                ),
+                child: Text(
+                  reason,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected ? Colors.white : const Color(0xFF191919),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubmitReviewView() {
+    final description = reasonDescriptions[_selectedReason ?? ''] ?? '';
+
+    return ListView(
+      padding: const EdgeInsets.all(20.0),
+      children: [
+        const Text(
+          "You're requesting a policy review for this reason",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF191919),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Grey box card
+        Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F2EF),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _selectedReason ?? '',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF191919),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF5E5E5E),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        const Text(
+          'Want to follow the status of your report?',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF191919),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Checkbox row
+        Row(
+          children: [
+            Checkbox(
+              value: _receiveUpdates,
+              activeColor: const Color(0xFF0D8BF2),
+              onChanged: (val) {
+                setState(() {
+                  _receiveUpdates = val ?? false;
+                });
+              },
+            ),
+            const Expanded(
+              child: Text(
+                'Receive updates on this report',
+                style: TextStyle(fontSize: 15, color: Color(0xFF191919)),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _submitReport() {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: const [
+            Icon(Icons.check_circle_outline, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Thank you! We received your report.'),
+          ],
+        ),
+        backgroundColor: const Color(0xFF262626),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+}
+
 

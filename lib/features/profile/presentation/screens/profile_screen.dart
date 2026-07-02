@@ -111,13 +111,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // =============================================
                       _buildProjectsSection(),
 
-                      const SizedBox(height: 8),
-
-                      // =============================================
-                      // SECTION 9: Skills
-                      // =============================================
-                      _buildSkillsSection(),
-
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -359,16 +352,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Icon(Icons.verified, size: 20, color: Color(0xFF1DA1F2)), // Blue Twitter verification check
                   ],
                 ),
-                const SizedBox(height: 2),
-
-                // Username
-                Text(
-                  username,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: textSecondary,
-                  ),
-                ),
                 const SizedBox(height: 12),
 
                 // Bio
@@ -464,13 +447,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-
-                // Mutual followed by sub-label
-                const Text(
-                  'Not followed by anyone you’re following',
-                  style: TextStyle(color: textSecondary, fontSize: 13),
-                ),
               ],
             ),
           ),
@@ -494,17 +470,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'About',
+                'Summary',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
               ),
-              Container(
-                width: 32, height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.transparent),
-                ),
-                child: const Icon(Icons.edit, size: 20, color: Color(0xFF5E5E5E)),
-              ),
+              const SizedBox.shrink(),
             ],
           ),
           const SizedBox(height: 12),
@@ -542,13 +511,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Row(
               children: [
                 const Text(
-                  'Featured',
+                  'Listed',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
                 ),
                 const Spacer(),
-                const Icon(Icons.add, size: 24, color: Color(0xFF5E5E5E)),
-                const SizedBox(width: 16),
-                const Icon(Icons.edit, size: 20, color: Color(0xFF5E5E5E)),
               ],
             ),
           ),
@@ -876,9 +842,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               const Text('Experience', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
               const Spacer(),
-              const Icon(Icons.add, size: 24, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 16),
-              const Icon(Icons.edit, size: 20, color: Color(0xFF5E5E5E)),
             ],
           ),
           const SizedBox(height: 16),
@@ -944,9 +907,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               const Text('Education', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
               const Spacer(),
-              const Icon(Icons.add, size: 24, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 16),
-              const Icon(Icons.edit, size: 20, color: Color(0xFF5E5E5E)),
             ],
           ),
           const SizedBox(height: 16),
@@ -1081,18 +1041,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               const Text('Projects (3)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
               const Spacer(),
-              const Icon(Icons.add, size: 24, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 16),
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const CreateStartupScreen(),
-                    ),
-                  );
-                },
-                child: const Icon(Icons.edit, size: 20, color: Color(0xFF5E5E5E)),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -1226,9 +1174,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               const Text('Skills', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
               const Spacer(),
-              const Icon(Icons.add, size: 24, color: Color(0xFF5E5E5E)),
-              const SizedBox(width: 16),
-              const Icon(Icons.edit, size: 20, color: Color(0xFF5E5E5E)),
             ],
           ),
           const SizedBox(height: 16),

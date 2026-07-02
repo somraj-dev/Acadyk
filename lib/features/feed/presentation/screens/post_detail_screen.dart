@@ -28,6 +28,7 @@ class PostDetailScreen extends StatefulWidget {
 class _PostDetailScreenState extends State<PostDetailScreen> {
   bool _isPostLiked = false;
   int _postLikesCount = 537;
+  bool _isPostBookmarked = false;
 
   // Replying state
   int? _replyingToCommentIndex;
@@ -191,18 +192,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 4),
-                                      // Premium badge
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFC5A059),
-                                          borderRadius: BorderRadius.circular(1.5),
-                                        ),
-                                        child: const Text(
-                                          'in',
-                                          style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
+
                                       if (widget.connectionDegree != null) ...[
                                         const SizedBox(width: 4),
                                         Text(
@@ -389,7 +379,18 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 ),
                               ],
                             ),
-                            const Icon(CupertinoIcons.bookmark, size: 24, color: Colors.black87),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isPostBookmarked = !_isPostBookmarked;
+                                });
+                              },
+                              child: Icon(
+                                _isPostBookmarked ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
+                                size: 24,
+                                color: _isPostBookmarked ? const Color(0xFF1E88E5) : Colors.black87,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -529,13 +530,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                         if (_replyingToCommentIndex != null) {
                                           final parentComment = _comments[_replyingToCommentIndex!];
                                           final replies = parentComment['replies'] as List;
+                                          final replyText = (_replyingToName != null && _replyingToName != parentComment['name'])
+                                              ? '$_replyingToName $text'
+                                              : text;
                                           replies.add({
                                             'name': 'Somraj lodhi',
                                             'headline': 'Founder & Builder @ Acadyk',
                                             'avatar': 'assets/images/somraj_avatar.jpg',
                                             'timeAgo': 'Just now',
                                             'connectionDegree': '1st',
-                                            'body': text,
+                                            'body': replyText,
                                             'likes': 0,
                                             'hasLiked': false,
                                           });
@@ -572,13 +576,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     if (_replyingToCommentIndex != null) {
                                       final parentComment = _comments[_replyingToCommentIndex!];
                                       final replies = parentComment['replies'] as List;
+                                      final replyText = (_replyingToName != null && _replyingToName != parentComment['name'])
+                                          ? '$_replyingToName $text'
+                                          : text;
                                       replies.add({
                                         'name': 'Somraj lodhi',
                                         'headline': 'Founder & Builder @ Acadyk',
                                         'avatar': 'assets/images/somraj_avatar.jpg',
                                         'timeAgo': 'Just now',
                                         'connectionDegree': '1st',
-                                        'body': text,
+                                        'body': replyText,
                                         'likes': 0,
                                         'hasLiked': false,
                                       });
@@ -693,14 +700,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFC5A059),
-                            borderRadius: BorderRadius.circular(1.5),
-                          ),
-                          child: const Text('in', style: TextStyle(color: Colors.white, fontSize: 7.5, fontWeight: FontWeight.bold)),
-                        ),
+
                         if (connectionDegree != null) ...[
                           const SizedBox(width: 4),
                           Text('• $connectionDegree', style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E))),
@@ -906,12 +906,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       children: [
                                         Flexible(
                                           child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF191919)), overflow: TextOverflow.ellipsis),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                                          decoration: BoxDecoration(color: const Color(0xFFC5A059), borderRadius: BorderRadius.circular(1.5)),
-                                          child: const Text('in', style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold)),
                                         ),
                                         if (connectionDegree != null) ...[
                                           const SizedBox(width: 4),
