@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:acadyk/common/providers/auth_provider.dart';
 import '../../../../common/widgets/logo_widget.dart';
 import '../../../../common/widgets/google_logo.dart';
+import '../../../../common/widgets/github_logo.dart';
 import '../../../feed/presentation/screens/home_feed_screen.dart';
 import '../../../../common/services/supabase_service.dart';
 
@@ -244,18 +245,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 36.0),
 
                 _buildSocialButton(
-                  logo: const GoogleLogo(size: 20.0, transparent: true),
-                  text: 'Login with Google',
+                  logo: const GitHubLogo(size: 20.0),
+                  text: 'Login with GitHub',
                   onTap: () async {
                     try {
                       await SupabaseService.client.auth.signInWithOAuth(
-                        OAuthProvider.google,
+                        OAuthProvider.github,
                         redirectTo: 'io.supabase.acadyk://login-callback/',
                       );
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Google login error: $e')),
+                          SnackBar(content: Text('GitHub login error: $e')),
                         );
                       }
                     }
