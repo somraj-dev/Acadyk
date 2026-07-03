@@ -70,6 +70,7 @@ class AuthProvider extends ChangeNotifier {
         }
       } catch (_) {}
     }
+    notifyListeners();
   }
 
   Future<void> refreshProfile() async {
