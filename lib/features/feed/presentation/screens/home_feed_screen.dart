@@ -51,6 +51,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   String? _replyingToName;
 
   List<Map<String, dynamic>> _supabasePosts = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -65,6 +66,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       if (mounted) {
         setState(() {
           _supabasePosts = posts;
+          _isLoading = false;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
         });
       }
     }
@@ -238,7 +246,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         child: ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           children: [
-                            if (_supabasePosts.isEmpty)
+                            if (_isLoading)
                               Container(
                                 padding: const EdgeInsets.symmetric(vertical: 40),
                                 alignment: Alignment.center,
@@ -249,6 +257,27 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                     Text(
                                       'Loading feed...',
                                       style: TextStyle(color: Color(0xFF5E5E5E)),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else if (_supabasePosts.isEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 16),
+                                alignment: Alignment.center,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.feed_outlined, size: 64, color: Colors.grey.shade400),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      'No posts in feed yet',
+                                      style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Be the first to share an update!',
+                                      style: TextStyle(color: Color(0xFF8E8E8E), fontSize: 14),
                                     ),
                                   ],
                                 ),
@@ -264,6 +293,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ] else if (_activeTab == 1) ...[
                     const Expanded(
                       child: DiscoverOpportunitiesScreen(),
+                    ),
+                  ] else if (_activeTab == 3) ...[
+                    const Expanded(
+                      child: MessageCenterScreen(),
                     ),
                   ] else if (_activeTab == 4) ...[
                     const Expanded(
@@ -2379,11 +2412,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           GestureDetector(
             onTap: () {
               setState(() {
+                _activeTab = 3;
                 _newlyFollowedInSession.clear();
               });
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const MessageCenterScreen()),
-              );
             },
             child: Icon(
               CupertinoIcons.ellipses_bubble,

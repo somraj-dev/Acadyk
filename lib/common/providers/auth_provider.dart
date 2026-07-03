@@ -45,13 +45,23 @@ class AuthProvider extends ChangeNotifier {
     } else {
       try {
         final email = _currentUser?.email ?? 'user@example.com';
-        final username = email.split('@')[0].replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toLowerCase() + '_' + userId.substring(0, 6);
-        final name = _currentUser?.userMetadata?['full_name'] ?? email.split('@')[0];
+        final meta = _currentUser?.userMetadata ?? {};
+        
+        // Extract real username from OAuth metadata (GitHub nickname/user_name)
+        String username = meta['user_name'] ?? meta['preferred_username'] ?? '';
+        if (username.trim().isEmpty) {
+          username = email.split('@')[0].replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '').toLowerCase();
+        }
+        
+        final name = meta['full_name'] ?? meta['name'] ?? email.split('@')[0];
+        final avatar = meta['avatar_url'] ?? '';
+
         final newProfile = {
           'id': userId,
           'email': email,
           'full_name': name,
           'username': username,
+          'profile_photo_url': avatar,
         };
         await ProfileService.createProfile(newProfile);
         final createdData = await ProfileService.getProfile(userId);
