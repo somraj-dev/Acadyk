@@ -28,6 +28,15 @@ class ProfileService {
     }
   }
 
+  static Future<void> createProfile(Map<String, dynamic> data) async {
+    try {
+      if (!SupabaseService.hasValidCredentials) return;
+      await SupabaseService.client.from('profiles').insert(data);
+    } catch (e) {
+      print('Error creating profile: $e');
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> searchProfiles(String query) async {
     try {
       if (!SupabaseService.hasValidCredentials) return [];

@@ -42,6 +42,23 @@ class AuthProvider extends ChangeNotifier {
     final profileData = await ProfileService.getProfile(userId);
     if (profileData != null) {
       _currentProfile = ProfileModel.fromJson(profileData);
+    } else {
+      try {
+        final email = _currentUser?.email ?? 'user@example.com';
+        final username = email.split('@')[0].replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toLowerCase() + '_' + userId.substring(0, 6);
+        final name = _currentUser?.userMetadata?['full_name'] ?? email.split('@')[0];
+        final newProfile = {
+          'id': userId,
+          'email': email,
+          'full_name': name,
+          'username': username,
+        };
+        await ProfileService.createProfile(newProfile);
+        final createdData = await ProfileService.getProfile(userId);
+        if (createdData != null) {
+          _currentProfile = ProfileModel.fromJson(createdData);
+        }
+      } catch (_) {}
     }
   }
 
