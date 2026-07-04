@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'settings_activity_screen.dart';
+import '../services/profile_manager.dart';
 import 'about_account_screen.dart';
 import '../../../feed/presentation/screens/create_startup_screen.dart';
 import '../../../chat/presentation/screens/direct_message_screen.dart';
@@ -132,10 +133,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _profilePhotoUrl;
   String? _coverPhotoUrl;
 
+  void _onProfileUpdated() {
+    if (mounted) {
+      setState(() {
+        _profileName = ProfileManager.name;
+        _profileBio = ProfileManager.bio;
+        _profileLocation = ProfileManager.location;
+        _profilePhotoUrl = ProfileManager.avatarUrl;
+        _coverPhotoUrl = ProfileManager.bannerUrl;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _loadProfileData();
+    ProfileManager.profileUpdateNotifier.addListener(_onProfileUpdated);
+  }
+
+  @override
+  void dispose() {
+    ProfileManager.profileUpdateNotifier.removeListener(_onProfileUpdated);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _loadProfileData() async {
@@ -146,11 +167,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _profilePhotoUrl = widget.userData!['avatar'];
       _coverPhotoUrl = widget.userData!['cover_photo_url'];
     } else {
-      _profileName = widget.isOwnProfile ? 'Somraj Lodhi' : 'Tanuj';
+      _profileName = widget.isOwnProfile ? ProfileManager.name : 'ImTanujSingh';
       _profileBio = widget.isOwnProfile 
-          ? 'Founder | Thinker | Quant Engineer. Covering worldwide action. DM for collabs.' 
+          ? ProfileManager.bio 
           : 'Cricket enthusiast 🇮🇳 🏏 Covering worldwide action. Sharing news and passionate commentary on every match. DM for collabs.';
-      _profileLocation = 'India';
+      _profileLocation = widget.isOwnProfile ? ProfileManager.location : 'India';
+      _profilePhotoUrl = widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/young_entrepreneur.jpg';
+      _coverPhotoUrl = widget.isOwnProfile ? ProfileManager.bannerUrl : 'assets/images/young_entrepreneur.jpg';
     }
 
     try {
@@ -261,21 +284,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfileHeaderCard() {
     // Resolve dynamic values based on userData or defaults
-    final String name = _profileName ?? (widget.isOwnProfile ? 'Somraj Lodhi' : 'Tanuj');
+    final String name = _profileName ?? (widget.isOwnProfile ? ProfileManager.name : 'ImTanujSingh');
 
     final String username = widget.userData != null 
         ? '@${widget.userData!['name'].toString().replaceAll(' ', '')}' 
-        : (widget.isOwnProfile ? '@SomrajLodhi' : '@ImTanujSingh');
+        : (widget.isOwnProfile ? '@${ProfileManager.name.replaceAll(' ', '')}' : '@ImTanujSingh');
 
     final String bio = _profileBio ?? (widget.isOwnProfile 
-        ? 'Founder | Thinker | Quant Engineer. Covering worldwide action. DM for collabs.' 
+        ? ProfileManager.bio 
         : 'Cricket enthusiast 🇮🇳 🏏 Covering worldwide action. Sharing news and passionate commentary on every match. DM for collabs.');
 
-    final String location = _profileLocation ?? 'India';
+    final String location = _profileLocation ?? (widget.isOwnProfile ? ProfileManager.location : 'India');
 
     final String avatar = widget.userData != null 
         ? widget.userData!['avatar'] 
-        : (widget.isOwnProfile ? 'assets/images/somraj_avatar.jpg' : 'assets/images/young_entrepreneur.jpg');
+        : (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/young_entrepreneur.jpg');
 
     const Color textColor = Color(0xFF0F1419);
     const Color textSecondary = Color(0xFF536471);
@@ -325,7 +348,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       image: DecorationImage(
                         image: (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty)
                             ? NetworkImage(_coverPhotoUrl!) as ImageProvider
-                            : const AssetImage('assets/images/team_celebration_banner.png'),
+                            : (widget.isOwnProfile ? AssetImage(ProfileManager.bannerUrl) : const AssetImage('assets/images/team_celebration_banner.png')) as ImageProvider,
                         fit: BoxFit.cover,
                       ),
                     ),

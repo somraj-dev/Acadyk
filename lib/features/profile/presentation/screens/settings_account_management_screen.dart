@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'settings_edit_profile_screen.dart';
 
 class SettingsAccountManagementScreen extends StatefulWidget {
   const SettingsAccountManagementScreen({super.key});
@@ -60,6 +61,11 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                 _buildSectionHeader('Your account'),
                 _buildPinterestTile(
                   title: 'Personal information',
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsEditProfileScreen()),
+                    );
+                  },
                 ),
                 _buildEmailTile(
                   title: 'Email address',
