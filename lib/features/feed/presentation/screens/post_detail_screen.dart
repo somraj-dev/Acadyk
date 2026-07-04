@@ -112,30 +112,64 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   void _loadRealComments() async {
     final dbComments = await PostService.getComments(widget.post!['id'].toString());
     if (mounted) {
-      setState(() {
-        _comments = dbComments.map((c) {
-          final author = c['profiles'] as Map<String, dynamic>? ?? {};
-          return {
-            'id': c['id'].toString(),
+      final topLevelList = dbComments.where((c) => c['parent_id'] == null).map((c) {
+        final author = c['profiles'] as Map<String, dynamic>? ?? {};
+        return {
+          'id': c['id'].toString(),
+          'name': author['full_name'] ?? 'Acadyk User',
+          'isAuthor': author['id'] == widget.post!['user_id'],
+          'headline': author['bio'] ?? 'Member',
+          'avatar': author['profile_photo_url'],
+          'timeAgo': 'Just now',
+          'connectionDegree': '1st',
+          'body': c['content'] ?? '',
+          'likes': c['likes_count'] ?? 0,
+          'hasLiked': false,
+          'replies': <Map<String, dynamic>>[],
+        };
+      }).toList();
+
+      final replyList = dbComments.where((c) => c['parent_id'] != null);
+      for (final reply in replyList) {
+        final parentId = reply['parent_id'].toString();
+        final author = reply['profiles'] as Map<String, dynamic>? ?? {};
+        final parentIndex = topLevelList.indexWhere((c) => c['id'] == parentId);
+        if (parentIndex != -1) {
+          (topLevelList[parentIndex]['replies'] as List).add({
+            'id': reply['id'].toString(),
             'name': author['full_name'] ?? 'Acadyk User',
-            'isAuthor': author['id'] == widget.post!['user_id'],
             'headline': author['bio'] ?? 'Member',
             'avatar': author['profile_photo_url'],
             'timeAgo': 'Just now',
-            'connectionDegree': null,
-            'body': c['content'] ?? '',
-            'likes': c['likes_count'] ?? 0,
+            'connectionDegree': '1st',
+            'body': reply['content'] ?? '',
+            'likes': reply['likes_count'] ?? 0,
             'hasLiked': false,
-            'replies': <Map<String, dynamic>>[],
-          };
-        }).toList();
+          });
+        }
+      }
+
+      setState(() {
+        _comments = topLevelList;
       });
     }
   }
 
   void _submitComment(String text) async {
     if (widget.post != null) {
-      await PostService.addComment(widget.post!['id'].toString(), text);
+      String? parentId;
+      if (_replyingToCommentIndex != null) {
+        parentId = _comments[_replyingToCommentIndex!]['id']?.toString();
+      }
+      final replyText = (_replyingToName != null && _replyingToCommentIndex != null && _replyingToName != _comments[_replyingToCommentIndex!]['name'])
+          ? '$_replyingToName $text'
+          : text;
+
+      await PostService.addComment(widget.post!['id'].toString(), replyText, parentId: parentId);
+      setState(() {
+        _replyingToCommentIndex = null;
+        _replyingToName = null;
+      });
       _loadRealComments();
     } else {
       setState(() {

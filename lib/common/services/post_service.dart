@@ -92,17 +92,22 @@ class PostService {
     }
   }
 
-  static Future<Map<String, dynamic>?> addComment(String postId, String content) async {
+  static Future<Map<String, dynamic>?> addComment(String postId, String content, {String? parentId}) async {
     try {
       if (!SupabaseService.hasValidCredentials) return null;
       final userId = SupabaseService.client.auth.currentUser?.id;
       if (userId == null) return null;
 
-      return await SupabaseService.client.from('comments').insert({
+      final Map<String, dynamic> data = {
         'post_id': postId,
         'user_id': userId,
         'content': content,
-      }).select('*, profiles(*)').single();
+      };
+      if (parentId != null) {
+        data['parent_id'] = parentId;
+      }
+
+      return await SupabaseService.client.from('comments').insert(data).select('*, profiles(*)').single();
     } catch (e) {
       print('Error adding comment: $e');
       return null;
