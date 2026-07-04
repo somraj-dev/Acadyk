@@ -1,6 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'settings_about_me_screen.dart';
+import 'settings_resume_screen.dart';
+import 'settings_education_screen.dart';
+import 'settings_work_experience_screen.dart';
+import '../../../feed/presentation/screens/create_startup_screen.dart';
 
 class SettingsProfileVisibilityScreen extends StatefulWidget {
   const SettingsProfileVisibilityScreen({super.key});
@@ -177,7 +182,11 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                   description: 'Narrate your professional journey and fast-track your way to new career heights!',
                   actionLabel: 'Add Work Experience',
                   painter: const WorkExperiencePainter(),
-                  onActionTap: () {},
+                  onActionTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsWorkExperienceScreen()),
+                    );
+                  },
                 ),
                 _buildDivider(),
 
@@ -187,7 +196,11 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                   description: 'Showcase your academic journey and open doors to your dream career opportunities!',
                   actionLabel: 'Add Education',
                   painter: const EducationPainter(),
-                  onActionTap: () {},
+                  onActionTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsEducationScreen()),
+                    );
+                  },
                 ),
                 _buildDivider(),
 
@@ -217,7 +230,11 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                   description: 'Unveil your projects to the world and pave your path to professional greatness!',
                   actionLabel: 'Add Project',
                   painter: const ProjectsPainter(),
-                  onActionTap: () {},
+                  onActionTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const CreateStartupScreen()),
+                    );
+                  },
                 ),
                 _buildDivider(),
 
@@ -321,7 +338,21 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                           elevation: 0,
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          if (index == 0) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const SettingsEducationScreen()),
+                            );
+                          } else if (index == 1) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const SettingsResumeScreen()),
+                            );
+                          } else if (index == 2) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const SettingsAboutMeScreen()),
+                            );
+                          }
+                        },
                         child: Text(
                           item.buttonText,
                           style: const TextStyle(
@@ -405,11 +436,11 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Left details
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'About',
                   style: TextStyle(
                     fontSize: 17,
@@ -417,8 +448,8 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                     color: Color(0xFF191919),
                   ),
                 ),
-                SizedBox(height: 8),
-                Text(
+                const SizedBox(height: 8),
+                const Text(
                   'Craft an engaging story in your bio and make meaningful connections with peers and recruiters alike!',
                   style: TextStyle(
                     fontSize: 13.0,
@@ -426,13 +457,20 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                     height: 1.35,
                   ),
                 ),
-                SizedBox(height: 12),
-                Text(
-                  'Add About',
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    color: Color(0xFF0095F6),
-                    fontWeight: FontWeight.bold,
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsAboutMeScreen()),
+                    );
+                  },
+                  child: const Text(
+                    'Add About',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      color: Color(0xFF0095F6),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -477,11 +515,11 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Left Content
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Add your Resume & get your profile filled in a click!',
                       style: TextStyle(
                         fontSize: 14.5,
@@ -490,8 +528,8 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                         height: 1.3,
                       ),
                     ),
-                    SizedBox(height: 6),
-                    Text(
+                    const SizedBox(height: 6),
+                    const Text(
                       'Adding your Resume helps you to tell who you are and what makes you different—to employers and recruiters',
                       style: TextStyle(
                         fontSize: 12.5,
@@ -499,13 +537,20 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                         height: 1.35,
                       ),
                     ),
-                    SizedBox(height: 12),
-                    Text(
-                      'Upload Resume',
-                      style: TextStyle(
-                        fontSize: 14.0,
-                        color: Color(0xFF0095F6),
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const SettingsResumeScreen()),
+                        );
+                      },
+                      child: const Text(
+                        'Upload Resume',
+                        style: TextStyle(
+                          fontSize: 14.0,
+                          color: Color(0xFF0095F6),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
