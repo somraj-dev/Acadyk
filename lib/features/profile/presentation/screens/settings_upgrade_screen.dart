@@ -45,13 +45,19 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
     final String monthlyRenewal = _activeTab == 0 ? '₹470.00' : '₹940.00';
     final String annualPrice = _activeTab == 0 ? '₹4,700.00' : '₹9,400.00';
 
+    const Color bgColor = Colors.white;
+    const Color cardBgColor = Color(0xFFF7F7F9);
+    const Color textColor = Color(0xFF191919);
+    const Color secondaryTextColor = Color(0xFF5E5E5E);
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: bgColor,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white, size: 24),
+          icon: const Icon(Icons.close, color: textColor, size: 24),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Row(
@@ -66,7 +72,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                   Text(
                     'Premium',
                     style: TextStyle(
-                      color: _activeTab == 0 ? Colors.white : Colors.grey,
+                      color: _activeTab == 0 ? textColor : secondaryTextColor,
                       fontSize: 16.0,
                       fontWeight: FontWeight.bold,
                     ),
@@ -75,7 +81,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                   Container(
                     height: 2,
                     width: 70,
-                    color: _activeTab == 0 ? Colors.white : Colors.transparent,
+                    color: _activeTab == 0 ? textColor : Colors.transparent,
                   ),
                 ],
               ),
@@ -89,7 +95,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                   Text(
                     'Premium+',
                     style: TextStyle(
-                      color: _activeTab == 1 ? Colors.white : Colors.grey,
+                      color: _activeTab == 1 ? textColor : secondaryTextColor,
                       fontSize: 16.0,
                       fontWeight: FontWeight.bold,
                     ),
@@ -98,7 +104,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                   Container(
                     height: 2,
                     width: 80,
-                    color: _activeTab == 1 ? Colors.white : Colors.transparent,
+                    color: _activeTab == 1 ? textColor : Colors.transparent,
                   ),
                 ],
               ),
@@ -107,7 +113,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
         ),
         centerTitle: true,
         actions: const [
-          SizedBox(width: 48), // balance leading chevron
+          SizedBox(width: 48), // balance leading close icon
         ],
       ),
       body: SafeArea(
@@ -123,8 +129,9 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                 Container(
                   padding: const EdgeInsets.all(16.0),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF161618),
+                    color: cardBgColor,
                     borderRadius: BorderRadius.circular(16.0),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
                   child: Column(
                     children: features.map((feature) {
@@ -132,20 +139,20 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Row(
                           children: [
-                            Icon(feature['icon'] as IconData, color: Colors.white, size: 20),
+                            Icon(feature['icon'] as IconData, color: textColor, size: 20),
                             const SizedBox(width: 14),
                             Expanded(
                               child: Text(
                                 feature['title'] as String,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: textColor,
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
                             if (feature['info'] == true)
-                              const Icon(Icons.info_outline, color: Colors.grey, size: 16),
+                              const Icon(Icons.info_outline, color: secondaryTextColor, size: 16),
                           ],
                         ),
                       );
@@ -165,10 +172,10 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(14.0),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF161618),
+                            color: cardBgColor,
                             borderRadius: BorderRadius.circular(12.0),
                             border: Border.all(
-                              color: _selectedPlan == 0 ? Colors.white : Colors.transparent,
+                              color: _selectedPlan == 0 ? textColor : Colors.transparent,
                               width: 1.5,
                             ),
                           ),
@@ -181,7 +188,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                                   const Text(
                                     'Monthly',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: textColor,
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -189,7 +196,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                                   Text(
                                     '50% off',
                                     style: TextStyle(
-                                      color: Colors.blue[400],
+                                      color: Colors.blue[700],
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -200,7 +207,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                               Text(
                                 '$monthlyPrice for 2 months',
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: textColor,
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -209,7 +216,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                               Text(
                                 'Then $monthlyRenewal / month',
                                 style: const TextStyle(
-                                  color: Colors.grey,
+                                  color: secondaryTextColor,
                                   fontSize: 11.5,
                                 ),
                               ),
@@ -226,10 +233,10 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(14.0),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF161618),
+                            color: cardBgColor,
                             borderRadius: BorderRadius.circular(12.0),
                             border: Border.all(
-                              color: _selectedPlan == 1 ? Colors.white : Colors.transparent,
+                              color: _selectedPlan == 1 ? textColor : Colors.transparent,
                               width: 1.5,
                             ),
                           ),
@@ -239,7 +246,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                               const Text(
                                 'Annual',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: textColor,
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -248,7 +255,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                               Text(
                                 '$annualPrice / year',
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: textColor,
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -280,8 +287,8 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
+                      backgroundColor: textColor,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24.0),
                       ),
@@ -306,7 +313,7 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                         ? 'Renews at $monthlyRenewal/month until cancelled'
                         : 'Renews at $annualPrice/year until cancelled',
                     style: const TextStyle(
-                      color: Colors.grey,
+                      color: secondaryTextColor,
                       fontSize: 12.0,
                     ),
                   ),
@@ -318,23 +325,23 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
                 Container(
                   padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade900),
+                    border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                   child: RichText(
                     textAlign: TextAlign.center,
                     text: TextSpan(
-                      style: const TextStyle(color: Colors.grey, fontSize: 11.0, height: 1.4),
+                      style: const TextStyle(color: secondaryTextColor, fontSize: 11.0, height: 1.4),
                       children: [
                         const TextSpan(text: 'By subscribing, you agree to our '),
                         TextSpan(
                           text: 'Purchaser Terms',
-                          style: TextStyle(color: Colors.blue[400], decoration: TextDecoration.underline),
+                          style: TextStyle(color: Colors.blue[700], decoration: TextDecoration.underline),
                         ),
                         const TextSpan(text: ', and that subscriptions auto-renew until you cancel. '),
                         TextSpan(
                           text: 'Cancel anytime',
-                          style: TextStyle(color: Colors.blue[400], decoration: TextDecoration.underline),
+                          style: TextStyle(color: Colors.blue[700], decoration: TextDecoration.underline),
                         ),
                         const TextSpan(
                           text: ', at least 24 hours prior to renewal to avoid additional charges. Price subject to change. Manage your subscription through the platform you subscribed on.',
