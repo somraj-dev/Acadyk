@@ -2822,73 +2822,92 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             const SizedBox(height: 12),
             Image.network(image, fit: BoxFit.cover, height: 240, width: double.infinity),
           ],
-          const SizedBox(height: 12),
-          // Reaction counters
+          // Reaction action row (Instagram/curated style)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
             child: Row(
               children: [
-                const Icon(CupertinoIcons.heart_fill, color: Colors.redAccent, size: 14),
-                const SizedBox(width: 4),
-                Text('$likesCount', style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 12.0)),
+                GestureDetector(
+                  onTap: () async {
+                    setState(() {
+                      _bookmarkedPosts[postId] = !isLiked;
+                    });
+                    try {
+                      if (SupabaseService.hasValidCredentials) {
+                        final userId = SupabaseService.client.auth.currentUser?.id;
+                        if (userId != null) {
+                          if (isLiked) {
+                            await SupabaseService.client
+                                .from('likes')
+                                .delete()
+                                .match({'user_id': userId, 'post_id': postId});
+                          } else {
+                            await SupabaseService.client
+                                .from('likes')
+                                .insert({'user_id': userId, 'post_id': postId});
+                          }
+                        }
+                      }
+                    } catch (_) {}
+                  },
+                  child: Row(
+                    children: [
+                      Icon(
+                        isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+                        color: isLiked ? Colors.red : Colors.black87,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${isLiked ? likesCount + 1 : likesCount}',
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF191919)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PostDetailScreen(
+                          authorName: authorName,
+                          authorHeadline: authorHeadline,
+                          authorAvatar: authorAvatar != null && authorAvatar.isNotEmpty
+                              ? authorAvatar
+                              : 'assets/images/somraj_avatar.jpg',
+                          timeAgo: 'Just now',
+                          postText: content,
+                          post: post,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(
+                        CupertinoIcons.chat_bubble,
+                        color: Colors.black87,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '$commentsCount',
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF191919)),
+                      ),
+                    ],
+                  ),
+                ),
                 const Spacer(),
-                Text('$commentsCount comments', style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 12.0)),
+                const Icon(
+                  CupertinoIcons.bookmark,
+                  color: Colors.black87,
+                  size: 24,
+                ),
               ],
             ),
           ),
-          const Divider(height: 20, color: Color(0xFFE0E0E0)),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              IconButton(
-                icon: Icon(isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart, color: isLiked ? Colors.red : Colors.black54),
-                onPressed: () async {
-                  setState(() {
-                    _bookmarkedPosts[postId] = !isLiked;
-                  });
-                  try {
-                    if (SupabaseService.hasValidCredentials) {
-                      final userId = SupabaseService.client.auth.currentUser?.id;
-                      if (userId != null) {
-                        if (isLiked) {
-                          await SupabaseService.client
-                              .from('likes')
-                              .delete()
-                              .match({'user_id': userId, 'post_id': postId});
-                        } else {
-                          await SupabaseService.client
-                              .from('likes')
-                              .insert({'user_id': userId, 'post_id': postId});
-                        }
-                      }
-                    }
-                  } catch (_) {}
-                },
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PostDetailScreen(
-                        authorName: authorName,
-                        authorHeadline: authorHeadline,
-                        authorAvatar: authorAvatar != null && authorAvatar.isNotEmpty
-                            ? authorAvatar
-                            : 'assets/images/somraj_avatar.jpg',
-                        timeAgo: 'Just now',
-                        postText: content,
-                        post: post,
-                      ),
-                    ),
-                  );
-                },
-                child: const Icon(CupertinoIcons.chat_bubble, color: Colors.black54),
-              ),
-              const Icon(CupertinoIcons.repeat, color: Colors.black54),
-              const Icon(CupertinoIcons.paperplane, color: Colors.black54),
-            ],
-          )
         ],
       ),
     );
