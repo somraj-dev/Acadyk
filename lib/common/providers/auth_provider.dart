@@ -51,12 +51,12 @@ class AuthProvider extends ChangeNotifier {
       createdAt: DateTime.now().toIso8601String(),
     );
 
-    final mockProfile = ProfileModel(
-      id: 'mock-dev-user-id-999',
-      email: 'developer@acadyk.com',
-      fullName: 'Somraj Lodhi',
-      username: 'somraj-dev',
-    );
+    final mockProfile = ProfileModel.fromJson({
+      'id': 'mock-dev-user-id-999',
+      'email': 'developer@acadyk.com',
+      'full_name': 'Somraj Lodhi',
+      'username': 'somraj-dev',
+    });
 
     _currentUser = mockUser;
     _currentProfile = mockProfile;
