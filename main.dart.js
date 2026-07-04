@@ -53283,7 +53283,7 @@ $1(a){return B.J1},
 $S:161}
 A.aIx.prototype={
 $1(a){var s=null,r=t.p,q=this.a
-return A.cf(!0,new A.Y(B.Vm,A.N(A.a([A.cj(B.y,A.a([new A.cx(B.bX,s,s,A.br(s,s,B.a0h,s,s,new A.aIt(a),s,s,s),s),B.arR],r),B.w,B.ag,s),B.b9,A.q(A.a([q.Jf(a,B.XO,"Pin",new A.aIu(a)),q.Jf(a,B.Xv,"Collage",new A.aIv(a)),q.Jf(a,B.XS,"Board",new A.aIw(a))],r),B.i,B.h1,B.c,0)],r),B.i,B.d,B.a_),s),B.G,!0)},
+return A.cf(!0,new A.Y(B.Vm,A.N(A.a([A.cj(B.y,A.a([new A.cx(B.bX,s,s,A.br(s,s,B.a0h,s,s,new A.aIt(a),s,s,s),s),B.arR],r),B.w,B.ag,s),B.b9,A.q(A.a([q.Jf(a,B.XO,"Post",new A.aIu(a)),q.Jf(a,B.Xv,"Event",new A.aIv(a)),q.Jf(a,B.XS,"Board",new A.aIw(a))],r),B.i,B.h1,B.c,0)],r),B.i,B.d,B.a_),s),B.G,!0)},
 $S:77}
 A.aIt.prototype={
 $0(){A.a7(this.a,!1).b6(null)
