@@ -36,15 +36,13 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 480),
             color: bgColor,
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
               children: [
                 _buildVisibilitySection(
                   title: 'Skills',
                   description: 'Spotlight your unique skills and catch the eye of recruiters looking for your exact talents!',
                   actionLabel: 'Add Skills',
-                  icon: Icons.psychology_outlined,
-                  color: Colors.blue.shade100,
-                  iconColor: Colors.blue.shade800,
+                  painter: const SkillsPainter(),
                   onActionTap: () {},
                 ),
                 _buildDivider(),
@@ -52,9 +50,7 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   title: 'Work Experience',
                   description: 'Narrate your professional journey and fast-track your way to new career heights!',
                   actionLabel: 'Add Work Experience',
-                  icon: Icons.business_center_outlined,
-                  color: Colors.orange.shade100,
-                  iconColor: Colors.orange.shade800,
+                  painter: const WorkExperiencePainter(),
                   onActionTap: () {},
                 ),
                 _buildDivider(),
@@ -62,9 +58,7 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   title: 'Education',
                   description: 'Showcase your academic journey and open doors to your dream career opportunities!',
                   actionLabel: 'Add Education',
-                  icon: Icons.school_outlined,
-                  color: Colors.green.shade100,
-                  iconColor: Colors.green.shade800,
+                  painter: const EducationPainter(),
                   onActionTap: () {},
                 ),
                 _buildDivider(),
@@ -72,9 +66,7 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   title: 'Responsibilities',
                   description: "Highlight the responsibilities you've mastered to demonstrate your leadership and expertise!",
                   actionLabel: 'Add Responsibility',
-                  icon: Icons.groups_outlined,
-                  color: Colors.purple.shade100,
-                  iconColor: Colors.purple.shade800,
+                  painter: const ResponsibilitiesPainter(),
                   onActionTap: () {},
                 ),
                 _buildDivider(),
@@ -82,9 +74,7 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   title: 'Certificate',
                   description: "Flaunt your certifications and show recruiters that you're a step ahead in your field!",
                   actionLabel: 'Add Certificate',
-                  icon: Icons.card_membership_outlined,
-                  color: Colors.teal.shade100,
-                  iconColor: Colors.teal.shade800,
+                  painter: const CertificatePainter(),
                   onActionTap: () {},
                 ),
                 _buildDivider(),
@@ -92,9 +82,7 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   title: 'Projects',
                   description: 'Unveil your projects to the world and pave your path to professional greatness!',
                   actionLabel: 'Add Project',
-                  icon: Icons.account_tree_outlined,
-                  color: Colors.indigo.shade100,
-                  iconColor: Colors.indigo.shade800,
+                  painter: const ProjectsPainter(),
                   onActionTap: () {},
                 ),
                 _buildDivider(),
@@ -102,9 +90,7 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   title: 'Achievements',
                   description: 'Broadcast your triumphs and make a remarkable impression on industry leaders!',
                   actionLabel: 'Add Achievement',
-                  icon: Icons.emoji_events_outlined,
-                  color: Colors.amber.shade100,
-                  iconColor: Colors.amber.shade800,
+                  painter: const AchievementsPainter(),
                   onActionTap: () {},
                 ),
                 const SizedBox(height: 32),
@@ -120,15 +106,13 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
     required String title,
     required String description,
     required String actionLabel,
-    required IconData icon,
-    required Color color,
-    required Color iconColor,
+    required CustomPainter painter,
     required VoidCallback onActionTap,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 24.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Left details
           Expanded(
@@ -138,49 +122,40 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 17,
+                    fontSize: 16.5,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF191919),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   description,
                   style: const TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 13.0,
                     color: Color(0xFF737373),
-                    height: 1.4,
+                    height: 1.35,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 InkWell(
                   onTap: onActionTap,
                   child: Text(
                     actionLabel,
                     style: const TextStyle(
-                      fontSize: 14.5,
+                      fontSize: 14.0,
                       color: Color(0xFF0095F6),
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          // Right illustration/icon container
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              icon,
-              size: 36,
-              color: iconColor,
-            ),
+          const SizedBox(width: 24),
+          // Right sketch illustration
+          CustomPaint(
+            size: const Size(80, 80),
+            painter: painter,
           ),
         ],
       ),
@@ -193,4 +168,308 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
       color: Color(0xFFEFEFEF),
     );
   }
+}
+
+// -------------------------------------------------------------
+// LINE-ART DRAWING CUSTOM PAINTERS (Matching the images exactly)
+// -------------------------------------------------------------
+
+class SkillsPainter extends CustomPainter {
+  const SkillsPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black45
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+
+    // Draw Board/Screen
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(size.width * 0.1, size.height * 0.1, size.width * 0.6, size.height * 0.5),
+        const Radius.circular(4),
+      ),
+      paint,
+    );
+
+    // Draw Board content lines
+    canvas.drawLine(Offset(size.width * 0.2, size.height * 0.25), Offset(size.width * 0.5, size.height * 0.25), paint);
+    canvas.drawLine(Offset(size.width * 0.2, size.height * 0.4), Offset(size.width * 0.4, size.height * 0.4), paint);
+
+    // Draw Stand
+    canvas.drawLine(Offset(size.width * 0.4, size.height * 0.6), Offset(size.width * 0.4, size.height * 0.75), paint);
+    canvas.drawLine(Offset(size.width * 0.25, size.height * 0.75), Offset(size.width * 0.55, size.height * 0.75), paint);
+
+    // Draw simple line-art figure pointing
+    canvas.drawCircle(Offset(size.width * 0.75, size.height * 0.35), 6, paint); // Head
+    // Body & Arm pointing to board
+    final path = Path()
+      ..moveTo(size.width * 0.75, size.height * 0.43)
+      ..lineTo(size.width * 0.75, size.height * 0.75) // spine
+      ..moveTo(size.width * 0.75, size.height * 0.48)
+      ..lineTo(size.width * 0.55, size.height * 0.38) // arm pointing
+      ..moveTo(size.width * 0.75, size.height * 0.48)
+      ..lineTo(size.width * 0.88, size.height * 0.55); // other arm
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class WorkExperiencePainter extends CustomPainter {
+  const WorkExperiencePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black45
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+
+    // Draw Briefcase outline
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(size.width * 0.1, size.height * 0.25, size.width * 0.8, size.height * 0.5),
+        const Radius.circular(6),
+      ),
+      paint,
+    );
+
+    // Briefcase handle
+    final path = Path()
+      ..moveTo(size.width * 0.38, size.height * 0.25)
+      ..quadraticBezierTo(size.width * 0.38, size.height * 0.13, size.width * 0.5, size.height * 0.13)
+      ..quadraticBezierTo(size.width * 0.62, size.height * 0.13, size.width * 0.62, size.height * 0.25);
+    canvas.drawPath(path, paint);
+
+    // Clasp details & strap lines
+    canvas.drawRect(Rect.fromLTWH(size.width * 0.44, size.height * 0.45, size.width * 0.12, size.height * 0.1), paint);
+    canvas.drawLine(Offset(size.width * 0.28, size.height * 0.25), Offset(size.width * 0.28, size.height * 0.75), paint);
+    canvas.drawLine(Offset(size.width * 0.72, size.height * 0.25), Offset(size.width * 0.72, size.height * 0.75), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class EducationPainter extends CustomPainter {
+  const EducationPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black45
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+
+    // Stack of Books
+    // Top Book
+    canvas.drawRect(Rect.fromLTWH(size.width * 0.15, size.height * 0.22, size.width * 0.65, size.height * 0.12), paint);
+    canvas.drawLine(Offset(size.width * 0.15, size.height * 0.28), Offset(size.width * 0.1, size.height * 0.28), paint);
+
+    // Middle Book
+    canvas.drawRect(Rect.fromLTWH(size.width * 0.2, size.height * 0.38, size.width * 0.65, size.height * 0.12), paint);
+    canvas.drawLine(Offset(size.width * 0.2, size.height * 0.44), Offset(size.width * 0.15, size.height * 0.44), paint);
+
+    // Bottom Book
+    canvas.drawRect(Rect.fromLTWH(size.width * 0.12, size.height * 0.54, size.width * 0.72, size.height * 0.13), paint);
+    canvas.drawLine(Offset(size.width * 0.12, size.height * 0.60), Offset(size.width * 0.06, size.height * 0.60), paint);
+
+    // Bookmark/Ribbon hanging down
+    final ribbon = Path()
+      ..moveTo(size.width * 0.65, size.height * 0.34)
+      ..lineTo(size.width * 0.65, size.height * 0.78)
+      ..lineTo(size.width * 0.7, size.height * 0.73)
+      ..lineTo(size.width * 0.75, size.height * 0.78)
+      ..lineTo(size.width * 0.75, size.height * 0.34);
+    canvas.drawPath(ribbon, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class ResponsibilitiesPainter extends CustomPainter {
+  const ResponsibilitiesPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black45
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+
+    // Head 1
+    canvas.drawCircle(Offset(size.width * 0.3, size.height * 0.3), 6, paint);
+    // Body 1
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width * 0.3, size.height * 0.38)
+        ..lineTo(size.width * 0.3, size.height * 0.75)
+        ..moveTo(size.width * 0.3, size.height * 0.45)
+        ..lineTo(size.width * 0.48, size.height * 0.52),
+      paint,
+    );
+
+    // Head 2
+    canvas.drawCircle(Offset(size.width * 0.65, size.height * 0.38), 6, paint);
+    // Body 2
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width * 0.65, size.height * 0.46)
+        ..lineTo(size.width * 0.65, size.height * 0.8)
+        ..moveTo(size.width * 0.65, size.height * 0.52)
+        ..lineTo(size.width * 0.48, size.height * 0.52),
+      paint,
+    );
+
+    // Checkmark/Approval star badge next to figures
+    canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.28), 5, paint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width * 0.82, size.height * 0.28)
+        ..lineTo(size.width * 0.85, size.height * 0.31)
+        ..lineTo(size.width * 0.89, size.height * 0.24),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class CertificatePainter extends CustomPainter {
+  const CertificatePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black45
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+
+    // Certificate Frame
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(size.width * 0.15, size.height * 0.15, size.width * 0.7, size.height * 0.68),
+        const Radius.circular(6),
+      ),
+      paint,
+    );
+
+    // Header line inside
+    canvas.drawLine(Offset(size.width * 0.28, size.height * 0.28), Offset(size.width * 0.72, size.height * 0.28), paint);
+
+    // Content lines
+    canvas.drawLine(Offset(size.width * 0.22, size.height * 0.42), Offset(size.width * 0.78, size.height * 0.42), paint);
+    canvas.drawLine(Offset(size.width * 0.22, size.height * 0.52), Offset(size.width * 0.78, size.height * 0.52), paint);
+
+    // Ribbon / Wax Seal badge in bottom right corner
+    canvas.drawCircle(Offset(size.width * 0.68, size.height * 0.68), 5, paint);
+    final ribbons = Path()
+      ..moveTo(size.width * 0.65, size.height * 0.72)
+      ..lineTo(size.width * 0.63, size.height * 0.81)
+      ..lineTo(size.width * 0.68, size.height * 0.78)
+      ..lineTo(size.width * 0.73, size.height * 0.81)
+      ..lineTo(size.width * 0.71, size.height * 0.72);
+    canvas.drawPath(ribbons, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class ProjectsPainter extends CustomPainter {
+  const ProjectsPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black45
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+
+    // Head
+    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.25), 6, paint);
+
+    // Figure body
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width * 0.5, size.height * 0.33)
+        ..lineTo(size.width * 0.5, size.height * 0.68)
+        ..moveTo(size.width * 0.5, size.height * 0.43)
+        ..lineTo(size.width * 0.32, size.height * 0.55)
+        ..moveTo(size.width * 0.5, size.height * 0.43)
+        ..lineTo(size.width * 0.68, size.height * 0.55),
+      paint,
+    );
+
+    // Blueprint/Drawing Plan outline held by hands
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(size.width * 0.22, size.height * 0.52, size.width * 0.56, size.height * 0.3),
+        const Radius.circular(3),
+      ),
+      paint,
+    );
+
+    // Blueprint grid/content indicator
+    canvas.drawLine(Offset(size.width * 0.3, size.height * 0.6), Offset(size.width * 0.5, size.height * 0.72), paint);
+    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.72), Offset(size.width * 0.7, size.height * 0.6), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class AchievementsPainter extends CustomPainter {
+  const AchievementsPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black45
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+
+    // Big central Star path
+    final path = Path();
+
+    // Direct manual path for precise clean 5-point star
+    path.moveTo(40, 20);
+    path.lineTo(46, 33);
+    path.lineTo(60, 35);
+    path.lineTo(50, 45);
+    path.lineTo(52, 59);
+    path.lineTo(40, 52);
+    path.lineTo(28, 59);
+    path.lineTo(30, 45);
+    path.lineTo(20, 35);
+    path.lineTo(34, 33);
+    path.close();
+    canvas.drawPath(path, paint);
+
+    // Sparkles / Small stars around
+    canvas.drawPath(
+      Path()
+        ..moveTo(22, 18)..lineTo(24, 22)..lineTo(28, 22)..lineTo(25, 24)..lineTo(26, 28)..lineTo(22, 25)..lineTo(18, 28)..lineTo(19, 24)..lineTo(16, 22)..lineTo(20, 22)..close(),
+      paint,
+    );
+
+    // Small sparkle dots/lines
+    canvas.drawLine(Offset(size.width * 0.15, size.height * 0.55), Offset(size.width * 0.20, size.height * 0.55), paint);
+    canvas.drawLine(Offset(size.width * 0.8, size.height * 0.35), Offset(size.width * 0.85, size.height * 0.35), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
