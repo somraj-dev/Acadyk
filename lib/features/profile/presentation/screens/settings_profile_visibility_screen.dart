@@ -7,6 +7,7 @@ import 'settings_education_screen.dart';
 import 'settings_work_experience_screen.dart';
 import 'settings_achievements_screen.dart';
 import 'settings_responsibilities_screen.dart';
+import 'settings_certificates_screen.dart';
 import '../../../feed/presentation/screens/create_startup_screen.dart';
 
 class SettingsProfileVisibilityScreen extends StatefulWidget {
@@ -226,7 +227,11 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                   description: "Flaunt your certifications and show recruiters that you're a step ahead in your field!",
                   actionLabel: 'Add Certificate',
                   painter: const CertificatePainter(),
-                  onActionTap: () {},
+                  onActionTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsCertificatesScreen()),
+                    );
+                  },
                 ),
                 _buildDivider(),
 
