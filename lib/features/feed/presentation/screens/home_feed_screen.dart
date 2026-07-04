@@ -122,13 +122,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   @override
-  void dispose() {
-    _commentInputCtrl.dispose();
-    _commentFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F2EF), // Neutral Grey page canvas background
