@@ -1,8 +1,118 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
-class SettingsProfileVisibilityScreen extends StatelessWidget {
+class SettingsProfileVisibilityScreen extends StatefulWidget {
   const SettingsProfileVisibilityScreen({super.key});
+
+  @override
+  State<SettingsProfileVisibilityScreen> createState() => _SettingsProfileVisibilityScreenState();
+}
+
+class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibilityScreen> {
+  late PageController _pageController;
+  int _currentPage = 0;
+  Timer? _timer;
+
+  final List<CarouselItemData> _carouselItems = [
+    CarouselItemData(
+      icon: Icons.menu_book,
+      title: 'Add Education',
+      subtitle: 'Spill the deets on your education and give recruiters a detailed understanding of your background!',
+      buttonText: 'Add Education',
+    ),
+    CarouselItemData(
+      icon: Icons.description,
+      title: 'Add your Resume & get your profile filled in a click!',
+      subtitle: 'Adding your Resume helps you to tell who you are and what makes you different—to employers and recruiters',
+      buttonText: 'Add Resume',
+    ),
+    CarouselItemData(
+      icon: Icons.person,
+      title: 'Add About',
+      subtitle: "This is your bio for people who don't know you, including recruiters from your favourite brands!",
+      buttonText: 'Add About',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: 0);
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (!mounted) return;
+      setState(() {
+        if (_currentPage < _carouselItems.length - 1) {
+          _currentPage++;
+        } else {
+          _currentPage = 0;
+        }
+      });
+      if (_pageController.hasClients) {
+        _pageController.animateToPage(
+          _currentPage,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentPage = index;
+    });
+  }
+
+  void _nextPage() {
+    _timer?.cancel();
+    setState(() {
+      if (_currentPage < _carouselItems.length - 1) {
+        _currentPage++;
+      } else {
+        _currentPage = 0;
+      }
+    });
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        _currentPage,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+    _startTimer();
+  }
+
+  void _prevPage() {
+    _timer?.cancel();
+    setState(() {
+      if (_currentPage > 0) {
+        _currentPage--;
+      } else {
+        _currentPage = _carouselItems.length - 1;
+      }
+    });
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        _currentPage,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,8 +148,8 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
               children: [
-                // 1. CAROUSEL CARD: Add Education
-                _buildEducationCarouselCard(),
+                // 1. DYNAMIC AUTO-CHANGING CAROUSEL CARD
+                _buildAutoCarouselCard(),
                 const SizedBox(height: 24),
 
                 // 2. ABOUT SECTION
@@ -128,112 +238,131 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEducationCarouselCard() {
+  Widget _buildAutoCarouselCard() {
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.center,
       children: [
+        // Card container containing PageView
         Container(
+          height: 190,
           width: double.infinity,
           decoration: BoxDecoration(
             color: const Color(0xFFF3F8FD),
             borderRadius: BorderRadius.circular(16),
           ),
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.menu_book,
-                      color: Color(0xFF0073B1),
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            itemCount: _carouselItems.length,
+            itemBuilder: (context, index) {
+              final item = _carouselItems[index];
+              return Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Add Education',
-                          style: TextStyle(
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF191919),
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            item.icon,
+                            color: const Color(0xFF0073B1),
+                            size: 24,
                           ),
                         ),
-                        SizedBox(height: 6),
-                        Text(
-                          'Spill the deets on your education and give recruiters a detailed understanding of your background!',
-                          style: TextStyle(
-                            fontSize: 13.0,
-                            color: Color(0xFF5E5E5E),
-                            height: 1.35,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 16.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF191919),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                item.subtitle,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 13.0,
+                                  color: Color(0xFF5E5E5E),
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0073B1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(100),
+                    const Spacer(),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0073B1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          elevation: 0,
+                        ),
+                        onPressed: () {},
+                        child: Text(
+                          item.buttonText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    elevation: 0,
-                  ),
-                  onPressed: () {},
-                  child: const Text(
-                    'Add Education',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
+                  ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
 
         // Carousel arrow button left
         Positioned(
           left: -16,
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              CupertinoIcons.left_chevron,
-              size: 14,
-              color: Color(0xFF5E5E5E),
+          child: GestureDetector(
+            onTap: _prevPage,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                CupertinoIcons.left_chevron,
+                size: 14,
+                color: Color(0xFF5E5E5E),
+              ),
             ),
           ),
         ),
@@ -241,24 +370,27 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
         // Carousel arrow button right
         Positioned(
           right: -16,
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              CupertinoIcons.right_chevron,
-              size: 14,
-              color: Color(0xFF5E5E5E),
+          child: GestureDetector(
+            onTap: _nextPage,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                CupertinoIcons.right_chevron,
+                size: 14,
+                color: Color(0xFF5E5E5E),
+              ),
             ),
           ),
         ),
@@ -458,6 +590,24 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
       color: Color(0xFFEFEFEF),
     );
   }
+}
+
+// -------------------------------------------------------------
+// DATA MODEL FOR AUTO CAROUSEL
+// -------------------------------------------------------------
+
+class CarouselItemData {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String buttonText;
+
+  CarouselItemData({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.buttonText,
+  });
 }
 
 // -------------------------------------------------------------
