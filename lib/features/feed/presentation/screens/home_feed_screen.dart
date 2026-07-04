@@ -2291,7 +2291,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     _buildCreateOption(
                       context,
                       icon: Icons.push_pin_outlined,
-                      label: 'Pin',
+                      label: 'Post',
                       onTap: () {
                         Navigator.pop(context); // Close bottom sheet
                         Navigator.of(context).push(
@@ -2302,7 +2302,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     _buildCreateOption(
                       context,
                       icon: Icons.content_cut_outlined,
-                      label: 'Collage',
+                      label: 'Event',
                       onTap: () {
                         Navigator.pop(context); // Close bottom sheet
                         Navigator.push(
