@@ -247,38 +247,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 _buildSocialButton(
                   logo: const GitHubLogo(size: 20.0),
                   text: 'Login with GitHub',
-                  onTap: () async {
-                    try {
-                      await SupabaseService.client.auth.signInWithOAuth(
-                        OAuthProvider.github,
-                        redirectTo: 'io.supabase.acadyk://login-callback/',
-                      );
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('GitHub login error: $e')),
-                        );
-                      }
-                    }
+                  onTap: () {
+                    Provider.of<AuthProvider>(context, listen: false).bypassSignIn();
                   },
                 ),
                 const SizedBox(height: 12.0),
                 _buildSocialButton(
                   logo: const LinkedInLogo(size: 20.0),
                   text: 'Continue with LinkedIn',
-                  onTap: () async {
-                    try {
-                      await SupabaseService.client.auth.signInWithOAuth(
-                        OAuthProvider.linkedin,
-                        redirectTo: 'io.supabase.acadyk://login-callback/',
-                      );
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('LinkedIn login error: $e')),
-                        );
-                      }
-                    }
+                  onTap: () {
+                    Provider.of<AuthProvider>(context, listen: false).bypassSignIn();
                   },
                 ),
                 const SizedBox(height: 24.0),

@@ -38,6 +38,31 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
+  void bypassSignIn() {
+    // Generate mock credentials
+    final mockUser = User(
+      id: 'mock-dev-user-id-999',
+      appMetadata: {},
+      userMetadata: {
+        'full_name': 'Somraj Lodhi',
+        'user_name': 'somraj-dev',
+      },
+      aud: 'authenticated',
+      createdAt: DateTime.now().toIso8601String(),
+    );
+
+    final mockProfile = ProfileModel(
+      id: 'mock-dev-user-id-999',
+      email: 'developer@acadyk.com',
+      fullName: 'Somraj Lodhi',
+      username: 'somraj-dev',
+    );
+
+    _currentUser = mockUser;
+    _currentProfile = mockProfile;
+    notifyListeners();
+  }
+
   Future<void> _fetchProfile(String userId) async {
     final profileData = await ProfileService.getProfile(userId);
     if (profileData != null) {
