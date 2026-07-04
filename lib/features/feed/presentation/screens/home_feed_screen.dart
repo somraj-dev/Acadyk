@@ -21,6 +21,7 @@ import 'create_post_screen.dart';
 import '../../../notifications/presentation/screens/notification_screen.dart';
 import '../../../community/presentation/screens/discover_communities_screen.dart';
 import '../../../profile/presentation/screens/space_screen.dart';
+import '../../../profile/presentation/screens/settings_activity_screen.dart';
 import '../../../chat/presentation/screens/message_center_screen.dart';
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -2612,7 +2613,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 const Divider(height: 1, color: Color(0xFFE0E0E0)),
                 const SizedBox(height: 8),
 
-                _buildDrawerNavItem('Settings'),
+                _buildDrawerNavItem('Settings', onTap: () {
+                  Navigator.of(context).pop(); // close drawer
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const SettingsActivityScreen(),
+                  ));
+                }),
                 _buildDrawerNavItem('Copilot settings'),
                 _buildDrawerNavItem('Feature preview'),
                 _buildDrawerNavItem('Appearance', onTap: () {
