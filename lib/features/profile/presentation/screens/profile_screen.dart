@@ -34,34 +34,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Container(
             constraints: const BoxConstraints(maxWidth: 480),
             color: const Color(0xFFF3F2EF),
-            child: Column(
+            child: Stack(
               children: [
-                // Top bar with back arrow
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-                  child: Row(
-                    children: [
-                      const Expanded(child: SizedBox()),
-                      const Icon(Icons.search, color: Color(0xFF5E5E5E), size: 24),
-                      const SizedBox(width: 16),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const SettingsActivityScreen(),
-                            ),
-                          );
-                        },
-                        child: const Icon(Icons.menu, color: Color(0xFF5E5E5E), size: 24),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                  ),
-                ),
-
                 // Scrollable content
-                Expanded(
+                Positioned.fill(
                   child: ListView(
                     controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -70,7 +46,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // SECTION 1: Profile Header Card
                       // =============================================
                       _buildProfileHeaderCard(),
-
                       const SizedBox(height: 8),
 
                       // =============================================
@@ -115,6 +90,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildProjectsSection(),
 
                       const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+
+                // Transparent top overlay bar with icons
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  right: 10,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Back button if not own profile
+                      if (!widget.isOwnProfile)
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios_new,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(),
+
+                      // Right side search and menu options
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () {},
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.search,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const SettingsActivityScreen(),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.menu,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
