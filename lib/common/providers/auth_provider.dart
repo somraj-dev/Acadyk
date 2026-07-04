@@ -63,12 +63,28 @@ class AuthProvider extends ChangeNotifier {
           'username': username,
           'profile_photo_url': avatar,
         };
-        await ProfileService.createProfile(newProfile);
+
+        try {
+          await ProfileService.createProfile(newProfile);
+        } catch (e) {
+          // If first insert fails (e.g. duplicate username constraint), append suffix and retry
+          final errMsg = e.toString();
+          if (errMsg.contains('profiles_username_key') || errMsg.contains('duplicate') || errMsg.contains('409') || errMsg.contains('already exists')) {
+            final suffix = userId.substring(0, 5);
+            newProfile['username'] = "${username}_$suffix";
+            await ProfileService.createProfile(newProfile);
+          } else {
+            rethrow;
+          }
+        }
+
         final createdData = await ProfileService.getProfile(userId);
         if (createdData != null) {
           _currentProfile = ProfileModel.fromJson(createdData);
         }
-      } catch (_) {}
+      } catch (e) {
+        print("Error in _fetchProfile auto-creation: $e");
+      }
     }
     notifyListeners();
   }

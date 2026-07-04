@@ -34,6 +34,7 @@ class ProfileService {
       await SupabaseService.client.from('profiles').insert(data);
     } catch (e) {
       print('Error creating profile: $e');
+      rethrow;
     }
   }
 
