@@ -221,41 +221,7 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
                     hint: 'Detail your education journey: degrees, accomplishments, skills gained. Share your academic and learning experiences to stand out',
                   ),
 
-                  const SizedBox(height: 16),
 
-                  // Generate with AI Button (premium chip container with sparkle)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(100),
-                        onTap: () {},
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.auto_awesome, size: 16, color: Colors.purple),
-                              SizedBox(width: 8),
-                              Text(
-                                'Generate with AI',
-                                style: TextStyle(
-                                  color: Color(0xFF334155),
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
 
                   const SizedBox(height: 24),
 
