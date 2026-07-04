@@ -8,6 +8,7 @@ class SettingsActivityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Force light theme settings background color
     const bgColor = Color(0xFFFAFAFA);
     const tileTextColor = Color(0xFF262626);
     const subtextColor = Color(0xFF8E8E8E);
