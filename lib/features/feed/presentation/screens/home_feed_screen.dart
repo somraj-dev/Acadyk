@@ -35,6 +35,7 @@ class HomeFeedScreen extends StatefulWidget {
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
   int _activeTab = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late final PageController _pageController;
 
   // Dynamic feedback and comment state
   final Map<String, bool> _likedPosts = {};
@@ -60,8 +61,17 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _activeTab == 4 ? 3 : (_activeTab == 3 ? 2 : _activeTab));
     _loadSupabasePosts();
     _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _commentInputCtrl.dispose();
+    _commentFocusNode.dispose();
+    super.dispose();
   }
 
   void _loadSupabasePosts() async {
@@ -133,182 +143,195 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               drawer: _buildProfileDrawer(),
               body: Column(
                 children: [
-                  if (_activeTab == 0) ...[
-                    // 1. Top App Bar (Instagram style, Light Theme)
-                    Container(
-                      color: Colors.white, // Light background
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Left: Avatar and Plus
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    _scaffoldKey.currentState?.openDrawer();
-                                  },
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      image: DecorationImage(
-                                        image: AssetImage('assets/images/alina_avatar.jpg'),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          // Center: Acadyk Text and Down Arrow
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                'Acadyk',
-                                style: TextStyle(
-                                  color: Colors.black, // Dark text for bright mode
-                                  fontSize: 32, // Slightly larger for Billabong
-                                  fontFamily: 'Billabong', // Exact Instagram style font
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                              const SizedBox(width: 4), // Small gap between 'k' and arrow
-                              const Icon(Icons.keyboard_arrow_down, color: Colors.black87, size: 24),
-                            ],
-                          ),
-                          
-                          // Right: Heart
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    showSearch(
-                                      context: context,
-                                      delegate: AcadykSearchDelegate(),
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFF3F4F6), // Light grey circle
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(CupertinoIcons.search, color: Colors.black87, size: 16),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.of(context).push(MaterialPageRoute(
-                                      builder: (_) => const NotificationScreen(),
-                                    ));
-                                  },
-                                  behavior: HitTestBehavior.opaque,
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      const Icon(CupertinoIcons.heart, color: Colors.black87, size: 28),
-                                      Positioned(
-                                        top: -1,
-                                        right: -2,
-                                        child: Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: const BoxDecoration(
-                                            color: Colors.redAccent,
-                                            shape: BoxShape.circle,
+                  Expanded(
+                    child: PageView(
+                      controller: _pageController,
+                      onPageChanged: (pageIndex) {
+                        setState(() {
+                          if (pageIndex == 0) _activeTab = 0;
+                          if (pageIndex == 1) _activeTab = 1;
+                          if (pageIndex == 2) _activeTab = 3;
+                          if (pageIndex == 3) _activeTab = 4;
+                        });
+                      },
+                      children: [
+                        // Page 0: Home Feed Screen
+                        Column(
+                          children: [
+                            // 1. Top App Bar (Instagram style, Light Theme)
+                            Container(
+                              color: Colors.white, // Light background
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // Left: Avatar and Plus
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () {
+                                            _scaffoldKey.currentState?.openDrawer();
+                                          },
+                                          child: Container(
+                                            width: 32,
+                                            height: 32,
+                                            decoration: const BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              image: DecorationImage(
+                                                image: AssetImage('assets/images/alina_avatar.jpg'),
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
                                           ),
                                         ),
+                                      ],
+                                    ),
+                                  ),
+                                  
+                                  // Center: Acadyk Text and Down Arrow
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text(
+                                        'Acadyk',
+                                        style: TextStyle(
+                                          color: Colors.black, // Dark text for bright mode
+                                          fontSize: 32, // Slightly larger for Billabong
+                                          fontFamily: 'Billabong', // Exact Instagram style font
+                                          fontWeight: FontWeight.w500,
+                                          letterSpacing: 1.0,
+                                        ),
                                       ),
+                                      const SizedBox(width: 4), // Small gap between 'k' and arrow
+                                      const Icon(Icons.keyboard_arrow_down, color: Colors.black87, size: 24),
                                     ],
                                   ),
-                                ),
-                              ],
+                                  
+                                  // Right: Heart
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () {
+                                            showSearch(
+                                              context: context,
+                                              delegate: AcadykSearchDelegate(),
+                                            );
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFF3F4F6), // Light grey circle
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(CupertinoIcons.search, color: Colors.black87, size: 16),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.of(context).push(MaterialPageRoute(
+                                              builder: (_) => const NotificationScreen(),
+                                            ));
+                                          },
+                                          behavior: HitTestBehavior.opaque,
+                                          child: Stack(
+                                            clipBehavior: Clip.none,
+                                            children: [
+                                              const Icon(CupertinoIcons.heart, color: Colors.black87, size: 28),
+                                              Positioned(
+                                                top: -1,
+                                                right: -2,
+                                                child: Container(
+                                                  width: 10,
+                                                  height: 10,
+                                                  decoration: const BoxDecoration(
+                                                    color: Colors.redAccent,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                            const Divider(height: 1, color: Color(0xFFE0E0E0)),
 
-                    // 2. Scrollable List of Posts (re-ordered and curated)
-                    Expanded(
-                      child: Container(
-                        color: const Color(0xFFF3F2EF),
-                        child: ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            if (_isLoading)
-                              Container(
-                                padding: const EdgeInsets.symmetric(vertical: 40),
-                                alignment: Alignment.center,
-                                child: const Column(
+                            // 2. Scrollable List of Posts (re-ordered and curated)
+                            Expanded(
+                              child: Container(
+                                color: const Color(0xFFF3F2EF),
+                                child: ListView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
                                   children: [
-                                    CircularProgressIndicator(),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      'Loading feed...',
-                                      style: TextStyle(color: Color(0xFF5E5E5E)),
-                                    ),
+                                    if (_isLoading)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 40),
+                                        alignment: Alignment.center,
+                                        child: const Column(
+                                          children: [
+                                            CircularProgressIndicator(),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              'Loading feed...',
+                                              style: TextStyle(color: Color(0xFF5E5E5E)),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    else if (_supabasePosts.isEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 16),
+                                        alignment: Alignment.center,
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.feed_outlined, size: 64, color: Colors.grey.shade400),
+                                            const SizedBox(height: 16),
+                                            const Text(
+                                              'No posts in feed yet',
+                                              style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            const Text(
+                                              'Be the first to share an update!',
+                                              style: TextStyle(color: Color(0xFF8E8E8E), fontSize: 14),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    else
+                                      ..._supabasePosts.map((post) => _buildDatabasePostCard(post)),
+
+                                    const SizedBox(height: 16.0),
                                   ],
                                 ),
-                              )
-                            else if (_supabasePosts.isEmpty)
-                              Container(
-                                padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 16),
-                                alignment: Alignment.center,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.feed_outlined, size: 64, color: Colors.grey.shade400),
-                                    const SizedBox(height: 16),
-                                    const Text(
-                                      'No posts in feed yet',
-                                      style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 16, fontWeight: FontWeight.bold),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'Be the first to share an update!',
-                                      style: TextStyle(color: Color(0xFF8E8E8E), fontSize: 14),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            else
-                              ..._supabasePosts.map((post) => _buildDatabasePostCard(post)),
-
-                            const SizedBox(height: 16.0),
+                              ),
+                            ),
                           ],
                         ),
-                      ),
+
+                        // Page 1: Opportunities
+                        const DiscoverOpportunitiesScreen(),
+
+                        // Page 2: Chat
+                        const MessageCenterScreen(),
+
+                        // Page 3: Profile
+                        const ProfileScreen(isOwnProfile: true),
+                      ],
                     ),
-                  ] else if (_activeTab == 1) ...[
-                    const Expanded(
-                      child: DiscoverOpportunitiesScreen(),
-                    ),
-                  ] else if (_activeTab == 3) ...[
-                    const Expanded(
-                      child: MessageCenterScreen(),
-                    ),
-                  ] else if (_activeTab == 4) ...[
-                    const Expanded(
-                      child: ProfileScreen(isOwnProfile: true),
-                    ),
-                  ] else ...[
-                    const Spacer(),
-                  ],
+                  ),
 
                   // 3. Bottom Tab Bar
                   const Divider(height: 1, color: Color(0xFFE0E0E0)),
@@ -2379,10 +2402,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         children: [
           // Home
           GestureDetector(
-            onTap: () => setState(() {
-              _activeTab = 0;
-              _newlyFollowedInSession.clear();
-            }),
+            onTap: () {
+              setState(() {
+                _activeTab = 0;
+                _newlyFollowedInSession.clear();
+              });
+              _pageController.jumpToPage(0);
+            },
             child: Icon(
               CupertinoIcons.house,
               color: _activeTab == 0 ? Colors.black : const Color(0xFF737373),
@@ -2391,10 +2417,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           ),
           // Search
           GestureDetector(
-            onTap: () => setState(() {
-              _activeTab = 1;
-              _newlyFollowedInSession.clear();
-            }),
+            onTap: () {
+              setState(() {
+                _activeTab = 1;
+                _newlyFollowedInSession.clear();
+              });
+              _pageController.jumpToPage(1);
+            },
             child: Icon(
               CupertinoIcons.search,
               color: _activeTab == 1 ? Colors.black : const Color(0xFF737373),
@@ -2419,6 +2448,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 _activeTab = 3;
                 _newlyFollowedInSession.clear();
               });
+              _pageController.jumpToPage(2);
             },
             child: Icon(
               CupertinoIcons.ellipses_bubble,
@@ -2440,10 +2470,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               avatarAsset: 'assets/images/somraj_avatar.jpg',
               radius: 13.5,
               enableTapToViewStory: false,
-              onDefaultTap: () => setState(() {
-                _activeTab = 4;
-                _newlyFollowedInSession.clear();
-              }),
+              onDefaultTap: () {
+                setState(() {
+                  _activeTab = 4;
+                  _newlyFollowedInSession.clear();
+                });
+                _pageController.jumpToPage(3);
+              },
             ),
           ),
 
