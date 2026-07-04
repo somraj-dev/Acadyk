@@ -5,6 +5,8 @@ import 'settings_about_me_screen.dart';
 import 'settings_resume_screen.dart';
 import 'settings_education_screen.dart';
 import 'settings_work_experience_screen.dart';
+import 'settings_achievements_screen.dart';
+import 'settings_responsibilities_screen.dart';
 import '../../../feed/presentation/screens/create_startup_screen.dart';
 
 class SettingsProfileVisibilityScreen extends StatefulWidget {
@@ -210,7 +212,11 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                   description: "Highlight the responsibilities you've mastered to demonstrate your leadership and expertise!",
                   actionLabel: 'Add Responsibility',
                   painter: const ResponsibilitiesPainter(),
-                  onActionTap: () {},
+                  onActionTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsResponsibilitiesScreen()),
+                    );
+                  },
                 ),
                 _buildDivider(),
 
@@ -244,7 +250,11 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                   description: 'Broadcast your triumphs and make a remarkable impression on industry leaders!',
                   actionLabel: 'Add Achievement',
                   painter: const AchievementsPainter(),
-                  onActionTap: () {},
+                  onActionTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsAchievementsScreen()),
+                    );
+                  },
                 ),
                 const SizedBox(height: 32),
               ],
