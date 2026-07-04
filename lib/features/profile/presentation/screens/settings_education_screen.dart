@@ -47,20 +47,21 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 18),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Education',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: Color(0xFF191919), fontWeight: FontWeight.w600, fontSize: 18),
         ),
+        centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.remove_red_eye_outlined, color: Colors.black54),
+            icon: const Icon(Icons.remove_red_eye_outlined, color: Color(0xFF757575), size: 22),
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.lightbulb_outline, color: Colors.black54),
+            icon: const Icon(Icons.lightbulb_outline, color: Color(0xFF757575), size: 22),
             onPressed: () {},
           ),
         ],
@@ -70,21 +71,22 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
                 children: [
                   // Breadcrumb
                   Row(
                     children: const [
-                      Text('Education', style: TextStyle(color: Colors.black54, fontSize: 13)),
-                      Icon(Icons.chevron_right, size: 14, color: Colors.black45),
+                      Text('Education', style: TextStyle(color: Color(0xFF737373), fontSize: 13, fontWeight: FontWeight.w500)),
+                      Icon(Icons.chevron_right, size: 16, color: Color(0xFFB0B0B0)),
                       Text('New Education', style: TextStyle(color: Color(0xFF0073B1), fontSize: 13, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Qualification *
                   _buildDropdownField(
-                    label: 'Qualification *',
+                    label: 'Qualification',
+                    isRequired: true,
                     value: _selectedQualification,
                     items: ['B.Tech', 'B.Sc', 'M.Tech', 'MBA', 'PhD'],
                     onChanged: (val) => setState(() => _selectedQualification = val),
@@ -93,16 +95,18 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
 
                   // Course *
                   _buildDropdownField(
-                    label: 'Course *',
+                    label: 'Course',
+                    isRequired: true,
                     value: _selectedCourse,
-                    items: ['Computer Science', 'Information Technology', 'Electronics', 'Mechanical'],
+                    items: ['Select Course', 'Computer Science', 'Information Technology', 'Electronics', 'Mechanical'],
                     onChanged: (val) => setState(() => _selectedCourse = val),
                     hint: 'Select Course',
                   ),
 
                   // Specialization *
                   _buildDropdownField(
-                    label: 'Specialization *',
+                    label: 'Specialization',
+                    isRequired: true,
                     value: _selectedSpecialization,
                     items: ['Software Engineering', 'Data Science', 'Artificial Intelligence', 'Cybersecurity'],
                     onChanged: (val) => setState(() => _selectedSpecialization = val),
@@ -111,17 +115,20 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
 
                   // College *
                   _buildTextField(
-                    label: 'College *',
+                    label: 'College',
+                    isRequired: true,
                     controller: _collegeCtrl,
                     hint: 'College',
                   ),
 
                   // Duration * (Start Year & End Year side-by-side)
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: _buildTextField(
-                          label: 'Duration *',
+                          label: 'Duration',
+                          isRequired: true,
                           controller: _startYearCtrl,
                           hint: 'Start Year',
                         ),
@@ -130,6 +137,7 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
                       Expanded(
                         child: _buildTextField(
                           label: ' ',
+                          isRequired: false,
                           controller: _endYearCtrl,
                           hint: 'End Year',
                         ),
@@ -140,6 +148,7 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
                   // Course Type
                   _buildDropdownField(
                     label: 'Course type',
+                    isRequired: false,
                     value: _selectedCourseType,
                     items: ['Full Time', 'Part Time', 'Correspondence'],
                     onChanged: (val) => setState(() => _selectedCourseType = val),
@@ -148,10 +157,12 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
 
                   // Percentage & CGPA side-by-side
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: _buildTextField(
                           label: 'Percentage',
+                          isRequired: false,
                           controller: _percentageCtrl,
                           hint: 'Percentage',
                         ),
@@ -160,6 +171,7 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
                       Expanded(
                         child: _buildTextField(
                           label: 'CGPA',
+                          isRequired: false,
                           controller: _cgpaCtrl,
                           hint: 'CGPA',
                         ),
@@ -169,10 +181,12 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
 
                   // Roll Number & Lateral Entry side-by-side
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: _buildTextField(
                           label: 'Roll Number',
+                          isRequired: false,
                           controller: _rollNumberCtrl,
                           hint: 'Roll number',
                         ),
@@ -181,8 +195,9 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
                       Expanded(
                         child: _buildDropdownField(
                           label: 'Are you a Lateral Entry Student?',
+                          isRequired: false,
                           value: _selectedLateral,
-                          items: ['Yes', 'No'],
+                          items: ['Lateral entry', 'Yes', 'No'],
                           onChanged: (val) => setState(() => _selectedLateral = val),
                           hint: 'Lateral entry',
                         ),
@@ -193,6 +208,7 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
                   // Skills
                   _buildTextField(
                     label: 'Skills',
+                    isRequired: false,
                     controller: _skillsCtrl,
                     hint: 'Add skills',
                   ),
@@ -200,49 +216,81 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
                   // Description
                   _buildLargeTextField(
                     label: 'Description',
+                    isRequired: false,
                     controller: _descriptionCtrl,
                     hint: 'Detail your education journey: degrees, accomplishments, skills gained. Share your academic and learning experiences to stand out',
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
-                  // Generate with AI Button
+                  // Generate with AI Button (premium chip container with sparkle)
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFE0E0E0)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
                       ),
-                      onPressed: () {},
-                      icon: const Icon(Icons.auto_awesome, size: 16, color: Colors.purple),
-                      label: const Text(
-                        'Generate with AI',
-                        style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(100),
+                        onTap: () {},
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.auto_awesome, size: 16, color: Colors.purple),
+                              SizedBox(width: 8),
+                              Text(
+                                'Generate with AI',
+                                style: TextStyle(
+                                  color: Color(0xFF334155),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
-                  // Attachments Button
-                  Container(
-                    width: double.infinity,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFD0D0D0), width: 1, style: BorderStyle.solid),
-                      borderRadius: BorderRadius.circular(8),
+                  // Attachments Custom Dashed Button
+                  CustomPaint(
+                    painter: DashedBorderPainter(
+                      color: const Color(0xFFCBD5E1),
+                      strokeWidth: 1.2,
+                      borderRadius: 8.0,
+                      dashLength: 5.0,
+                      gap: 3.0,
                     ),
-                    child: InkWell(
-                      onTap: () {},
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.add, color: Colors.black54),
-                          SizedBox(width: 6),
-                          Text('Attachments', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-                        ],
+                    child: Container(
+                      width: double.infinity,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: InkWell(
+                        onTap: () {},
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.add, color: Color(0xFF64748B), size: 18),
+                            SizedBox(width: 6),
+                            Text(
+                              'Attachments',
+                              style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.5,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -264,25 +312,40 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
                   Expanded(
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFE0E0E0)),
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Discard', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Discard',
+                        style: TextStyle(
+                          color: Color(0xFF5E5E5E),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.5,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0073B1),
+                        backgroundColor: const Color(0xFFE2E8F0), // Disabled color until fields complete, or active blue
+                        foregroundColor: Colors.white,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        elevation: 0,
                       ),
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Save',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.5,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -294,34 +357,52 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
     );
   }
 
-  Widget _buildTextField({required String label, required TextEditingController controller, required String hint}) {
+  Widget _buildTextField({required String label, required bool isRequired, required TextEditingController controller, required String hint}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (label.trim().isNotEmpty) ...[
-            Text(
-              label,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+            RichText(
+              text: TextSpan(
+                text: label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF191919),
+                ),
+                children: isRequired
+                    ? const [
+                        TextSpan(
+                          text: ' *',
+                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                        ),
+                      ]
+                    : null,
+              ),
             ),
             const SizedBox(height: 8),
           ],
           TextField(
             controller: controller,
-            style: const TextStyle(fontSize: 14.5, color: Colors.black87),
+            style: const TextStyle(fontSize: 14.5, color: Color(0xFF191919)),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(color: Colors.black38, fontSize: 14.5),
+              hintStyle: const TextStyle(color: Color(0xFFB0B0B0), fontSize: 14.5),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: Color(0xFFD0D0D0)),
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: Color(0xFFD0D0D0)),
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFF0073B1), width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             ),
           ),
         ],
@@ -329,34 +410,52 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
     );
   }
 
-  Widget _buildLargeTextField({required String label, required TextEditingController controller, required String hint}) {
+  Widget _buildLargeTextField({required String label, required bool isRequired, required TextEditingController controller, required String hint}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+          RichText(
+            text: TextSpan(
+              text: label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF191919),
+              ),
+              children: isRequired
+                  ? const [
+                      TextSpan(
+                        text: ' *',
+                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
+                    ]
+                  : null,
+            ),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: controller,
-            maxLines: 6,
-            style: const TextStyle(fontSize: 14.5, color: Colors.black87),
+            maxLines: 5,
+            style: const TextStyle(fontSize: 14.5, color: Color(0xFF191919), height: 1.4),
             decoration: InputDecoration(
               hintText: hint,
               hintMaxLines: 4,
-              hintStyle: const TextStyle(color: Colors.black38, fontSize: 13.5),
+              hintStyle: const TextStyle(color: Color(0xFFB0B0B0), fontSize: 13.5, height: 1.4),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: Color(0xFFD0D0D0)),
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: Color(0xFFD0D0D0)),
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
               ),
-              contentPadding: const EdgeInsets.all(12),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFF0073B1), width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.all(14),
             ),
           ),
         ],
@@ -366,6 +465,7 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
 
   Widget _buildDropdownField({
     required String label,
+    required bool isRequired,
     required String? value,
     required List<String> items,
     required ValueChanged<String?> onChanged,
@@ -376,27 +476,41 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+          RichText(
+            text: TextSpan(
+              text: label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF191919),
+              ),
+              children: isRequired
+                  ? const [
+                      TextSpan(
+                        text: ' *',
+                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
+                    ]
+                  : null,
+            ),
           ),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFD0D0D0)),
-              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: value,
                 isExpanded: true,
-                hint: Text(hint, style: const TextStyle(color: Colors.black38, fontSize: 14.5)),
-                icon: const Icon(Icons.arrow_drop_down, color: Colors.black54),
+                hint: Text(hint, style: const TextStyle(color: Color(0xFFB0B0B0), fontSize: 14.5)),
+                icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
                 items: items.map((String item) {
                   return DropdownMenuItem<String>(
                     value: item,
-                    child: Text(item, style: const TextStyle(fontSize: 14.5, color: Colors.black87)),
+                    child: Text(item, style: const TextStyle(fontSize: 14.5, color: Color(0xFF191919))),
                   );
                 }).toList(),
                 onChanged: onChanged,
@@ -406,5 +520,57 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
         ],
       ),
     );
+  }
+}
+
+class DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double gap;
+  final double dashLength;
+  final double borderRadius;
+
+  DashedBorderPainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.gap,
+    required this.dashLength,
+    required this.borderRadius,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Radius.circular(borderRadius),
+      ));
+
+    final dashPath = Path();
+    double distance = 0.0;
+    for (final pathMetric in path.computeMetrics()) {
+      while (distance < pathMetric.length) {
+        dashPath.addPath(
+          pathMetric.extractPath(distance, distance + dashLength),
+          Offset.zero,
+        );
+        distance += dashLength + gap;
+      }
+    }
+    canvas.drawPath(dashPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant DashedBorderPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.gap != gap ||
+        oldDelegate.dashLength != dashLength ||
+        oldDelegate.borderRadius != borderRadius;
   }
 }
