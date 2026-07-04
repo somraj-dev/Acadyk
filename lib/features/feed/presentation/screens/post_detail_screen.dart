@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:acadyk/common/services/post_service.dart';
 import 'package:acadyk/common/services/supabase_service.dart';
 import '../../../profile/presentation/screens/edit_status_screen.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../profile/presentation/services/profile_manager.dart';
 
 
 class PostDetailScreen extends StatefulWidget {
@@ -271,14 +273,28 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Avatar
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                image: DecorationImage(
-                                  image: AssetImage(widget.authorAvatar),
-                                  fit: BoxFit.cover,
+                            GestureDetector(
+                              onTap: () {
+                                final isOwn = widget.authorName == ProfileManager.name || 
+                                              widget.authorName.toLowerCase().contains('somraj');
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ProfileScreen(
+                                      isOwnProfile: isOwn,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  image: DecorationImage(
+                                    image: AssetImage(widget.authorAvatar),
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
                             ),
@@ -290,14 +306,28 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                   Row(
                                     children: [
                                       Flexible(
-                                        child: Text(
-                                          widget.authorName,
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF191919),
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            final isOwn = widget.authorName == ProfileManager.name || 
+                                                          widget.authorName.toLowerCase().contains('somraj');
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => ProfileScreen(
+                                                  isOwnProfile: isOwn,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: Text(
+                                            widget.authorName,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF191919),
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                       const SizedBox(width: 4),

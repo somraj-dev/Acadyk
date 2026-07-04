@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:acadyk/common/services/supabase_service.dart';
+import 'package:acadyk/common/services/post_service.dart';
 import 'discover_opportunities_screen.dart';
 import 'select_opportunity_screen.dart';
 import 'company_profile_screen.dart';
@@ -38,6 +39,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   final Map<String, bool> _likedPosts = {};
   final Map<String, int> _likesCountOverride = {};
   final Map<String, bool> _bookmarkedPosts = {};
+  final Map<String, bool> _savedPosts = {};
   final Map<String, bool> _followedAccounts = {};
   final Map<String, bool> _newlyFollowedInSession = {};
   final Map<String, bool> _commentsExpanded = {};
@@ -2776,9 +2778,19 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            authorName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: Color(0xFF191919)),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ProfileScreen(isOwnProfile: false, userData: author),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              authorName,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: Color(0xFF191919)),
+                            ),
                           ),
                           if (isVerified) ...[
                             const SizedBox(width: 4),
@@ -2906,10 +2918,23 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                 ),
                 const Spacer(),
-                const Icon(
-                  CupertinoIcons.bookmark,
-                  color: Colors.black87,
-                  size: 24,
+                GestureDetector(
+                  onTap: () async {
+                    final wasSaved = _savedPosts[postId] ?? false;
+                    setState(() {
+                      _savedPosts[postId] = !wasSaved;
+                    });
+                    await PostService.toggleBookmark(postId, wasSaved);
+                  },
+                  child: Icon(
+                    (_savedPosts[postId] ?? false)
+                        ? CupertinoIcons.bookmark_fill
+                        : CupertinoIcons.bookmark,
+                    color: (_savedPosts[postId] ?? false)
+                        ? const Color(0xFF1E88E5)
+                        : Colors.black87,
+                    size: 24,
+                  ),
                 ),
               ],
             ),
