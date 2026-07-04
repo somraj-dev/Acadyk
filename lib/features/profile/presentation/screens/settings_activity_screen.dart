@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'settings_notifications_screen.dart';
 import 'settings_privacy_screen.dart';
 import 'settings_account_management_screen.dart';
+import 'settings_profile_visibility_screen.dart';
 
 class SettingsActivityScreen extends StatelessWidget {
   const SettingsActivityScreen({super.key});
@@ -46,7 +47,11 @@ class SettingsActivityScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (context) => const SettingsAccountManagementScreen()),
                   );
                 }),
-                _buildPinterestTile('Profile visibility'),
+                _buildPinterestTile('Profile visibility', onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const SettingsProfileVisibilityScreen()),
+                  );
+                }),
                 _buildPinterestTile('Refine your recommendations'),
                 _buildPinterestTile('Claimed external accounts'),
                 _buildPinterestTile('Social permissions'),
