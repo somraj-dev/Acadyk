@@ -38,6 +38,20 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
               children: [
+                // 1. CAROUSEL CARD: Add Education
+                _buildEducationCarouselCard(),
+                const SizedBox(height: 24),
+
+                // 2. ABOUT SECTION
+                _buildAboutSection(),
+                _buildDivider(),
+
+                // 3. RESUME SECTION
+                _buildResumeSection(),
+                const SizedBox(height: 16),
+                _buildDivider(),
+
+                // 4. Skills
                 _buildVisibilitySection(
                   title: 'Skills',
                   description: 'Spotlight your unique skills and catch the eye of recruiters looking for your exact talents!',
@@ -46,6 +60,8 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   onActionTap: () {},
                 ),
                 _buildDivider(),
+
+                // 5. Work Experience
                 _buildVisibilitySection(
                   title: 'Work Experience',
                   description: 'Narrate your professional journey and fast-track your way to new career heights!',
@@ -54,6 +70,8 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   onActionTap: () {},
                 ),
                 _buildDivider(),
+
+                // 6. Education (List option)
                 _buildVisibilitySection(
                   title: 'Education',
                   description: 'Showcase your academic journey and open doors to your dream career opportunities!',
@@ -62,6 +80,8 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   onActionTap: () {},
                 ),
                 _buildDivider(),
+
+                // 7. Responsibilities
                 _buildVisibilitySection(
                   title: 'Responsibilities',
                   description: "Highlight the responsibilities you've mastered to demonstrate your leadership and expertise!",
@@ -70,6 +90,8 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   onActionTap: () {},
                 ),
                 _buildDivider(),
+
+                // 8. Certificate
                 _buildVisibilitySection(
                   title: 'Certificate',
                   description: "Flaunt your certifications and show recruiters that you're a step ahead in your field!",
@@ -78,6 +100,8 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   onActionTap: () {},
                 ),
                 _buildDivider(),
+
+                // 9. Projects
                 _buildVisibilitySection(
                   title: 'Projects',
                   description: 'Unveil your projects to the world and pave your path to professional greatness!',
@@ -86,6 +110,8 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
                   onActionTap: () {},
                 ),
                 _buildDivider(),
+
+                // 10. Achievements
                 _buildVisibilitySection(
                   title: 'Achievements',
                   description: 'Broadcast your triumphs and make a remarkable impression on industry leaders!',
@@ -99,6 +125,270 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildEducationCarouselCard() {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F8FD),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.menu_book,
+                      color: Color(0xFF0073B1),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Add Education',
+                          style: TextStyle(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF191919),
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Spill the deets on your education and give recruiters a detailed understanding of your background!',
+                          style: TextStyle(
+                            fontSize: 13.0,
+                            color: Color(0xFF5E5E5E),
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0073B1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    elevation: 0,
+                  ),
+                  onPressed: () {},
+                  child: const Text(
+                    'Add Education',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Carousel arrow button left
+        Positioned(
+          left: -16,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              CupertinoIcons.left_chevron,
+              size: 14,
+              color: Color(0xFF5E5E5E),
+            ),
+          ),
+        ),
+
+        // Carousel arrow button right
+        Positioned(
+          right: -16,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              CupertinoIcons.right_chevron,
+              size: 14,
+              color: Color(0xFF5E5E5E),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAboutSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Left details
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'About',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF191919),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Craft an engaging story in your bio and make meaningful connections with peers and recruiters alike!',
+                  style: TextStyle(
+                    fontSize: 13.0,
+                    color: Color(0xFF737373),
+                    height: 1.35,
+                  ),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Add About',
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    color: Color(0xFF0095F6),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Right illustration
+          CustomPaint(
+            size: const Size(80, 80),
+            painter: const AboutPainter(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResumeSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Resume',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF191919),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF6FAFD),
+            border: Border.all(
+              color: const Color(0xFFE2EFF9),
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Left Content
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Add your Resume & get your profile filled in a click!',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF191919),
+                        height: 1.3,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Adding your Resume helps you to tell who you are and what makes you different—to employers and recruiters',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Color(0xFF5E5E5E),
+                        height: 1.35,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Upload Resume',
+                      style: TextStyle(
+                        fontSize: 14.0,
+                        color: Color(0xFF0095F6),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Right Drawing
+              CustomPaint(
+                size: const Size(80, 80),
+                painter: const ResumePainter(),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -173,6 +463,90 @@ class SettingsProfileVisibilityScreen extends StatelessWidget {
 // -------------------------------------------------------------
 // LINE-ART DRAWING CUSTOM PAINTERS (Matching the images exactly)
 // -------------------------------------------------------------
+
+class AboutPainter extends CustomPainter {
+  const AboutPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black45
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+
+    // Table/Desk line
+    canvas.drawLine(Offset(size.width * 0.1, size.height * 0.75), Offset(size.width * 0.9, size.height * 0.75), paint);
+
+    // Laptop outline
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width * 0.45, size.height * 0.75)
+        ..lineTo(size.width * 0.48, size.height * 0.58) // open lid side
+        ..lineTo(size.width * 0.65, size.height * 0.58)
+        ..lineTo(size.width * 0.63, size.height * 0.75) // open lid other side
+        ..close(),
+      paint,
+    );
+
+    // Head
+    canvas.drawCircle(Offset(size.width * 0.32, size.height * 0.35), 6, paint);
+
+    // Sitting figure
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width * 0.32, size.height * 0.43)
+        ..lineTo(size.width * 0.28, size.height * 0.65) // spine
+        ..lineTo(size.width * 0.18, size.height * 0.75) // seat
+        ..moveTo(size.width * 0.3, size.height * 0.48)
+        ..lineTo(size.width * 0.44, size.height * 0.65) // arms typing
+        ..moveTo(size.width * 0.18, size.height * 0.75)
+        ..lineTo(size.width * 0.35, size.height * 0.90), // leg
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class ResumePainter extends CustomPainter {
+  const ResumePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black45
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+
+    // Document/Resume sheet
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(size.width * 0.28, size.height * 0.2, size.width * 0.48, size.height * 0.65),
+        const Radius.circular(3),
+      ),
+      paint,
+    );
+
+    // Text lines inside resume
+    canvas.drawLine(Offset(size.width * 0.34, size.height * 0.32), Offset(size.width * 0.7, size.height * 0.32), paint);
+    canvas.drawLine(Offset(size.width * 0.34, size.height * 0.45), Offset(size.width * 0.62, size.height * 0.45), paint);
+    canvas.drawLine(Offset(size.width * 0.34, size.height * 0.58), Offset(size.width * 0.68, size.height * 0.58), paint);
+
+    // Connection avatars/circles
+    canvas.drawCircle(Offset(size.width * 0.18, size.height * 0.3), 5, paint);
+    canvas.drawCircle(Offset(size.width * 0.82, size.height * 0.42), 5, paint);
+
+    // Connection lines
+    canvas.drawLine(Offset(size.width * 0.22, size.height * 0.32), Offset(size.width * 0.28, size.height * 0.36), paint);
+    canvas.drawLine(Offset(size.width * 0.76, size.height * 0.45), Offset(size.width * 0.82, size.height * 0.48), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
 
 class SkillsPainter extends CustomPainter {
   const SkillsPainter();
@@ -443,8 +817,6 @@ class AchievementsPainter extends CustomPainter {
 
     // Big central Star path
     final path = Path();
-
-    // Direct manual path for precise clean 5-point star
     path.moveTo(40, 20);
     path.lineTo(46, 33);
     path.lineTo(60, 35);
