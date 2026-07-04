@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'settings_notifications_screen.dart';
 import 'settings_privacy_screen.dart';
-import 'settings_accounts_centre_screen.dart';
+import 'settings_account_management_screen.dart';
 
 class SettingsActivityScreen extends StatelessWidget {
   const SettingsActivityScreen({super.key});
@@ -43,7 +43,7 @@ class SettingsActivityScreen extends StatelessWidget {
               children: [
                 _buildPinterestTile('Account management', onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const SettingsAccountsCentreScreen()),
+                    MaterialPageRoute(builder: (context) => const SettingsAccountManagementScreen()),
                   );
                 }),
                 _buildPinterestTile('Profile visibility'),
