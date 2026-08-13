@@ -30,41 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLogo() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Circular logo for acadyk matching unstop design format
-        Container(
-          width: 34,
-          height: 34,
-          decoration: const BoxDecoration(
-            color: Color(0xFF0F4C81), // Solid royal blue circle
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'a',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              fontFamily: 'sans-serif',
-              height: 1.1,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        const Text(
-          'acadyk',
-          style: TextStyle(
-            color: Color(0xFF0F4C81),
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -1.0,
-          ),
-        ),
-      ],
-    );
+    return const LogoWidget(size: 34);
   }
 
   Widget _buildSocialButton({

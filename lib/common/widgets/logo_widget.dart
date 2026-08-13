@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 class LogoWidget extends StatelessWidget {
   final double fontSize;
+  final double size;
 
   const LogoWidget({
     super.key,
     this.fontSize = 32.0,
+    this.size = 36.0,
   });
 
   @override
@@ -15,36 +17,25 @@ class LogoWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          'Acad',
-          style: TextStyle(
-            color: const Color(0xFF0A66C2), // LinkedIn Blue
-            fontWeight: FontWeight.bold,
-            fontSize: fontSize,
-            letterSpacing: -1.0, // Tighter tracking as in original logo
+        Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(size * 0.25),
+            image: const DecorationImage(
+              image: AssetImage('assets/images/acadyk_logo.png'),
+              fit: BoxFit.cover,
+            ),
           ),
         ),
-        const SizedBox(width: 2.0), // Tiny margin to keep box adjacent
-        Container(
-          width: fontSize * 1.0,
-          height: fontSize * 1.0,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: const Color(0xFF0A66C2),
-            borderRadius: BorderRadius.circular(3.0), // Small rounded corners matching "in" box
-          ),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 2.0), // Aligns uppercase text vertically
-            child: Text(
-              'YK',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: fontSize * 0.78,
-                letterSpacing: -0.5,
-                height: 1.0,
-              ),
-            ),
+        const SizedBox(width: 8.0),
+        Text(
+          'acadyk',
+          style: TextStyle(
+            color: const Color(0xFF0F4C81),
+            fontWeight: FontWeight.w900,
+            fontSize: size * 0.75,
+            letterSpacing: -0.8,
           ),
         ),
       ],
