@@ -11,6 +11,9 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -30,4 +33,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web
+          publish_dir: ./apps/mobile/build/web
