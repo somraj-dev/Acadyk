@@ -12,11 +12,15 @@ class AuthProvider extends ChangeNotifier {
   StreamSubscription<AuthState>? _authSubscription;
 
   AuthProvider() {
-    _currentUser = AuthService.currentUser;
-    if (_currentUser != null) {
-      _fetchProfile(_currentUser!.id);
+    try {
+      _currentUser = AuthService.currentUser;
+      if (_currentUser != null) {
+        _fetchProfile(_currentUser!.id);
+      }
+      _setupAuthListener();
+    } catch (e) {
+      debugPrint('AuthProvider initialization error: $e');
     }
-    _setupAuthListener();
   }
 
   User? get currentUser => _currentUser;

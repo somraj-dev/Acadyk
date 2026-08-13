@@ -25,6 +25,7 @@ import '../../../profile/presentation/screens/space_screen.dart';
 import '../../../profile/presentation/screens/settings_activity_screen.dart';
 import '../../../profile/presentation/screens/settings_upgrade_screen.dart';
 import '../../../chat/presentation/screens/message_center_screen.dart';
+import '../data/mock_feed_data.dart';
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
 
@@ -282,29 +283,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                           ],
                                         ),
                                       )
-                                    else if (_supabasePosts.isEmpty)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 16),
-                                        alignment: Alignment.center,
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.feed_outlined, size: 64, color: Colors.grey.shade400),
-                                            const SizedBox(height: 16),
-                                            const Text(
-                                              'No posts in feed yet',
-                                              style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 16, fontWeight: FontWeight.bold),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            const Text(
-                                              'Be the first to share an update!',
-                                              style: TextStyle(color: Color(0xFF8E8E8E), fontSize: 14),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    else
-                                      ..._supabasePosts.map((post) => _buildDatabasePostCard(post)),
+                                    else ...[
+                                      if (_supabasePosts.isNotEmpty)
+                                        ..._supabasePosts.map((post) => _buildDatabasePostCard(post)),
+                                      // Mock posts from MITS Gwalior
+                                      ...MockFeedData.mockPosts.map((post) => _buildMockPostCard(post)),
+                                    ],
 
                                     const SizedBox(height: 16.0),
                                   ],
@@ -2748,6 +2732,335 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             fontSize: 12,
             fontWeight: FontWeight.bold,
           ),
+        ),
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // MOCK POST CARD BUILDER
+  // ------------------------------------------------------------------
+  Widget _buildMockPostCard(Map<String, dynamic> post) {
+    final String postId = post['id'] ?? 'mock_${post.hashCode}';
+    final String authorName = post['authorName'] ?? 'Unknown';
+    final String authorSubtitle = post['authorSubtitle'] ?? '';
+    final String authorInitials = post['authorInitials'] ?? '?';
+    final int authorBgColor = post['authorBgColor'] ?? 0xFF424242;
+    final bool isVerified = post['isVerified'] ?? false;
+    final String badgeType = post['badgeType'] ?? 'bronze';
+    final String timeAgo = post['timeAgo'] ?? '';
+    final String content = post['content'] ?? '';
+    final int likes = post['likes'] ?? 0;
+    final int comments = post['comments'] ?? 0;
+    final bool isCollab = post['isCollab'] ?? false;
+    final String postType = post['type'] ?? 'student';
+
+    // Collab author data
+    final String collabName = post['collabAuthorName'] ?? '';
+    final String collabInitials = post['collabAuthorInitials'] ?? '';
+    final int collabBgColor = post['collabAuthorBgColor'] ?? 0xFF424242;
+
+    // Determine if this is a notification-type post
+    final bool isNotification = postType == 'notification';
+
+    // Use MITS logo for MITS official posts
+    final bool isMITSOfficial = authorName.startsWith('MITS');
+
+    return Container(
+      color: Colors.white,
+      margin: const EdgeInsets.only(bottom: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Notification banner for notification-type posts
+          if (isNotification)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFF3E0), Color(0xFFFFECB3)],
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.notifications_active, size: 16, color: Color(0xFFE65100)),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Official Notification • $timeAgo',
+                    style: const TextStyle(
+                      color: Color(0xFFE65100),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Collab banner for collab posts
+          if (isCollab)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.handshake, size: 16, color: Color(0xFF1565C0)),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text(
+                      'Collaboration Post',
+                      style: TextStyle(
+                        color: Color(0xFF1565C0),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Avatar section
+                if (isCollab) ...[
+                  // Overlapping dual avatars for collab posts
+                  SizedBox(
+                    width: 52,
+                    height: 44,
+                    child: Stack(
+                      children: [
+                        // Main author avatar
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          child: _buildMockAvatar(
+                            initials: authorInitials,
+                            bgColor: Color(authorBgColor),
+                            size: 36,
+                            isMITS: isMITSOfficial,
+                          ),
+                        ),
+                        // Collab author avatar (overlapping)
+                        Positioned(
+                          left: 20,
+                          top: 8,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: _buildMockAvatar(
+                              initials: collabInitials,
+                              bgColor: Color(collabBgColor),
+                              size: 32,
+                              isMITS: false,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  // Single avatar
+                  Container(
+                    padding: const EdgeInsets.all(2.0),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isNotification
+                          ? const Color(0xFFEF4444)
+                          : (isMITSOfficial ? const Color(0xFF1565C0) : Colors.transparent),
+                    ),
+                    child: Container(
+                      padding: EdgeInsets.all(isNotification || isMITSOfficial ? 1.5 : 0),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isNotification || isMITSOfficial ? Colors.white : Colors.transparent,
+                      ),
+                      child: _buildMockAvatar(
+                        initials: authorInitials,
+                        bgColor: Color(authorBgColor),
+                        size: 36,
+                        isMITS: isMITSOfficial,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 8),
+                // Author info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              isCollab ? '$authorName × $collabName' : authorName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                                color: Color(0xFF191919),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isVerified) ...[
+                            const SizedBox(width: 4),
+                            PremiumBadge(type: badgeType),
+                          ],
+                        ],
+                      ),
+                      Text(
+                        authorSubtitle,
+                        style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (!isNotification)
+                        Text(
+                          timeAgo,
+                          style: const TextStyle(color: Color(0xFF8E8E8E), fontSize: 11),
+                        ),
+                    ],
+                  ),
+                ),
+                _buildFollowButton(postId),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => _showPostOptionsBottomSheet(
+                    context: context,
+                    postId: postId,
+                    authorName: authorName,
+                    authorHeadline: authorSubtitle,
+                    authorAvatar: '',
+                    postText: content,
+                    postImage: null,
+                    accountData: {
+                      'name': authorName,
+                      'avatarUrl': '',
+                      'dateJoined': 'August 2024',
+                      'location': 'Gwalior, India',
+                      'sharedFollowers': 12,
+                    },
+                  ),
+                  child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E), size: 20),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Post content with "see more" truncation for long posts
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: _buildExpandableContent(postId, content),
+          ),
+          const SizedBox(height: 10),
+
+          // Engagement row
+          _buildPostActionRow(
+            postId: postId,
+            defaultLikes: likes,
+            defaultComments: comments,
+          ),
+          if (_commentsExpanded[postId] == true) ...[
+            _buildCommentsSection(postId),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Helper: Build avatar for mock posts
+  Widget _buildMockAvatar({
+    required String initials,
+    required Color bgColor,
+    required double size,
+    required bool isMITS,
+  }) {
+    if (isMITS) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          image: DecorationImage(
+            image: AssetImage('assets/images/mits_logo.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    }
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: bgColor,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initials.length > 2 ? initials.substring(0, 2) : initials,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: size * 0.35,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  // Helper: Expandable content with "see more"
+  final Map<String, bool> _expandedContent = {};
+  Widget _buildExpandableContent(String postId, String content) {
+    final isExpanded = _expandedContent[postId] ?? false;
+    const int maxLength = 200;
+    final bool needsTruncation = content.length > maxLength;
+
+    if (!needsTruncation || isExpanded) {
+      return Text(
+        content,
+        style: const TextStyle(
+          color: Color(0xFF191919),
+          fontSize: 14,
+          height: 1.4,
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _expandedContent[postId] = true;
+        });
+      },
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            color: Color(0xFF191919),
+            fontSize: 14,
+            height: 1.4,
+          ),
+          children: [
+            TextSpan(text: content.substring(0, maxLength)),
+            const TextSpan(
+              text: '... see more',
+              style: TextStyle(
+                color: Color(0xFF0A66C2),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

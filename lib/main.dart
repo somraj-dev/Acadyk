@@ -9,7 +9,11 @@ import 'common/providers/profile_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SupabaseService.initialize();
+  try {
+    await SupabaseService.initialize();
+  } catch (e) {
+    debugPrint('Supabase initialization error: $e');
+  }
   runApp(
     MultiProvider(
       providers: [
@@ -30,15 +34,35 @@ class MyCustomScrollBehavior extends MaterialScrollBehavior {
       };
 }
 
-class AcadykApp extends StatelessWidget {
+class AcadykApp extends StatefulWidget {
   const AcadykApp({super.key});
+
+  @override
+  State<AcadykApp> createState() => _AcadykAppState();
+}
+
+class _AcadykAppState extends State<AcadykApp> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncProfile();
+  }
+
+  void _syncProfile() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
+    if (authProvider.currentProfile != profileProvider.profile) {
+      profileProvider.setProfile(authProvider.currentProfile);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        // Automatically set the ProfileProvider's profile when currentProfile changes
+        // Sync profile when auth changes without triggering infinite rebuilds
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
           final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
           if (authProvider.currentProfile != profileProvider.profile) {
             profileProvider.setProfile(authProvider.currentProfile);
@@ -80,4 +104,5 @@ class AcadykApp extends StatelessWidget {
     );
   }
 }
+
 
