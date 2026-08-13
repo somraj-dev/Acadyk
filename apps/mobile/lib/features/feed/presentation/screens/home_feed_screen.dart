@@ -36,11 +36,12 @@ class HomeFeedScreen extends StatefulWidget {
 
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get scaffoldBg => _isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
-  Color get cardBg => _isDark ? const Color(0xFF000000) : Colors.white;
-  Color get textMain => _isDark ? const Color(0xFFF7F9F9) : const Color(0xFF0F1419);
-  Color get textSub => _isDark ? const Color(0xFF71767B) : const Color(0xFF536471);
-  Color get borderDivider => _isDark ? const Color(0xFF2F3336) : const Color(0xFFEFF3F4);
+  Color get scaffoldBg => _isDark ? Color(0xFF000000) : Color(0xFFFFFFFF);
+  Color get cardBg => _isDark ? Color(0xFF000000) : Colors.white;
+  Color get textMain => _isDark ? Color(0xFFF7F9F9) : Color(0xFF0F1419);
+  Color get textSub => _isDark ? Color(0xFF71767B) : Color(0xFF536471);
+  Color get iconColor => _isDark ? Colors.white : Colors.black87;
+  Color get borderDivider => _isDark ? Color(0xFF2F3336) : Color(0xFFEFF3F4);
 
   int _activeTab = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -287,10 +288,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(vertical: 40),
                                         alignment: Alignment.center,
-                                        child: const Column(
+                                        child: Column(
                                           children: [
-                                            CircularProgressIndicator(),
-                                            SizedBox(height: 16),
+                                            const CircularProgressIndicator(),
+                                            const SizedBox(height: 16),
                                             Text(
                                               'Loading feed...',
                                               style: TextStyle(color: textSub),
@@ -419,7 +420,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       ));
                     },
                     behavior: HitTestBehavior.opaque,
-                    child: const Column(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
@@ -634,7 +635,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       ));
                     },
                     behavior: HitTestBehavior.opaque,
-                    child: const Column(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
@@ -710,8 +711,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 ),
               ));
             },
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12.0),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Text(
                 'TIME CEO Jessica Sibley sits down with Alisha Moopen, Managing Director & Group CEO of... more',
                 style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
@@ -837,7 +838,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     children: [
                       Row(
                         children: [
-                          const Text(
+                          Text(
                             'Alina Sprongole',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -849,7 +850,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           const PremiumBadge(type: 'bronze'),
                           const SizedBox(width: 4),
 
-                          const Text('• 1st', style: TextStyle(color: textSub, fontSize: 12)),
+                          Text('• 1st', style: TextStyle(color: textSub, fontSize: 12)),
                         ],
                       ),
                       const Text(
@@ -860,7 +861,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           fontSize: 11.5,
                         ),
                       ),
-                      const Text(
+                      Text(
                         'Vibe Skills',
                         style: TextStyle(color: textSub, fontSize: 11.0),
                       ),
@@ -908,8 +909,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 ),
               ));
             },
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12.0),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Text(
                 'A \$24M seed valuation is a death sentence. Carta just released their Q1 2026 data. The... more',
                 style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
@@ -958,17 +959,17 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       color: cardBg,
       margin: const EdgeInsets.only(bottom: 8.0),
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
               CircleAvatar(
                 radius: 12,
-                backgroundColor: Color(0xFFEEF3F8),
+                backgroundColor: const Color(0xFFEEF3F8),
                 child: Icon(Icons.person, size: 14, color: textSub),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 'Ankit Sharma likes this',
                 style: TextStyle(
@@ -1042,7 +1043,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1105,8 +1106,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 ),
               ));
             },
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12.0),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Text(
                 'A 19-year-old left Patna with borrowed money. 50 years later, his company posted \$18.2B in revenue. This is Anil Agarwal - and the story is not... more',
                 style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
@@ -1243,7 +1244,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       children: [
                         Row(
                           children: [
-                            const Text(
+                            Text(
                               'Gokul Rajaram',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -1252,7 +1253,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Text(
+                            Text(
                               '• Following',
                               style: TextStyle(
                                 color: textSub,
@@ -1261,7 +1262,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             ),
                           ],
                         ),
-                        const Text(
+                        Text(
                           'Investor and Company Helper',
                           style: TextStyle(
                             color: textSub,
@@ -1301,8 +1302,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           const SizedBox(height: 10),
 
           // Reposter Text
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.0),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
             child: Text(
               'This is awesome!!!!',
               style: TextStyle(color: textMain, fontSize: 16.0, height: 1.3),
@@ -1358,7 +1359,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 ),
                               );
                             },
-                            child: const Column(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
@@ -1391,7 +1392,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
                     child: RichText(
-                      text: const TextSpan(
+                      text: TextSpan(
                         style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
                         children: [
                           TextSpan(text: 'I enjoyed the podcast featuring '),
@@ -1530,7 +1531,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               const SizedBox(width: 6),
               Text(
                 likesStr,
-                style: const TextStyle(
+                style: TextStyle(
                   color: iconColor,
                   fontSize: 14.0,
                   fontWeight: FontWeight.w600,
@@ -1553,7 +1554,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               const SizedBox(width: 6),
               Text(
                 commentsCount.toString(),
-                style: const TextStyle(
+                style: TextStyle(
                   color: iconColor,
                   fontSize: 14.0,
                   fontWeight: FontWeight.w600,
@@ -1757,7 +1758,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                           _commentFocusNode.requestFocus();
                                         });
                                       },
-                                      child: const Text(
+                                      child: Text(
                                         'Reply',
                                         style: TextStyle(color: textSub, fontSize: 12, fontWeight: FontWeight.w600),
                                       ),
@@ -1869,7 +1870,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                                     _commentFocusNode.requestFocus();
                                                   });
                                                 },
-                                                child: const Text(
+                                                child: Text(
                                                   'Reply',
                                                   style: TextStyle(color: textSub, fontSize: 11, fontWeight: FontWeight.w600),
                                                 ),
@@ -3210,7 +3211,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     children: [
                       Icon(
                         isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-                        color: isLiked ? const Color(0xFFF91880) : iconColor,
+                        color: isLiked ? Color(0xFFF91880) : iconColor,
                         size: 24,
                       ),
                       const SizedBox(width: 6),
@@ -3330,7 +3331,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         ),
                       );
                     },
-                    child: const Column(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
@@ -4091,6 +4092,16 @@ class RepostScreen extends StatefulWidget {
 }
 
 class _RepostScreenState extends State<RepostScreen> {
+  // _RepostScreenState_has_getters
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get scaffoldBg => _isDark ? Color(0xFF000000) : Color(0xFFFFFFFF);
+  Color get cardBg => _isDark ? Color(0xFF000000) : Colors.white;
+  Color get textMain => _isDark ? Color(0xFFF7F9F9) : Color(0xFF0F1419);
+  Color get textSub => _isDark ? Color(0xFF71767B) : Color(0xFF536471);
+  Color get iconColor => _isDark ? Colors.white : Colors.black87;
+  Color get borderDivider => _isDark ? Color(0xFF2F3336) : Color(0xFFEFF3F4);
+
   final TextEditingController _commentCtrl = TextEditingController();
   bool _showPreview = true;
 
@@ -4118,7 +4129,7 @@ class _RepostScreenState extends State<RepostScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.close, color: iconColor, size: 28),
+                        icon: Icon(Icons.close, color: iconColor, size: 28),
                         onPressed: () => Navigator.pop(context),
                       ),
                       ElevatedButton(
@@ -4620,6 +4631,16 @@ class ReportPostScreen extends StatefulWidget {
 }
 
 class _ReportPostScreenState extends State<ReportPostScreen> {
+  // _ReportPostScreenState_has_getters
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get scaffoldBg => _isDark ? Color(0xFF000000) : Color(0xFFFFFFFF);
+  Color get cardBg => _isDark ? Color(0xFF000000) : Colors.white;
+  Color get textMain => _isDark ? Color(0xFFF7F9F9) : Color(0xFF0F1419);
+  Color get textSub => _isDark ? Color(0xFF71767B) : Color(0xFF536471);
+  Color get iconColor => _isDark ? Colors.white : Colors.black87;
+  Color get borderDivider => _isDark ? Color(0xFF2F3336) : Color(0xFFEFF3F4);
+
   int _currentStep = 0; // 0: Select reason, 1: Submit review
   String? _selectedReason;
   bool _receiveUpdates = false;
@@ -4680,7 +4701,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
                       // Back arrow (only visible on step 1)
                       if (_currentStep == 1)
                         IconButton(
-                          icon: const Icon(Icons.arrow_back, color: iconColor, size: 28),
+                          icon: Icon(Icons.arrow_back, color: iconColor, size: 28),
                           onPressed: () {
                             setState(() {
                               _currentStep = 0;
@@ -4690,7 +4711,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
                       else
                         const SizedBox(width: 48), // Balances the close icon
                       
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Report this post',
                           textAlign: TextAlign.center,
@@ -4702,7 +4723,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: iconColor, size: 28),
+                        icon: Icon(Icons.close, color: iconColor, size: 28),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -4752,7 +4773,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
     return ListView(
       padding: const EdgeInsets.all(20.0),
       children: [
-        const Text(
+        Text(
           'Select your reporting reason',
           style: TextStyle(
             fontSize: 20,
@@ -4805,7 +4826,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
     return ListView(
       padding: const EdgeInsets.all(20.0),
       children: [
-        const Text(
+        Text(
           "You're requesting a policy review for this reason",
           style: TextStyle(
             fontSize: 20,
@@ -4847,7 +4868,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
         ),
         const SizedBox(height: 24),
 
-        const Text(
+        Text(
           'Want to follow the status of your report?',
           style: TextStyle(
             fontSize: 16,
@@ -4869,7 +4890,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
                 });
               },
             ),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Receive updates on this report',
                 style: TextStyle(fontSize: 15, color: textMain),
@@ -4902,8 +4923,21 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
   }
 }
 
-class SharePostScreen extends StatelessWidget {
+class SharePostScreen extends StatefulWidget {
   const SharePostScreen({super.key});
+
+  @override
+  State<SharePostScreen> createState() => _SharePostScreenState();
+}
+
+class _SharePostScreenState extends State<SharePostScreen> {
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get scaffoldBg => _isDark ? Color(0xFF000000) : Color(0xFFFFFFFF);
+  Color get cardBg => _isDark ? Color(0xFF000000) : Colors.white;
+  Color get textMain => _isDark ? Color(0xFFF7F9F9) : Color(0xFF0F1419);
+  Color get textSub => _isDark ? Color(0xFF71767B) : Color(0xFF536471);
+  Color get iconColor => _isDark ? Colors.white : Colors.black87;
+  Color get borderDivider => _isDark ? Color(0xFF2F3336) : Color(0xFFEFF3F4);
 
   final List<Map<String, dynamic>> users = const [
     {'name': 'ਆਯੂਸ਼', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
@@ -4937,7 +4971,7 @@ class SharePostScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back, color: iconColor, size: 24),
+                        icon: Icon(Icons.arrow_back, color: iconColor, size: 24),
                         onPressed: () => Navigator.pop(context),
                       ),
                       Expanded(
@@ -5052,7 +5086,7 @@ class SharePostScreen extends StatelessWidget {
                         icon: Icons.link,
                         label: 'Copy link',
                         color: const Color(0xFFEBEBEB),
-                        iconColor: const Color(0xFF191919),
+                        iconColor: Color(0xFF191919),
                         onTap: () {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -5096,7 +5130,7 @@ class SharePostScreen extends StatelessWidget {
                         icon: Icons.download,
                         label: 'Download',
                         color: const Color(0xFFEBEBEB),
-                        iconColor: const Color(0xFF191919),
+                        iconColor: Color(0xFF191919),
                         onTap: () {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
