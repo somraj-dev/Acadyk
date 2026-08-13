@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as legacy_provider;
 import '../common/services/supabase_service.dart';
 import '../common/providers/auth_provider.dart';
 import '../common/providers/profile_provider.dart';
@@ -11,17 +12,19 @@ Future<void> bootstrap() async {
   try {
     await SupabaseService.initialize();
   } catch (e) {
-    debugPrint('Supabase initialization error: ');
+    debugPrint('Supabase initialization error: $e');
   }
 
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => ProfileProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-      ],
-      child: const AcadykApp(),
+    ProviderScope(
+      child: legacy_provider.MultiProvider(
+        providers: [
+          legacy_provider.ChangeNotifierProvider(create: (_) => AuthProvider()),
+          legacy_provider.ChangeNotifierProvider(create: (_) => ProfileProvider()),
+          legacy_provider.ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ],
+        child: const AcadykApp(),
+      ),
     ),
   );
 }
