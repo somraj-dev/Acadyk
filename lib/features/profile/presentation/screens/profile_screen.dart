@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'settings_activity_screen.dart';
 import '../services/profile_manager.dart';
 import 'about_account_screen.dart';
-import '../../../feed/presentation/screens/create_startup_screen.dart';
 import '../../../chat/presentation/screens/direct_message_screen.dart';
 import 'edit_status_screen.dart';
 import 'connections_list_screen.dart';
@@ -28,12 +26,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F2EF),
+      backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 480),
-            color: const Color(0xFFF3F2EF),
+            color: const Color(0xFFF8F9FA),
             child: Stack(
               children: [
                 // Scrollable content
@@ -49,14 +47,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 8),
 
                       // =============================================
-                      // SECTION 2: About
+                      // SECTION 2: Summary / About
                       // =============================================
                       _buildAboutSection(),
 
                       const SizedBox(height: 8),
 
                       // =============================================
-                      // SECTION 3: Featured
+                      // SECTION 3: Listed / Featured
                       // =============================================
                       _buildFeaturedSection(),
 
@@ -80,47 +78,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // SECTION 6: Education
                       // =============================================
                       _buildEducationSection(),
-
-
-
+                      const SizedBox(height: 8),
 
                       // =============================================
-                      // SECTION 8: Projects
+                      // SECTION 7: Projects
                       // =============================================
                       _buildProjectsSection(),
+                      const SizedBox(height: 8),
+
+                      // =============================================
+                      // SECTION 8: Skills & Connected Apps
+                      // =============================================
+                      _buildSkillsSection(),
+                      const SizedBox(height: 8),
+                      _buildConnectedAppsSection(),
 
                       const SizedBox(height: 24),
                     ],
                   ),
                 ),
 
-                // Transparent top overlay bar with icons
+                // Transparent top overlay bar with dark translucent icons over banner
                 Positioned(
-                  top: 10,
-                  left: 10,
-                  right: 10,
+                  top: 12,
+                  left: 16,
+                  right: 16,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Back button if not own profile
-                      if (!widget.isOwnProfile)
-                        GestureDetector(
-                          onTap: () => Navigator.of(context).pop(),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.35),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back_ios_new,
-                              color: Colors.white,
-                              size: 18,
-                            ),
+                      // Back button
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).maybePop(),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            shape: BoxShape.circle,
                           ),
-                        )
-                      else
-                        const SizedBox(),
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
 
                       // Right side search and menu options
                       Row(
@@ -128,11 +131,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           GestureDetector(
                             onTap: () {},
                             child: Container(
-                              padding: const EdgeInsets.all(8),
+                              width: 40,
+                              height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.35),
+                                color: Colors.black.withValues(alpha: 0.45),
                                 shape: BoxShape.circle,
                               ),
+                              alignment: Alignment.center,
                               child: const Icon(
                                 Icons.search,
                                 color: Colors.white,
@@ -140,21 +145,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const SettingsActivityScreen(),
-                                ),
-                              );
-                            },
+                            onTap: () => _showProfileOptionsBottomSheet(context),
                             child: Container(
-                              padding: const EdgeInsets.all(8),
+                              width: 40,
+                              height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.35),
+                                color: Colors.black.withValues(alpha: 0.45),
                                 shape: BoxShape.circle,
                               ),
+                              alignment: Alignment.center,
                               child: const Icon(
                                 Icons.menu,
                                 color: Colors.white,
@@ -333,37 +334,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfileHeaderCard() {
     // Resolve dynamic values based on userData or defaults
-    final String name = _profileName ?? (widget.isOwnProfile ? ProfileManager.name : 'ImTanujSingh');
+    final String name = _profileName ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
 
     final String username = widget.userData != null 
-        ? '@${widget.userData!['name'].toString().replaceAll(' ', '')}' 
-        : (widget.isOwnProfile ? '@${ProfileManager.name.replaceAll(' ', '')}' : '@ImTanujSingh');
+        ? '@${widget.userData!['name'].toString().replaceAll(' ', '').toLowerCase()}' 
+        : (widget.isOwnProfile ? '@${ProfileManager.name.replaceAll(' ', '').toLowerCase()}' : '@somraj.lodhi');
 
     final String bio = _profileBio ?? (widget.isOwnProfile 
         ? ProfileManager.bio 
-        : 'Cricket enthusiast 🇮🇳 🏏 Covering worldwide action. Sharing news and passionate commentary on every match. DM for collabs.');
+        : 'Founder | Thinker | Quant Engineer. Covering worldwide action. DM for collabs.');
 
     final String location = _profileLocation ?? (widget.isOwnProfile ? ProfileManager.location : 'India');
 
     final String avatar = widget.userData != null 
         ? widget.userData!['avatar'] 
-        : (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/young_entrepreneur.jpg');
-
-    const Color textColor = Color(0xFF0F1419);
-    const Color textSecondary = Color(0xFF536471);
+        : (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/somraj_avatar.jpg');
 
     return Container(
       color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner + Overlay Profile Photo Stack
+          // Banner + Squircle Profile Photo Stack
           SizedBox(
-            height: 190,
+            height: 250,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Banner Image
+                // Banner Image (Aerial Monochrome Ocean Waves with bottom gradient overlay)
                 GestureDetector(
                   onTap: widget.isOwnProfile
                       ? () async {
@@ -391,37 +389,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         }
                       : null,
                   child: Container(
-                    height: 140,
+                    height: 215,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       image: DecorationImage(
                         image: (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty)
                             ? NetworkImage(_coverPhotoUrl!) as ImageProvider
-                            : (widget.isOwnProfile ? AssetImage(ProfileManager.bannerUrl) : const AssetImage('assets/images/team_celebration_banner.png')) as ImageProvider,
+                            : const AssetImage('assets/images/ocean_wave_header.png') as ImageProvider,
                         fit: BoxFit.cover,
+                      ),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.35),
+                            Colors.transparent,
+                            Colors.white.withValues(alpha: 0.65),
+                            Colors.white,
+                          ],
+                          stops: const [0.0, 0.45, 0.85, 1.0],
+                        ),
                       ),
                     ),
                   ),
                 ),
 
-                // Profile avatar overlapping the banner
+                // Profile Squircle Avatar overlapping the bottom of the banner
                 Positioned(
-                  left: 16,
+                  left: 20,
                   bottom: 0,
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
                       Container(
-                        width: 86,
-                        height: 86,
+                        width: 96,
+                        height: 96,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3.5),
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(color: Colors.white, width: 4.0),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
@@ -451,54 +464,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   }
                                 }
                               : null,
-                          child: CircleAvatar(
-                            radius: 40,
-                            backgroundImage: (_profilePhotoUrl != null && _profilePhotoUrl!.isNotEmpty)
-                                ? NetworkImage(_profilePhotoUrl!) as ImageProvider
-                                : AssetImage(avatar),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(22),
+                            child: Image(
+                              image: (_profilePhotoUrl != null && _profilePhotoUrl!.isNotEmpty)
+                                  ? NetworkImage(_profilePhotoUrl!) as ImageProvider
+                                  : AssetImage(avatar),
+                              fit: BoxFit.cover,
+                              width: 96,
+                              height: 96,
+                            ),
                           ),
                         ),
                       ),
-                      if (widget.isOwnProfile)
-                        Positioned(
-                          bottom: -2,
-                          right: -2,
-                          child: ValueListenableBuilder<bool>(
-                            valueListenable: UserStatusState.statusNotifier,
-                            builder: (context, statusValue, child) {
-                              final displayEmoji = UserStatusState.emoji ?? '🤕';
-                              return GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const EditStatusScreen()),
-                                  );
-                                },
-                                child: Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF161B22), // GitHub dark gray badge
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.15),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    displayEmoji,
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
+
+                      // Emoji status badge on bottom right corner of avatar
+                      Positioned(
+                        bottom: -2,
+                        right: -2,
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: UserStatusState.statusNotifier,
+                          builder: (context, statusValue, child) {
+                            final displayEmoji = UserStatusState.emoji ?? '🤕';
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const EditStatusScreen()),
+                                );
+                              },
+                              child: Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E293B),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2.5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.15),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
-                          ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  displayEmoji,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            );
+                          },
                         ),
+                      ),
                     ],
                   ),
                 ),
@@ -506,28 +525,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-          // Action Buttons Row (right-aligned)
+          // Action Buttons Row (Right Aligned: Mail + Edit Profile / Follow)
           Padding(
-            padding: const EdgeInsets.only(right: 16.0, top: 12.0),
+            padding: const EdgeInsets.only(right: 20.0, top: 10.0, bottom: 4.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // Three dots button
-                GestureDetector(
-                  onTap: () => _showProfileOptionsBottomSheet(context),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFCFD9DE), width: 1),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.more_horiz, size: 18, color: textColor),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Chat bubble button
+                // Mail button in white circle
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -543,33 +547,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
                   },
                   child: Container(
-                    width: 36,
-                    height: 36,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
+                      color: Colors.white,
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFCFD9DE), width: 1),
+                      border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
                     ),
                     alignment: Alignment.center,
-                    child: const Icon(Icons.mail_outline_rounded, size: 18, color: textColor),
+                    child: const Icon(CupertinoIcons.mail, size: 20, color: Color(0xFF0F172A)),
                   ),
                 ),
-                const SizedBox(width: 8),
-                 // Follow / Following pill button or Edit Profile
+                const SizedBox(width: 10),
+
+                // Edit Profile / Follow pill button
                 if (widget.isOwnProfile)
                   GestureDetector(
                     onTap: () => _showEditProfileDialog(context, name, bio, location),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F4C81),
-                        borderRadius: BorderRadius.circular(20),
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(22),
                       ),
                       child: const Text(
                         'Edit Profile',
                         style: TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14.5,
                         ),
                       ),
                     ),
@@ -582,17 +588,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: _isFollowing ? const Color(0xFF272C30) : textColor,
-                        borderRadius: BorderRadius.circular(20),
+                        color: _isFollowing ? const Color(0xFF334155) : const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(22),
                       ),
                       child: Text(
                         _isFollowing ? 'Following' : 'Follow',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14.5,
                         ),
                       ),
                     ),
@@ -600,66 +606,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
-          // User Information Section
+          // User Identity Details Section
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Name + Verified Badge
-                Row(
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: textColor,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.verified, size: 20, color: Color(0xFF1DA1F2)), // Blue Twitter verification check
-                  ],
+                // Full Name
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.4,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 2),
+
+                // Handle @somraj.lodhi
+                Text(
+                  username,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 14),
 
                 // Bio
                 Text(
                   bio,
                   style: const TextStyle(
-                    fontSize: 15,
-                    color: textColor,
+                    fontSize: 14.5,
+                    color: Color(0xFF334155),
                     height: 1.35,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                // Location + Joined Date Row
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, color: textSecondary, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      location,
-                      style: const TextStyle(color: textSecondary, fontSize: 13.5),
-                    ),
-                    const SizedBox(width: 14),
-                    const Icon(Icons.calendar_today_outlined, color: textSecondary, size: 14),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'Joined February 2020',
-                      style: TextStyle(color: textSecondary, fontSize: 13.5),
-                    ),
-                    const SizedBox(width: 2),
-                    const Icon(Icons.keyboard_arrow_right, color: textSecondary, size: 14),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Following / Followers counts
+                // Stats Row: Following & Followers
                 Row(
                   children: [
                     GestureDetector(
@@ -675,21 +665,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         );
                       },
-                      child: const Row(
-                        children: [
-                          Text(
-                            '357',
-                            style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Following',
-                            style: TextStyle(color: textSecondary, fontSize: 14),
-                          ),
-                        ],
+                      child: RichText(
+                        text: const TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '357',
+                              style: TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14.5,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' Following',
+                              style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 20),
+                    const SizedBox(width: 24),
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -703,62 +702,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         );
                       },
-                      child: const Row(
-                        children: [
-                          Text(
-                            '197.3K',
-                            style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Followers',
-                            style: TextStyle(color: textSecondary, fontSize: 14),
-                          ),
-                        ],
+                      child: RichText(
+                        text: const TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '197.3K',
+                              style: TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14.5,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' Followers',
+                              style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
-          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
   // =============================================================
-  // ABOUT SECTION
+  // SUMMARY SECTION
   // =============================================================
   Widget _buildAboutSection() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Summary',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-              ),
-              const SizedBox.shrink(),
-            ],
+          const Text(
+            'Summary',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF0F172A),
+              letterSpacing: -0.3,
+            ),
           ),
           const SizedBox(height: 12),
           RichText(
             text: const TextSpan(
-              style: TextStyle(fontSize: 14, color: Color(0xFF191919), height: 1.5),
+              style: TextStyle(
+                fontSize: 14.5,
+                color: Color(0xFF334155),
+                height: 1.5,
+                fontWeight: FontWeight.w400,
+              ),
               children: [
                 TextSpan(
-                  text: 'I am a Machine Learning student at Madhav Institute of Technology and Science (MITS), Gwalior, with a strong interest in building scalable technology solutions at the intersection of healthcare and intelligent systems.\nCurrently, I am working on AxioVital, a...',
+                  text:
+                      'I am a Machine Learning student at Madhav Institute of Technology and Science (MITS), Gwalior, with a strong interest in building scalable technology solutions at the intersection of healthcare and intelligent systems.\nCurrently, I am working on AxioVital, a...',
                 ),
                 TextSpan(
                   text: ' more',
-                  style: TextStyle(color: Color(0xFF5E5E5E), fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -769,7 +785,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // =============================================================
-  // FEATURED SECTION
+  // LISTED / FEATURED SECTION
   // =============================================================
   Widget _buildFeaturedSection() {
     return Container(
@@ -779,12 +795,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Row(
               children: [
                 const Text(
                   'Listed',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.3,
+                  ),
                 ),
                 const Spacer(),
               ],
