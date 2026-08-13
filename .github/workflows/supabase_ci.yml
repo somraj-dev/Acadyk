@@ -1,0 +1,13 @@
+name: Supabase CI
+on:
+  push:
+    paths:
+      - "backend/supabase/**"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: supabase/setup-cli@v1
+      - name: Verify Migrations
+        run: supabase db lint --workdir backend/supabase

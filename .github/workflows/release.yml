@@ -1,0 +1,12 @@
+name: Release Pipeline
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Tagged Release
+        run: echo "Releasing tag"

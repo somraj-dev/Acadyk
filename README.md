@@ -1,17 +1,33 @@
-# acadyk
+# Acadyk — Enterprise Monorepo
 
-A new Flutter project.
+Acadyk is a next-generation academic, professional, and career discovery network built with **Flutter** and **Supabase**.
+
+## Monorepo Architecture
+
+```
+Acadyk/
+├── apps/
+│   └── mobile/          # Flutter Mobile Application
+├── backend/
+│   └── supabase/        # Database Migrations, RLS Policies, Edge Functions
+├── infra/               # Deployment & Monitoring Configurations
+├── docs/                # Architecture, DB Schema, & API Documentation
+└── scripts/             # Shell Automation Scripts
+```
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+1. Bootstrap dependencies:
+   ```bash
+   make bootstrap
+   ```
 
-A few resources to get you started if this is your first Flutter project:
+2. Run static analysis:
+   ```bash
+   make lint
+   ```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+3. Run mobile application:
+   ```bash
+   cd apps/mobile && flutter run
+   ```
