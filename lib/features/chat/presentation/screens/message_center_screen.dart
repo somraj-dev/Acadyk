@@ -20,6 +20,99 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
     _loadConversations();
   }
 
+  final List<Map<String, dynamic>> _mockConversations = const [
+    {
+      'id': 'conv_1',
+      'is_group': false,
+      'last_message_text': '📢 Urgent: Mid-term examination schedule & admit card download link has been released on student portal.',
+      'time_ago': '10m ago',
+      'unread_count': 2,
+      'conversation_participants': [
+        {
+          'user_id': 'mits_official',
+          'profiles': {
+            'id': 'mits_official',
+            'full_name': 'MITS Gwalior (Official)',
+            'username': 'mitsgwalior',
+            'profile_photo_url': 'assets/images/mits_logo.png',
+          }
+        }
+      ]
+    },
+    {
+      'id': 'conv_2',
+      'is_group': false,
+      'last_message_text': 'Hey! Are you participating in the upcoming Hackathon 2026? We have 1 slot left in our team.',
+      'time_ago': '1h ago',
+      'unread_count': 1,
+      'conversation_participants': [
+        {
+          'user_id': 'arjun_patel',
+          'profiles': {
+            'id': 'arjun_patel',
+            'full_name': 'Arjun Patel (GDSC Lead)',
+            'username': 'arjunpatel',
+            'profile_photo_url': 'assets/images/somraj_avatar.jpg',
+          }
+        }
+      ]
+    },
+    {
+      'id': 'conv_3',
+      'is_group': false,
+      'last_message_text': 'Thanks for sharing the Flutter codebase documentation! It helped a lot.',
+      'time_ago': '3h ago',
+      'unread_count': 0,
+      'conversation_participants': [
+        {
+          'user_id': 'sneha_verma',
+          'profiles': {
+            'id': 'sneha_verma',
+            'full_name': 'Sneha Verma',
+            'username': 'snehaverma',
+            'profile_photo_url': 'assets/images/alina_avatar.jpg',
+          }
+        }
+      ]
+    },
+    {
+      'id': 'conv_4',
+      'is_group': false,
+      'last_message_text': 'Your research project proposal on Quant AI has been approved. Please submit the progress report.',
+      'time_ago': '1d ago',
+      'unread_count': 0,
+      'conversation_participants': [
+        {
+          'user_id': 'neha_gupta',
+          'profiles': {
+            'id': 'neha_gupta',
+            'full_name': 'Dr. Neha Gupta (HOD CSE)',
+            'username': 'nehagupta',
+            'profile_photo_url': 'assets/images/young_entrepreneur.jpg',
+          }
+        }
+      ]
+    },
+    {
+      'id': 'conv_5',
+      'is_group': false,
+      'last_message_text': 'Congratulations! TCS & Google off-campus placement drive registration link is active.',
+      'time_ago': '2d ago',
+      'unread_count': 0,
+      'conversation_participants': [
+        {
+          'user_id': 'rohit_sharma',
+          'profiles': {
+            'id': 'rohit_sharma',
+            'full_name': 'Rohit Sharma (Placement Cell)',
+            'username': 'rohitsharma',
+            'profile_photo_url': 'assets/images/somraj_avatar.jpg',
+          }
+        }
+      ]
+    },
+  ];
+
   Future<void> _loadConversations() async {
     setState(() {
       _isLoading = true;
@@ -28,13 +121,14 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
       final data = await MessageService.getConversations();
       if (mounted) {
         setState(() {
-          _conversations = data;
+          _conversations = data.isNotEmpty ? data : _mockConversations;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
+          _conversations = _mockConversations;
           _isLoading = false;
         });
       }
@@ -203,7 +297,9 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
               radius: 26,
               backgroundImage: (avatarUrl.isNotEmpty && avatarUrl.startsWith('http'))
                   ? NetworkImage(avatarUrl) as ImageProvider
-                  : const AssetImage('assets/images/somraj_avatar.jpg'),
+                  : (avatarUrl.isNotEmpty && avatarUrl.startsWith('assets/'))
+                      ? AssetImage(avatarUrl) as ImageProvider
+                      : const AssetImage('assets/images/somraj_avatar.jpg'),
             ),
             const SizedBox(width: 16),
             // Name and Subtitle

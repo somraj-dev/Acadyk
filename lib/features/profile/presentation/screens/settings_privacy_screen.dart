@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_permissions_screen.dart';
 
 class SettingsPrivacyScreen extends StatelessWidget {
   const SettingsPrivacyScreen({super.key});
@@ -62,7 +63,17 @@ class SettingsPrivacyScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                _buildPrivacyTile('Manage data permissions', tileTextColor, subtextColor),
+                _buildPrivacyTile(
+                  'Manage data & app permissions',
+                  tileTextColor,
+                  subtextColor,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AppPermissionsScreen()),
+                    );
+                  },
+                ),
                 _buildDivider(),
                 _buildPrivacyTile('Download your data', tileTextColor, subtextColor),
                 _buildDivider(),
@@ -98,7 +109,7 @@ class SettingsPrivacyScreen extends StatelessWidget {
                 _buildPrivacyTile('Research invitations', tileTextColor, subtextColor, trailingText: 'On'),
                 _buildDivider(),
                 _buildPrivacyTile('Acadyk marketing emails and promotions', tileTextColor, subtextColor),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -112,9 +123,10 @@ class SettingsPrivacyScreen extends StatelessWidget {
     Color textCol,
     Color subtextCol, {
     String? trailingText,
+    VoidCallback? onTap,
   }) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap ?? () {},
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
         child: Row(

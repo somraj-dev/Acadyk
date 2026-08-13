@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'dart:math';
 import '../services/profile_manager.dart';
 import 'about_account_screen.dart';
+import 'your_account_screen.dart';
 import '../../../chat/presentation/screens/direct_message_screen.dart';
 import 'edit_status_screen.dart';
 import 'connections_list_screen.dart';
@@ -147,7 +149,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(width: 10),
                           GestureDetector(
-                            onTap: () => _showProfileOptionsBottomSheet(context),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const YourAccountScreen()),
+                              );
+                            },
                             child: Container(
                               width: 40,
                               height: 40,
@@ -207,48 +214,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ProfileManager.profileUpdateNotifier.removeListener(_onProfileUpdated);
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _loadProfileData() async {
-    if (widget.userData != null) {
-      _profileName = widget.userData!['name'];
-      _profileBio = widget.userData!['headline'];
-      _profileLocation = widget.userData!['location'];
-      _profilePhotoUrl = widget.userData!['avatar'];
-      _coverPhotoUrl = widget.userData!['cover_photo_url'];
-    } else {
-      _profileName = widget.isOwnProfile ? ProfileManager.name : 'ImTanujSingh';
-      _profileBio = widget.isOwnProfile 
-          ? ProfileManager.bio 
-          : 'Cricket enthusiast 🇮🇳 🏏 Covering worldwide action. Sharing news and passionate commentary on every match. DM for collabs.';
-      _profileLocation = widget.isOwnProfile ? ProfileManager.location : 'India';
-      _profilePhotoUrl = widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/young_entrepreneur.jpg';
-      _coverPhotoUrl = widget.isOwnProfile ? ProfileManager.bannerUrl : 'assets/images/young_entrepreneur.jpg';
-    }
-
-    try {
-      final userId = widget.isOwnProfile
-          ? SupabaseService.client.auth.currentUser?.id
-          : widget.userData?['id'];
-      if (userId != null) {
-        final data = await SupabaseService.client
-            .from('profiles')
-            .select()
-            .eq('id', userId)
-            .maybeSingle();
-        if (data != null && mounted) {
-          setState(() {
-            _profileName = data['full_name'];
-            _profileBio = data['bio'];
-            _profileLocation = data['location'];
-            _profilePhotoUrl = data['profile_photo_url'];
-            _coverPhotoUrl = data['cover_photo_url'];
-          });
-        }
-      }
-    } catch (e) {
-      print('Error loading profile: $e');
-    }
   }
 
   void _showEditProfileDialog(BuildContext context, String currentName, String currentBio, String currentLocation) {
@@ -316,13 +281,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     }
                   }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to save profile: $e')),
-                    );
-                  }
-                }
+                } catch (_) {}
               },
               child: const Text('Save'),
             ),
@@ -332,23 +291,160 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildAvatarImageWidget({
+    required String? photoUrl,
+    required String avatarString,
+    required String initials,
+    required int bgColorHex,
+    required bool isMITS,
+  }) {
+    if (photoUrl != null && photoUrl.isNotEmpty) {
+      if (photoUrl.startsWith('http')) {
+        return Image.network(
+          photoUrl,
+          fit: BoxFit.cover,
+          width: 96,
+          height: 96,
+          errorBuilder: (context, error, stackTrace) {
+            if (avatarString.isNotEmpty && avatarString.startsWith('assets/')) {
+              return Image.asset(avatarString, fit: BoxFit.cover, width: 96, height: 96);
+            }
+            if (isMITS) {
+              return Image.asset('assets/images/mits_logo.png', fit: BoxFit.cover, width: 96, height: 96);
+            }
+            return Image.asset('assets/images/somraj_avatar.jpg', fit: BoxFit.cover, width: 96, height: 96);
+          },
+        );
+      } else if (photoUrl.startsWith('assets/')) {
+        return Image.asset(
+          photoUrl,
+          fit: BoxFit.cover,
+          width: 96,
+          height: 96,
+          errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/somraj_avatar.jpg', fit: BoxFit.cover, width: 96, height: 96),
+        );
+      }
+    }
+    if (avatarString.isNotEmpty && avatarString.startsWith('assets/')) {
+      return Image.asset(
+        avatarString,
+        fit: BoxFit.cover,
+        width: 96,
+        height: 96,
+        errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/somraj_avatar.jpg', fit: BoxFit.cover, width: 96, height: 96),
+      );
+    }
+    if (isMITS) {
+      return Image.asset('assets/images/mits_logo.png', fit: BoxFit.cover, width: 96, height: 96);
+    }
+    return Container(
+      width: 96,
+      height: 96,
+      color: Color(bgColorHex),
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 32,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBannerImageWidget() {
+    if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty && _coverPhotoUrl!.startsWith('http')) {
+      return Image.network(
+        _coverPhotoUrl!,
+        fit: BoxFit.cover,
+        height: 215,
+        width: double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset('assets/images/ocean_wave_header.png', fit: BoxFit.cover, height: 215, width: double.infinity);
+        },
+      );
+    }
+    if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty && _coverPhotoUrl!.startsWith('assets/')) {
+      return Image.asset(
+        _coverPhotoUrl!,
+        fit: BoxFit.cover,
+        height: 215,
+        width: double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset('assets/images/ocean_wave_header.png', fit: BoxFit.cover, height: 215, width: double.infinity);
+        },
+      );
+    }
+    return Image.asset(
+      'assets/images/ocean_wave_header.png',
+      fit: BoxFit.cover,
+      height: 215,
+      width: double.infinity,
+    );
+  }
+
+  void _loadProfileData() async {
+    if (widget.userData != null) {
+      _profileName = widget.userData!['name'] ?? widget.userData!['full_name'] ?? widget.userData!['authorName'];
+      _profileBio = widget.userData!['headline'] ?? widget.userData!['bio'] ?? widget.userData!['authorSubtitle'];
+      _profileLocation = widget.userData!['location'] ?? 'Gwalior, India';
+      _profilePhotoUrl = widget.userData!['avatar'] ?? widget.userData!['avatarUrl'] ?? widget.userData!['profile_photo_url'];
+      _coverPhotoUrl = widget.userData!['cover_photo_url'];
+    } else {
+      _profileName = widget.isOwnProfile ? ProfileManager.name : 'MITS Gwalior';
+      _profileBio = widget.isOwnProfile 
+          ? ProfileManager.bio 
+          : 'Madhav Institute of Technology & Science, Gwalior (M.P.) • Premier Technical Institution Est. 1957';
+      _profileLocation = widget.isOwnProfile ? ProfileManager.location : 'Gwalior, India';
+      _profilePhotoUrl = widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/mits_logo.png';
+      _coverPhotoUrl = widget.isOwnProfile ? ProfileManager.bannerUrl : 'assets/images/ocean_wave_header.png';
+    }
+
+    try {
+      final userId = widget.isOwnProfile
+          ? SupabaseService.client.auth.currentUser?.id
+          : widget.userData?['id'];
+      if (userId != null) {
+        final data = await SupabaseService.client
+            .from('profiles')
+            .select()
+            .eq('id', userId)
+            .maybeSingle();
+        if (data != null && mounted) {
+          setState(() {
+            _profileName = data['full_name'];
+            _profileBio = data['bio'];
+            _profileLocation = data['location'];
+            _profilePhotoUrl = data['profile_photo_url'];
+            _coverPhotoUrl = data['cover_photo_url'];
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
   Widget _buildProfileHeaderCard() {
     // Resolve dynamic values based on userData or defaults
-    final String name = _profileName ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
+    final String name = _profileName ?? widget.userData?['name'] ?? widget.userData?['full_name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'MITS Gwalior');
 
     final String username = widget.userData != null 
-        ? '@${widget.userData!['name'].toString().replaceAll(' ', '').toLowerCase()}' 
-        : (widget.isOwnProfile ? '@${ProfileManager.name.replaceAll(' ', '').toLowerCase()}' : '@somraj.lodhi');
+        ? '@${name.replaceAll(' ', '').replaceAll('-', '').replaceAll('.', '').toLowerCase()}' 
+        : (widget.isOwnProfile ? '@${ProfileManager.name.replaceAll(' ', '').toLowerCase()}' : '@mitsgwalior');
 
-    final String bio = _profileBio ?? (widget.isOwnProfile 
+    final String bio = _profileBio ?? widget.userData?['headline'] ?? widget.userData?['bio'] ?? (widget.isOwnProfile 
         ? ProfileManager.bio 
-        : 'Founder | Thinker | Quant Engineer. Covering worldwide action. DM for collabs.');
+        : 'Madhav Institute of Technology & Science, Gwalior (M.P.) • Premier Technical Institution Est. 1957');
 
-    final String location = _profileLocation ?? (widget.isOwnProfile ? ProfileManager.location : 'India');
+    final String location = _profileLocation ?? widget.userData?['location'] ?? (widget.isOwnProfile ? ProfileManager.location : 'Gwalior, India');
 
     final String avatar = widget.userData != null 
-        ? widget.userData!['avatar'] 
-        : (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/somraj_avatar.jpg');
+        ? (widget.userData!['avatar'] ?? widget.userData!['avatarUrl'] ?? '')
+        : (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/mits_logo.png');
+
+    final String initials = widget.userData?['initials'] ?? (name.isNotEmpty ? name.substring(0, min(2, name.length)).toUpperCase() : 'M');
+    final int bgColorHex = widget.userData?['bgColor'] ?? 0xFF1565C0;
+    final bool isMITS = name.contains('MITS');
 
     return Container(
       color: Colors.white,
@@ -388,32 +484,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           }
                         }
                       : null,
-                  child: Container(
-                    height: 215,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty)
-                            ? NetworkImage(_coverPhotoUrl!) as ImageProvider
-                            : const AssetImage('assets/images/ocean_wave_header.png') as ImageProvider,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.35),
-                            Colors.transparent,
-                            Colors.white.withValues(alpha: 0.65),
-                            Colors.white,
-                          ],
-                          stops: const [0.0, 0.45, 0.85, 1.0],
+                  child: Stack(
+                    children: [
+                      _buildBannerImageWidget(),
+                      Container(
+                        height: 215,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.35),
+                              Colors.transparent,
+                              Colors.white.withValues(alpha: 0.65),
+                              Colors.white,
+                            ],
+                            stops: const [0.0, 0.45, 0.85, 1.0],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
 
@@ -466,13 +556,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               : null,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(22),
-                            child: Image(
-                              image: (_profilePhotoUrl != null && _profilePhotoUrl!.isNotEmpty)
-                                  ? NetworkImage(_profilePhotoUrl!) as ImageProvider
-                                  : AssetImage(avatar),
-                              fit: BoxFit.cover,
-                              width: 96,
-                              height: 96,
+                            child: _buildAvatarImageWidget(
+                              photoUrl: _profilePhotoUrl,
+                              avatarString: avatar,
+                              initials: initials,
+                              bgColorHex: bgColorHex,
+                              isMITS: isMITS,
                             ),
                           ),
                         ),
@@ -525,12 +614,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-          // Action Buttons Row (Right Aligned: Mail + Edit Profile / Follow)
+          // Action Buttons Row (Right Aligned: Three Dots + Mail + Edit Profile / Follow)
           Padding(
             padding: const EdgeInsets.only(right: 20.0, top: 10.0, bottom: 4.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                // Three dots button in white circle (Shortcuts when visiting another user's profile)
+                if (!widget.isOwnProfile) ...[
+                  GestureDetector(
+                    onTap: () => _showProfileOptionsBottomSheet(context),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.more_horiz, size: 20, color: Color(0xFF0F172A)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+
                 // Mail button in white circle
                 GestureDetector(
                   onTap: () {
@@ -1548,6 +1656,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // BOTTOM SHEETS & POPUPS
   // =============================================================
   void _showProfileOptionsBottomSheet(BuildContext context) {
+    final String currentMemberName = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
+    final String currentMemberAvatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/somraj_avatar.jpg');
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -1577,14 +1688,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: const [
-                          Icon(Icons.check_circle_outline, color: Colors.white),
+                          Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
                           SizedBox(width: 8),
-                          Text('Profile sent in a message successfully!'),
+                          Expanded(child: Text('Profile sent in message!', style: TextStyle(fontSize: 13))),
                         ],
                       ),
                       backgroundColor: const Color(0xFF262626),
                       behavior: SnackBarBehavior.floating,
+                      width: 280,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   );
@@ -1598,14 +1711,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: const [
-                          Icon(Icons.share_outlined, color: Colors.white),
+                          Icon(Icons.share_outlined, color: Colors.white, size: 18),
                           SizedBox(width: 8),
-                          Text('Share options loaded!'),
+                          Expanded(child: Text('Share options loaded!', style: TextStyle(fontSize: 13))),
                         ],
                       ),
                       backgroundColor: const Color(0xFF262626),
                       behavior: SnackBarBehavior.floating,
+                      width: 280,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   );
@@ -1641,14 +1756,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: const [
-                          Icon(Icons.bookmark_outline, color: Colors.white),
+                          Icon(Icons.bookmark_outline, color: Colors.white, size: 18),
                           SizedBox(width: 8),
-                          Text('Saved items loaded!'),
+                          Expanded(child: Text('Saved items loaded!', style: TextStyle(fontSize: 13))),
                         ],
                       ),
                       backgroundColor: const Color(0xFF262626),
                       behavior: SnackBarBehavior.floating,
+                      width: 280,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   );
@@ -1661,12 +1778,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.pop(context);
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const AboutAccountScreen(
+                      builder: (context) => AboutAccountScreen(
                         accountData: {
-                          'name': 'Somraj Lodhi',
-                          'avatarUrl': 'assets/images/somraj_avatar.jpg',
+                          'name': currentMemberName,
+                          'avatarUrl': currentMemberAvatar,
                           'dateJoined': 'June 2024',
-                          'location': 'Indore, India',
+                          'location': 'Gwalior, India',
                           'sharedFollowers': 18,
                         },
                       ),

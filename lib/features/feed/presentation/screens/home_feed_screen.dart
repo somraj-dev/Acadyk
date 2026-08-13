@@ -18,6 +18,7 @@ import '../../../profile/presentation/screens/about_account_screen.dart';
 import 'post_detail_screen.dart';
 import 'startup_gallery_screen.dart';
 import 'exhibition_screen.dart';
+import 'clubs_screen.dart';
 import 'create_post_screen.dart';
 import '../../../notifications/presentation/screens/notification_screen.dart';
 import '../../../community/presentation/screens/discover_communities_screen.dart';
@@ -2481,117 +2482,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           // Scrollable top content
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
               children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).pop(); // close drawer
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                    );
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Somraj Avatar
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                            ColorFiltered(
-                              colorFilter: const ColorFilter.mode(
-                                Colors.blueGrey, // Subtle tint change
-                                BlendMode.modulate,
-                              ),
-                              child: Container(
-                                width: 68,
-                                height: 68,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  image: DecorationImage(
-                                    image: AssetImage('assets/images/alina_avatar.jpg'),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Name & Verified Shield Badge
-                      Row(
-                        children: const [
-                          Text(
-                            'Alina Sprongole',
-                            style: TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF191919),
-                            ),
-                          ),
-                          SizedBox(width: 6),
-                          Icon(Icons.verified_user, size: 18, color: Color(0xFF191919)),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-
-                      // Headline
-                      const Text(
-                        'Founder | Thinker | Quant Engineer',
-                        style: TextStyle(
-                          fontSize: 13.0,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF191919),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Location
-                      const Text(
-                        'Indore, Madhya Pradesh, India',
-                        style: TextStyle(
-                          fontSize: 12.0,
-                          color: Color(0xFF5E5E5E),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Company block
-                      Row(
-                        children: [
-                          // Quantaforze Logo
-                          Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                            padding: const EdgeInsets.all(3.0),
-                            child: CustomPaint(
-                              painter: const QuantaforzeLogoPainter(),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Quantaforze Corporation',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF191919),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const SizedBox(height: 16),
-                const Divider(height: 1, color: Color(0xFFE0E0E0)),
-                const SizedBox(height: 8),
-
                 _buildDrawerNavItem('Profile', onTap: () {
                   Navigator.of(context).pop(); // close drawer
                   Navigator.of(context).push(
@@ -2604,7 +2496,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     builder: (context) => const StartupGalleryScreen(),
                   ));
                 }),
-                _buildDrawerNavItem('Clubs'),
+                _buildDrawerNavItem('Clubs', onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const ClubsScreen(),
+                  ));
+                }),
                 _buildDrawerNavItem('Exhibition', onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => const ExhibitionScreen(),
@@ -2737,6 +2634,34 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     );
   }
 
+  void _navigateToUserProfile({
+    required String name,
+    required String headline,
+    String? avatar,
+    String? initials,
+    int? bgColor,
+    String? location,
+    bool isVerified = false,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileScreen(
+          isOwnProfile: false,
+          userData: {
+            'name': name,
+            'headline': headline,
+            'avatar': avatar ?? '',
+            'initials': initials ?? (name.isNotEmpty ? name.substring(0, min(2, name.length)).toUpperCase() : 'U'),
+            'bgColor': bgColor ?? 0xFF1565C0,
+            'location': location ?? 'Gwalior, India',
+            'isVerified': isVerified,
+          },
+        ),
+      ),
+    );
+  }
+
   // ------------------------------------------------------------------
   // MOCK POST CARD BUILDER
   // ------------------------------------------------------------------
@@ -2765,6 +2690,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
     // Use MITS logo for MITS official posts
     final bool isMITSOfficial = authorName.startsWith('MITS');
+
+    final String mainAvatarAsset = isMITSOfficial ? 'assets/images/mits_logo.png' : '';
 
     return Container(
       color: Colors.white,
@@ -2829,7 +2756,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Avatar section
+                // Avatar section (Tappable to open main author profile or collab author profile)
                 if (isCollab) ...[
                   // Overlapping dual avatars for collab posts
                   SizedBox(
@@ -2841,27 +2768,45 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         Positioned(
                           left: 0,
                           top: 0,
-                          child: _buildMockAvatar(
-                            initials: authorInitials,
-                            bgColor: Color(authorBgColor),
-                            size: 36,
-                            isMITS: isMITSOfficial,
+                          child: GestureDetector(
+                            onTap: () => _navigateToUserProfile(
+                              name: authorName,
+                              headline: authorSubtitle,
+                              avatar: mainAvatarAsset,
+                              initials: authorInitials,
+                              bgColor: authorBgColor,
+                              isVerified: isVerified,
+                            ),
+                            child: _buildMockAvatar(
+                              initials: authorInitials,
+                              bgColor: Color(authorBgColor),
+                              size: 36,
+                              isMITS: isMITSOfficial,
+                            ),
                           ),
                         ),
                         // Collab author avatar (overlapping)
                         Positioned(
                           left: 20,
                           top: 8,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: _buildMockAvatar(
+                          child: GestureDetector(
+                            onTap: () => _navigateToUserProfile(
+                              name: collabName,
+                              headline: 'Partner Organization @ Acadyk',
                               initials: collabInitials,
-                              bgColor: Color(collabBgColor),
-                              size: 32,
-                              isMITS: false,
+                              bgColor: collabBgColor,
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: _buildMockAvatar(
+                                initials: collabInitials,
+                                bgColor: Color(collabBgColor),
+                                size: 32,
+                                isMITS: false,
+                              ),
                             ),
                           ),
                         ),
@@ -2869,68 +2814,89 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     ),
                   ),
                 ] else ...[
-                  // Single avatar
-                  Container(
-                    padding: const EdgeInsets.all(2.0),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isNotification
-                          ? const Color(0xFFEF4444)
-                          : (isMITSOfficial ? const Color(0xFF1565C0) : Colors.transparent),
+                  // Single avatar (Tappable)
+                  GestureDetector(
+                    onTap: () => _navigateToUserProfile(
+                      name: authorName,
+                      headline: authorSubtitle,
+                      avatar: mainAvatarAsset,
+                      initials: authorInitials,
+                      bgColor: authorBgColor,
+                      isVerified: isVerified,
                     ),
                     child: Container(
-                      padding: EdgeInsets.all(isNotification || isMITSOfficial ? 1.5 : 0),
+                      padding: const EdgeInsets.all(2.0),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isNotification || isMITSOfficial ? Colors.white : Colors.transparent,
+                        color: isNotification
+                            ? const Color(0xFFEF4444)
+                            : (isMITSOfficial ? const Color(0xFF1565C0) : Colors.transparent),
                       ),
-                      child: _buildMockAvatar(
-                        initials: authorInitials,
-                        bgColor: Color(authorBgColor),
-                        size: 36,
-                        isMITS: isMITSOfficial,
+                      child: Container(
+                        padding: EdgeInsets.all(isNotification || isMITSOfficial ? 1.5 : 0),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isNotification || isMITSOfficial ? Colors.white : Colors.transparent,
+                        ),
+                        child: _buildMockAvatar(
+                          initials: authorInitials,
+                          bgColor: Color(authorBgColor),
+                          size: 36,
+                          isMITS: isMITSOfficial,
+                        ),
                       ),
                     ),
                   ),
                 ],
                 const SizedBox(width: 8),
-                // Author info
+                // Author info (Tappable to open author's profile dynamically)
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              isCollab ? '$authorName × $collabName' : authorName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13.5,
-                                color: Color(0xFF191919),
+                  child: GestureDetector(
+                    onTap: () => _navigateToUserProfile(
+                      name: authorName,
+                      headline: authorSubtitle,
+                      avatar: mainAvatarAsset,
+                      initials: authorInitials,
+                      bgColor: authorBgColor,
+                      isVerified: isVerified,
+                    ),
+                    behavior: HitTestBehavior.opaque,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                isCollab ? '$authorName × $collabName' : authorName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13.5,
+                                  color: Color(0xFF191919),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          if (isVerified) ...[
-                            const SizedBox(width: 4),
-                            PremiumBadge(type: badgeType),
+                            if (isVerified) ...[
+                              const SizedBox(width: 4),
+                              PremiumBadge(type: badgeType),
+                            ],
                           ],
-                        ],
-                      ),
-                      Text(
-                        authorSubtitle,
-                        style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (!isNotification)
-                        Text(
-                          timeAgo,
-                          style: const TextStyle(color: Color(0xFF8E8E8E), fontSize: 11),
                         ),
-                    ],
+                        Text(
+                          authorSubtitle,
+                          style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (!isNotification)
+                          Text(
+                            timeAgo,
+                            style: const TextStyle(color: Color(0xFF8E8E8E), fontSize: 11),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
                 _buildFollowButton(postId),
@@ -2941,12 +2907,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     postId: postId,
                     authorName: authorName,
                     authorHeadline: authorSubtitle,
-                    authorAvatar: '',
+                    authorAvatar: mainAvatarAsset,
                     postText: content,
                     postImage: null,
                     accountData: {
                       'name': authorName,
-                      'avatarUrl': '',
+                      'avatarUrl': mainAvatarAsset,
                       'dateJoined': 'August 2024',
                       'location': 'Gwalior, India',
                       'sharedFollowers': 12,
@@ -4893,14 +4859,16 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
+          mainAxisSize: MainAxisSize.min,
           children: const [
-            Icon(Icons.check_circle_outline, color: Colors.white),
+            Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
             SizedBox(width: 8),
-            Text('Thank you! We received your report.'),
+            Expanded(child: Text('Thank you! We received your report.', style: TextStyle(fontSize: 13))),
           ],
         ),
         backgroundColor: const Color(0xFF262626),
         behavior: SnackBarBehavior.floating,
+        width: 280,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
