@@ -137,8 +137,10 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const bgColor = Colors.white;
-    const textColor = Color(0xFF111827);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = theme.scaffoldBackgroundColor;
+    final textColor = theme.colorScheme.onSurface;
     final currentUserId = SupabaseService.client.auth.currentUser?.id ?? '';
 
     return Scaffold(
@@ -152,8 +154,8 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.only(left: 16.0),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16.0),
                     child: Text(
                       'Messages',
                       style: TextStyle(
@@ -164,7 +166,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.edit_square, color: textColor, size: 26),
+                    icon: Icon(Icons.edit_square, color: textColor, size: 26),
                     onPressed: () {},
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),

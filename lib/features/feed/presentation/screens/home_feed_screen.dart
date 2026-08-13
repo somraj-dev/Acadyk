@@ -35,6 +35,13 @@ class HomeFeedScreen extends StatefulWidget {
 }
 
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get scaffoldBg => _isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
+  Color get cardBg => _isDark ? const Color(0xFF000000) : Colors.white;
+  Color get textMain => _isDark ? const Color(0xFFF7F9F9) : const Color(0xFF0F1419);
+  Color get textSub => _isDark ? const Color(0xFF71767B) : const Color(0xFF536471);
+  Color get borderDivider => _isDark ? const Color(0xFF2F3336) : const Color(0xFFEFF3F4);
+
   int _activeTab = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final PageController _pageController;
@@ -125,17 +132,24 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final scaffoldBg = theme.scaffoldBackgroundColor;
+    final textColor = theme.colorScheme.onSurface;
+    final iconColor = isDark ? Colors.white : Colors.black87;
+    final searchBgColor = isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F2EF), // Neutral Grey page canvas background
+      key: _scaffoldKey,
+      backgroundColor: scaffoldBg,
+      drawer: _buildProfileDrawer(),
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 480), // Restrict to mobile width
-            color: Colors.white,
+            constraints: const BoxConstraints(maxWidth: 414), // Standard mobile frame width
+            color: scaffoldBg,
             child: Scaffold(
-              key: _scaffoldKey,
-              backgroundColor: Colors.white,
-              drawer: _buildProfileDrawer(),
+              backgroundColor: scaffoldBg,
               body: Column(
                 children: [
                   Expanded(
@@ -153,10 +167,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         // Page 0: Home Feed Screen
                         Column(
                           children: [
-                            // 1. Top App Bar (Instagram style, Light Theme)
+                            // 1. Top App Bar (Dynamic Light/Dark Theme)
                             Container(
-                              color: Colors.white, // Light background
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                              color: scaffoldBg,
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                               child: Stack(
                                 alignment: Alignment.center,
                                 children: [
@@ -171,8 +185,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                             _scaffoldKey.currentState?.openDrawer();
                                           },
                                           child: Container(
-                                            width: 32,
-                                            height: 32,
+                                            width: 34,
+                                            height: 34,
                                             decoration: const BoxDecoration(
                                               shape: BoxShape.circle,
                                               image: DecorationImage(
@@ -190,22 +204,22 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Text(
+                                      Text(
                                         'Acadyk',
                                         style: TextStyle(
-                                          color: Colors.black, // Dark text for bright mode
-                                          fontSize: 32, // Slightly larger for Billabong
-                                          fontFamily: 'Billabong', // Exact Instagram style font
-                                          fontWeight: FontWeight.w500,
-                                          letterSpacing: 1.0,
+                                          color: textColor,
+                                          fontSize: 26,
+                                          fontFamily: 'Billabong',
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.5,
                                         ),
                                       ),
-                                      const SizedBox(width: 4), // Small gap between 'k' and arrow
-                                      const Icon(Icons.keyboard_arrow_down, color: Colors.black87, size: 24),
+                                      const SizedBox(width: 2), // Small gap between 'k' and arrow
+                                      Icon(Icons.keyboard_arrow_down, color: iconColor, size: 20),
                                     ],
                                   ),
                                   
-                                  // Right: Heart
+                                  // Right: Search & Heart
                                   Align(
                                     alignment: Alignment.centerRight,
                                     child: Row(
@@ -219,15 +233,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                             );
                                           },
                                           child: Container(
-                                            padding: const EdgeInsets.all(6),
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFFF3F4F6), // Light grey circle
+                                            padding: const EdgeInsets.all(7),
+                                            decoration: BoxDecoration(
+                                              color: searchBgColor,
                                               shape: BoxShape.circle,
                                             ),
-                                            child: const Icon(CupertinoIcons.search, color: Colors.black87, size: 16),
+                                            child: Icon(CupertinoIcons.search, color: iconColor, size: 16),
                                           ),
                                         ),
-                                        const SizedBox(width: 12),
+                                        const SizedBox(width: 10),
                                         GestureDetector(
                                           onTap: () {
                                             Navigator.of(context).push(MaterialPageRoute(
@@ -238,13 +252,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                           child: Stack(
                                             clipBehavior: Clip.none,
                                             children: [
-                                              const Icon(CupertinoIcons.heart, color: Colors.black87, size: 28),
+                                              Icon(CupertinoIcons.heart, color: iconColor, size: 24),
                                               Positioned(
                                                 top: -1,
                                                 right: -2,
                                                 child: Container(
-                                                  width: 10,
-                                                  height: 10,
+                                                  width: 9,
+                                                  height: 9,
                                                   decoration: const BoxDecoration(
                                                     color: Colors.redAccent,
                                                     shape: BoxShape.circle,
@@ -260,7 +274,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 ],
                               ),
                             ),
-                            const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                            Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E0E0)),
 
                             // 2. Scrollable List of Posts (re-ordered and curated)
                             Expanded(
@@ -279,7 +293,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                             SizedBox(height: 16),
                                             Text(
                                               'Loading feed...',
-                                              style: TextStyle(color: Color(0xFF5E5E5E)),
+                                              style: TextStyle(color: textSub),
                                             ),
                                           ],
                                         ),
@@ -312,7 +326,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
 
                   // 3. Bottom Tab Bar
-                  const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                  Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E0E0)),
                   _buildBottomNavBar(),
                 ],
               ),
@@ -329,8 +343,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
   // Post 1: Y Combinator
   Widget _buildYCPostCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+            
     return Container(
-      color: Colors.white,
+      color: cardBg,
       margin: const EdgeInsets.only(bottom: 8.0),
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Column(
@@ -413,7 +429,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14.0,
-                                color: Color(0xFF191919),
+                                color: textMain,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -422,7 +438,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         ),
                         Text(
                           'Startup Supporters',
-                          style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
+                          style: TextStyle(color: textSub, fontSize: 11.5),
                         ),
                       ],
                     ),
@@ -448,7 +464,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       'sharedFollowers': 24,
                     },
                   ),
-                  child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
+                  child: Icon(Icons.more_vert, color: textSub),
                 ),
               ],
             ),
@@ -460,7 +476,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12.0),
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(color: Color(0xFF191919), fontSize: 13.5, height: 1.45),
+                style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
                 children: [
                   TextSpan(
                     text: 'Warp',
@@ -483,8 +499,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                   TextSpan(
                     text: '...more',
-                    style: const TextStyle(
-                      color: Color(0xFF191919),
+                    style: TextStyle(
+                      color: textMain,
                       fontWeight: FontWeight.bold,
                     ),
                     recognizer: TapGestureRecognizer()
@@ -544,7 +560,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // Post 2: TIME
   Widget _buildTIMEPostCard() {
     return Container(
-      color: Colors.white,
+      color: cardBg,
       margin: const EdgeInsets.only(bottom: 8.0),
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Column(
@@ -628,7 +644,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14.0,
-                                color: Color(0xFF191919),
+                                color: textMain,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -637,14 +653,14 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         ),
                         Text(
                           '2,484,746 followers',
-                          style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
+                          style: TextStyle(color: textSub, fontSize: 11.5),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           'News & Media Publisher',
                           style: TextStyle(
-                            color: Color(0xFF5E5E5E),
+                            color: textSub,
                             fontSize: 11.0,
                             fontWeight: FontWeight.bold,
                           ),
@@ -673,7 +689,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       'sharedFollowers': 12,
                     },
                   ),
-                  child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
+                  child: Icon(Icons.more_vert, color: textSub),
                 ),
               ],
             ),
@@ -698,7 +714,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               padding: EdgeInsets.symmetric(horizontal: 12.0),
               child: Text(
                 'TIME CEO Jessica Sibley sits down with Alisha Moopen, Managing Director & Group CEO of... more',
-                style: TextStyle(color: Color(0xFF191919), fontSize: 13.5, height: 1.45),
+                style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
               ),
             ),
           ),
@@ -784,7 +800,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // Post 3: Alina Sprongole
   Widget _buildAlinaPostCard() {
     return Container(
-      color: Colors.white,
+      color: cardBg,
       margin: const EdgeInsets.only(bottom: 8.0),
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Column(
@@ -826,14 +842,14 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14.0,
-                              color: Color(0xFF191919),
+                              color: textMain,
                             ),
                           ),
                           const SizedBox(width: 4),
                           const PremiumBadge(type: 'bronze'),
                           const SizedBox(width: 4),
 
-                          const Text('• 1st', style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 12)),
+                          const Text('• 1st', style: TextStyle(color: textSub, fontSize: 12)),
                         ],
                       ),
                       const Text(
@@ -846,7 +862,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       ),
                       const Text(
                         'Vibe Skills',
-                        style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.0),
+                        style: TextStyle(color: textSub, fontSize: 11.0),
                       ),
                     ],
                   ),
@@ -870,7 +886,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       'sharedFollowers': 2,
                     },
                   ),
-                  child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
+                  child: Icon(Icons.more_vert, color: textSub),
                 ),
               ],
             ),
@@ -896,7 +912,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               padding: EdgeInsets.symmetric(horizontal: 12.0),
               child: Text(
                 'A \$24M seed valuation is a death sentence. Carta just released their Q1 2026 data. The... more',
-                style: TextStyle(color: Color(0xFF191919), fontSize: 13.5, height: 1.45),
+                style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
               ),
             ),
           ),
@@ -939,7 +955,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // Middle Activity Separator Card
   Widget _buildActivitySeparatorRow() {
     return Container(
-      color: Colors.white,
+      color: cardBg,
       margin: const EdgeInsets.only(bottom: 8.0),
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       child: const Row(
@@ -950,13 +966,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               CircleAvatar(
                 radius: 12,
                 backgroundColor: Color(0xFFEEF3F8),
-                child: Icon(Icons.person, size: 14, color: Color(0xFF5E5E5E)),
+                child: Icon(Icons.person, size: 14, color: textSub),
               ),
               SizedBox(width: 8),
               Text(
                 'Ankit Sharma likes this',
                 style: TextStyle(
-                  color: Color(0xFF191919),
+                  color: textMain,
                   fontWeight: FontWeight.w600,
                   fontSize: 12.5,
                 ),
@@ -972,7 +988,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // Post 4: P Dharmik
   Widget _buildDharmikPostCard() {
     return Container(
-      color: Colors.white,
+      color: cardBg,
       margin: const EdgeInsets.only(bottom: 8.0),
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Column(
@@ -1038,7 +1054,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13.5,
-                                color: Color(0xFF191919),
+                                color: textMain,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1046,7 +1062,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           SizedBox(width: 4),
                           Text(
                             'and',
-                            style: TextStyle(fontSize: 13.5, color: Color(0xFF191919)),
+                            style: TextStyle(fontSize: 13.5, color: textMain),
                           ),
                           SizedBox(width: 4),
                           Flexible(
@@ -1055,7 +1071,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13.5,
-                                color: Color(0xFF191919),
+                                color: textMain,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1064,7 +1080,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       ),
                       Text(
                         'Acadyk',
-                        style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.0),
+                        style: TextStyle(color: textSub, fontSize: 11.0),
                       ),
                     ],
                   ),
@@ -1093,7 +1109,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               padding: EdgeInsets.symmetric(horizontal: 12.0),
               child: Text(
                 'A 19-year-old left Patna with borrowed money. 50 years later, his company posted \$18.2B in revenue. This is Anil Agarwal - and the story is not... more',
-                style: TextStyle(color: Color(0xFF191919), fontSize: 13.5, height: 1.45),
+                style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
               ),
             ),
           ),
@@ -1178,7 +1194,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // Post 5: Repost Card
   Widget _buildRepostCard() {
     return Container(
-      color: Colors.white,
+      color: cardBg,
       margin: const EdgeInsets.only(bottom: 8.0),
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Column(
@@ -1232,14 +1248,14 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14.0,
-                                color: Color(0xFF191919),
+                                color: textMain,
                               ),
                             ),
                             const SizedBox(width: 4),
                             const Text(
                               '• Following',
                               style: TextStyle(
-                                color: Color(0xFF5E5E5E),
+                                color: textSub,
                                 fontSize: 13.0,
                               ),
                             ),
@@ -1248,7 +1264,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         const Text(
                           'Investor and Company Helper',
                           style: TextStyle(
-                            color: Color(0xFF5E5E5E),
+                            color: textSub,
                             fontSize: 12.0,
                           ),
                           maxLines: 1,
@@ -1277,7 +1293,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       'sharedFollowers': 50,
                     },
                   ),
-                  child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
+                  child: Icon(Icons.more_vert, color: textSub),
                 ),
               ],
             ),
@@ -1289,7 +1305,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             padding: EdgeInsets.symmetric(horizontal: 12.0),
             child: Text(
               'This is awesome!!!!',
-              style: TextStyle(color: Color(0xFF191919), fontSize: 16.0, height: 1.3),
+              style: TextStyle(color: textMain, fontSize: 16.0, height: 1.3),
             ),
           ),
           const SizedBox(height: 12),
@@ -1350,13 +1366,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14.0,
-                                    color: Color(0xFF191919),
+                                    color: textMain,
                                   ),
                                 ),
                                 Text(
                                   'Engineering @ OpenAI',
                                   style: TextStyle(
-                                    color: Color(0xFF5E5E5E),
+                                    color: textSub,
                                     fontSize: 12.0,
                                   ),
                                   maxLines: 1,
@@ -1376,7 +1392,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
                     child: RichText(
                       text: const TextSpan(
-                        style: TextStyle(color: Color(0xFF191919), fontSize: 13.5, height: 1.45),
+                        style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
                         children: [
                           TextSpan(text: 'I enjoyed the podcast featuring '),
                           TextSpan(
@@ -1396,7 +1412,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           TextSpan(text: '\'s Use Transcribe tool to... '),
                           TextSpan(
                             text: 'more',
-                            style: TextStyle(color: Color(0xFF5E5E5E)),
+                            style: TextStyle(color: textSub),
                           ),
                         ],
                       ),
@@ -1515,7 +1531,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               Text(
                 likesStr,
                 style: const TextStyle(
-                  color: Colors.black87,
+                  color: iconColor,
                   fontSize: 14.0,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1538,7 +1554,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               Text(
                 commentsCount.toString(),
                 style: const TextStyle(
-                  color: Colors.black87,
+                  color: iconColor,
                   fontSize: 14.0,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1743,7 +1759,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                       },
                                       child: const Text(
                                         'Reply',
-                                        style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 12, fontWeight: FontWeight.w600),
+                                        style: TextStyle(color: textSub, fontSize: 12, fontWeight: FontWeight.w600),
                                       ),
                                     ),
                                   ],
@@ -1855,7 +1871,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                                 },
                                                 child: const Text(
                                                   'Reply',
-                                                  style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11, fontWeight: FontWeight.w600),
+                                                  style: TextStyle(color: textSub, fontSize: 11, fontWeight: FontWeight.w600),
                                                 ),
                                               ),
                                             ],
@@ -1890,7 +1906,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 children: [
                   Text(
                     'Replying to $_replyingToName',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E), fontWeight: FontWeight.w500),
+                    style: TextStyle(fontSize: 11, color: textSub, fontWeight: FontWeight.w500),
                   ),
                   const Spacer(),
                   GestureDetector(
@@ -1901,7 +1917,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         _replyingToName = null;
                       });
                     },
-                    child: const Icon(Icons.close, size: 14, color: Color(0xFF5E5E5E)),
+                    child: Icon(Icons.close, size: 14, color: textSub),
                   ),
                 ],
               ),
@@ -2255,7 +2271,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF202022),
-      constraints: const BoxConstraints(maxWidth: 480),
+      constraints: const BoxConstraints(maxWidth: 414),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -2370,10 +2386,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     );
   }
 
-  // Bottom Navigation Bar matching the exact requested UI (Instagram/Threads style) - Light Theme
+  // Bottom Navigation Bar matching active theme (Light / Dark)
   Widget _buildBottomNavBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final navBg = Theme.of(context).scaffoldBackgroundColor;
+    final activeColor = isDark ? Colors.white : Colors.black;
+    final inactiveColor = isDark ? const Color(0xFF8B949E) : const Color(0xFF737373);
+
     return Container(
-      color: Colors.white, // Exact light background color
+      color: navBg,
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -2389,11 +2410,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             },
             child: Icon(
               CupertinoIcons.house,
-              color: _activeTab == 0 ? Colors.black : const Color(0xFF737373),
+              color: _activeTab == 0 ? activeColor : inactiveColor,
               size: 28,
             ),
           ),
-          // Search
+          // Search / Discover
           GestureDetector(
             onTap: () {
               setState(() {
@@ -2402,10 +2423,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               });
               _pageController.jumpToPage(1);
             },
-            child: Icon(
-              CupertinoIcons.search,
-              color: _activeTab == 1 ? Colors.black : const Color(0xFF737373),
-              size: 28,
+            child: LayoutGridNavIcon(
+              color: _activeTab == 1 ? activeColor : inactiveColor,
+              size: 26,
             ),
           ),
           // Add/Plus
@@ -2415,7 +2435,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             },
             child: Icon(
               CupertinoIcons.add,
-              color: _activeTab == 2 ? Colors.black : const Color(0xFF737373),
+              color: _activeTab == 2 ? activeColor : inactiveColor,
               size: 32,
             ),
           ),
@@ -2430,7 +2450,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             },
             child: Icon(
               CupertinoIcons.ellipses_bubble,
-              color: _activeTab == 3 ? Colors.black : const Color(0xFF737373),
+              color: _activeTab == 3 ? activeColor : inactiveColor,
               size: 28,
             ),
           ),
@@ -2440,7 +2460,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: _activeTab == 4 ? Colors.black : Colors.transparent,
+                color: _activeTab == 4 ? activeColor : Colors.transparent,
                 width: 1.5,
               ),
             ),
@@ -2468,9 +2488,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // -------------------------------------------------------------
 
   Widget _buildProfileDrawer() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final drawerBg = isDark ? const Color(0xFF161B22) : Colors.white;
+
     return Drawer(
       width: 310,
-      backgroundColor: Colors.white,
+      backgroundColor: drawerBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topRight: Radius.circular(0),
@@ -2520,7 +2543,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 }),
                 
                 const SizedBox(height: 8),
-                const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E0E0)),
                 const SizedBox(height: 8),
 
                 _buildDrawerNavItem('Settings', onTap: () {
@@ -2545,7 +2568,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 }),
 
                 const SizedBox(height: 8),
-                const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E0E0)),
                 const SizedBox(height: 8),
 
                 _buildDrawerNavItem('Sign out'),
@@ -2558,6 +2581,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   Widget _buildDrawerNavItem(String title, {String? trailingBadge, VoidCallback? onTap}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final navTextColor = isDark ? Colors.white : const Color(0xFF191919);
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -2567,17 +2592,17 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15.0,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF191919),
+                color: navTextColor,
               ),
             ),
             if (trailingBadge != null)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF191919),
+                  color: textMain,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -2666,7 +2691,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // MOCK POST CARD BUILDER
   // ------------------------------------------------------------------
   Widget _buildMockPostCard(Map<String, dynamic> post) {
-    final String postId = post['id'] ?? 'mock_${post.hashCode}';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+                final String postId = post['id'] ?? 'mock_${post.hashCode}';
     final String authorName = post['authorName'] ?? 'Unknown';
     final String authorSubtitle = post['authorSubtitle'] ?? '';
     final String authorInitials = post['authorInitials'] ?? '?';
@@ -2694,7 +2720,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final String mainAvatarAsset = isMITSOfficial ? 'assets/images/mits_logo.png' : '';
 
     return Container(
-      color: Colors.white,
+      color: cardBg,
       margin: const EdgeInsets.only(bottom: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2703,19 +2729,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           if (isNotification)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFFF3E0), Color(0xFFFFECB3)],
-                ),
+              decoration: BoxDecoration(
+                color: _isDark ? const Color(0xFF1E1B4B) : const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(4),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.notifications_active, size: 16, color: Color(0xFFE65100)),
+                  Icon(Icons.notifications_active, size: 16, color: _isDark ? const Color(0xFFF59E0B) : const Color(0xFFE65100)),
                   const SizedBox(width: 6),
                   Text(
                     'Official Notification • $timeAgo',
-                    style: const TextStyle(
-                      color: Color(0xFFE65100),
+                    style: TextStyle(
+                      color: _isDark ? const Color(0xFFF59E0B) : const Color(0xFFE65100),
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
                     ),
@@ -2728,20 +2753,19 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           if (isCollab)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
-                ),
+              decoration: BoxDecoration(
+                color: _isDark ? const Color(0xFF0F172A) : const Color(0xFFE3F2FD),
+                borderRadius: BorderRadius.circular(4),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.handshake, size: 16, color: Color(0xFF1565C0)),
+                  Icon(Icons.handshake, size: 16, color: _isDark ? const Color(0xFF38BDF8) : const Color(0xFF1565C0)),
                   const SizedBox(width: 6),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Collaboration Post',
                       style: TextStyle(
-                        color: Color(0xFF1565C0),
+                        color: _isDark ? const Color(0xFF38BDF8) : const Color(0xFF1565C0),
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),
@@ -2869,10 +2893,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             Flexible(
                               child: Text(
                                 isCollab ? '$authorName × $collabName' : authorName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13.5,
-                                  color: Color(0xFF191919),
+                                  color: textMain,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -2886,14 +2910,14 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         ),
                         Text(
                           authorSubtitle,
-                          style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
+                          style: TextStyle(color: textSub, fontSize: 11.5),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (!isNotification)
                           Text(
                             timeAgo,
-                            style: const TextStyle(color: Color(0xFF8E8E8E), fontSize: 11),
+                            style: TextStyle(color: textSub, fontSize: 11),
                           ),
                       ],
                     ),
@@ -2918,7 +2942,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       'sharedFollowers': 12,
                     },
                   ),
-                  child: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E), size: 20),
+                  child: Icon(Icons.more_vert, color: textSub, size: 20),
                 ),
               ],
             ),
@@ -2989,6 +3013,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // Helper: Expandable content with "see more"
   final Map<String, bool> _expandedContent = {};
   Widget _buildExpandableContent(String postId, String content) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bodyTextColor = isDark ? const Color(0xFFE6EDF3) : const Color(0xFF191919);
     final isExpanded = _expandedContent[postId] ?? false;
     const int maxLength = 200;
     final bool needsTruncation = content.length > maxLength;
@@ -2996,8 +3022,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     if (!needsTruncation || isExpanded) {
       return Text(
         content,
-        style: const TextStyle(
-          color: Color(0xFF191919),
+        style: TextStyle(
+          color: bodyTextColor,
           fontSize: 14,
           height: 1.4,
         ),
@@ -3012,8 +3038,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       },
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(
-            color: Color(0xFF191919),
+          style: TextStyle(
+            color: bodyTextColor,
             fontSize: 14,
             height: 1.4,
           ),
@@ -3033,7 +3059,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   Widget _buildDatabasePostCard(Map<String, dynamic> post) {
-    final author = post['profiles'] as Map<String, dynamic>? ?? {};
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+                final author = post['profiles'] as Map<String, dynamic>? ?? {};
     final String authorName = author['full_name'] ?? 'Acadyk User';
     final String authorHeadline = author['bio'] ?? 'Member @ Acadyk';
     final String? authorAvatar = author['profile_photo_url'];
@@ -3048,7 +3075,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final bool isLiked = _bookmarkedPosts[postId] ?? false;
 
     return Container(
-      color: Colors.white,
+      color: cardBg,
       margin: const EdgeInsets.only(bottom: 8.0),
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Column(
@@ -3100,7 +3127,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             },
                             child: Text(
                               authorName,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: Color(0xFF191919)),
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: textMain),
                             ),
                           ),
                           if (isVerified) ...[
@@ -3114,7 +3141,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       ),
                       Text(
                         authorHeadline,
-                        style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 11.5),
+                        style: TextStyle(color: textSub, fontSize: 11.5),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -3122,7 +3149,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
+                  icon: Icon(Icons.more_vert, color: textSub),
                   onPressed: () {
                     _showPostOptionsBottomSheet(
                       context: context,
@@ -3144,7 +3171,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12.0),
             child: Text(
               content,
-              style: const TextStyle(color: Color(0xFF191919), fontSize: 14.5, height: 1.3),
+              style: TextStyle(color: textMain, fontSize: 14.5, height: 1.3),
             ),
           ),
           if (image != null && image.isNotEmpty) ...[
@@ -3183,13 +3210,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     children: [
                       Icon(
                         isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-                        color: isLiked ? Colors.red : Colors.black87,
+                        color: isLiked ? const Color(0xFFF91880) : iconColor,
                         size: 24,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         '${isLiked ? likesCount + 1 : likesCount}',
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF191919)),
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: textMain),
                       ),
                     ],
                   ),
@@ -3215,15 +3242,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   },
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         CupertinoIcons.chat_bubble,
-                        color: Colors.black87,
+                        color: iconColor,
                         size: 24,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         '$commentsCount',
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF191919)),
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: textMain),
                       ),
                     ],
                   ),
@@ -3242,8 +3269,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         ? CupertinoIcons.bookmark_fill
                         : CupertinoIcons.bookmark,
                     color: (_savedPosts[postId] ?? false)
-                        ? const Color(0xFF1E88E5)
-                        : Colors.black87,
+                        ? const Color(0xFF1D9BF0)
+                        : iconColor,
                     size: 24,
                   ),
                 ),
@@ -3260,7 +3287,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final hasImage = repost['postImage'] != null;
 
     return Container(
-      color: Colors.white,
+      color: cardBg,
       margin: const EdgeInsets.only(bottom: 8.0),
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Column(
@@ -3313,14 +3340,14 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14.0,
-                                color: Color(0xFF191919),
+                                color: textMain,
                               ),
                             ),
                             SizedBox(width: 4),
                             Text(
                               '• You',
                               style: TextStyle(
-                                color: Color(0xFF5E5E5E),
+                                color: textSub,
                                 fontSize: 13.0,
                               ),
                             ),
@@ -3329,7 +3356,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         Text(
                           'Founder & Builder @ Acadyk',
                           style: TextStyle(
-                            color: Color(0xFF5E5E5E),
+                            color: textSub,
                             fontSize: 12.0,
                           ),
                           maxLines: 1,
@@ -3340,7 +3367,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E)),
+                  icon: Icon(Icons.more_vert, color: textSub),
                   onPressed: () {
                     _showPostOptionsBottomSheet(
                       context: context,
@@ -3372,7 +3399,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Text(
                 repost['comment'],
-                style: const TextStyle(color: Color(0xFF191919), fontSize: 15.0, height: 1.3),
+                style: TextStyle(color: textMain, fontSize: 15.0, height: 1.3),
               ),
             ),
           const SizedBox(height: 12),
@@ -3439,16 +3466,16 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               children: [
                                 Text(
                                   repost['authorName'],
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13.0,
-                                    color: Color(0xFF191919),
+                                    color: textMain,
                                   ),
                                 ),
                                 Text(
                                   repost['authorHeadline'],
-                                  style: const TextStyle(
-                                    color: Color(0xFF5E5E5E),
+                                  style: TextStyle(
+                                    color: textSub,
                                     fontSize: 11.5,
                                   ),
                                   maxLines: 1,
@@ -3467,7 +3494,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
                     child: Text(
                       repost['postText'],
-                      style: const TextStyle(color: Color(0xFF191919), fontSize: 13.0, height: 1.4),
+                      style: TextStyle(color: textMain, fontSize: 13.0, height: 1.4),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -4080,7 +4107,7 @@ class _RepostScreenState extends State<RepostScreen> {
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: const BoxConstraints(maxWidth: 414),
             color: Colors.white,
             child: Column(
               children: [
@@ -4091,7 +4118,7 @@ class _RepostScreenState extends State<RepostScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.close, color: Colors.black87, size: 28),
+                        icon: const Icon(Icons.close, color: iconColor, size: 28),
                         onPressed: () => Navigator.pop(context),
                       ),
                       ElevatedButton(
@@ -4206,16 +4233,16 @@ class _RepostScreenState extends State<RepostScreen> {
                                             children: [
                                               Text(
                                                 widget.authorName,
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 13.0,
-                                                  color: Color(0xFF191919),
+                                                  color: textMain,
                                                 ),
                                               ),
                                               Text(
                                                 widget.authorHeadline,
-                                                style: const TextStyle(
-                                                  color: Color(0xFF5E5E5E),
+                                                style: TextStyle(
+                                                  color: textSub,
                                                   fontSize: 11.5,
                                                 ),
                                                 maxLines: 1,
@@ -4233,7 +4260,7 @@ class _RepostScreenState extends State<RepostScreen> {
                                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
                                     child: Text(
                                       widget.postText,
-                                      style: const TextStyle(color: Color(0xFF191919), fontSize: 13.0, height: 1.4),
+                                      style: TextStyle(color: textMain, fontSize: 13.0, height: 1.4),
                                     ),
                                   ),
                                   const SizedBox(height: 12),
@@ -4640,7 +4667,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: const BoxConstraints(maxWidth: 414),
             color: Colors.white,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -4653,7 +4680,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
                       // Back arrow (only visible on step 1)
                       if (_currentStep == 1)
                         IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 28),
+                          icon: const Icon(Icons.arrow_back, color: iconColor, size: 28),
                           onPressed: () {
                             setState(() {
                               _currentStep = 0;
@@ -4670,12 +4697,12 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF191919),
+                            color: textMain,
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: Colors.black87, size: 28),
+                        icon: const Icon(Icons.close, color: iconColor, size: 28),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -4730,7 +4757,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF191919),
+            color: textMain,
           ),
         ),
         const SizedBox(height: 20),
@@ -4783,7 +4810,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF191919),
+            color: textMain,
           ),
         ),
         const SizedBox(height: 16),
@@ -4800,18 +4827,18 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
             children: [
               Text(
                 _selectedReason ?? '',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF191919),
+                  color: textMain,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 description,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF5E5E5E),
+                  color: textSub,
                   height: 1.4,
                 ),
               ),
@@ -4825,7 +4852,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF191919),
+            color: textMain,
           ),
         ),
         const SizedBox(height: 12),
@@ -4845,7 +4872,7 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
             const Expanded(
               child: Text(
                 'Receive updates on this report',
-                style: TextStyle(fontSize: 15, color: Color(0xFF191919)),
+                style: TextStyle(fontSize: 15, color: textMain),
               ),
             ),
           ],
@@ -4900,7 +4927,7 @@ class SharePostScreen extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: const BoxConstraints(maxWidth: 414),
             color: Colors.white,
             child: Column(
               children: [
@@ -4910,7 +4937,7 @@ class SharePostScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
+                        icon: const Icon(Icons.arrow_back, color: iconColor, size: 24),
                         onPressed: () => Navigator.pop(context),
                       ),
                       Expanded(
@@ -4991,8 +5018,8 @@ class SharePostScreen extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 u['name'],
-                                style: const TextStyle(
-                                  color: Color(0xFF191919),
+                                style: TextStyle(
+                                  color: textMain,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -5117,7 +5144,7 @@ class SharePostScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(color: Color(0xFF5E5E5E), fontSize: 12),
+            style: TextStyle(color: textSub, fontSize: 12),
           ),
         ],
       ),
@@ -5148,4 +5175,75 @@ class _WhatsAppBubblePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
+class LayoutGridNavIcon extends StatelessWidget {
+  final Color color;
+  final double size;
+
+  const LayoutGridNavIcon({
+    super.key,
+    required this.color,
+    this.size = 26,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _LayoutGridNavIconPainter(color: color),
+      ),
+    );
+  }
+}
+
+class _LayoutGridNavIconPainter extends CustomPainter {
+  final Color color;
+
+  _LayoutGridNavIconPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.095
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final double w = size.width;
+    final double h = size.height;
+
+    final double pad = w * 0.12;
+    final double availW = w - (pad * 2);
+    final double availH = h - (pad * 2);
+
+    final double gap = availW * 0.20;
+    final double colWidth = (availW - gap) / 2;
+
+    // 1. Left Vertical Capsule (Tall rounded rectangle)
+    final Rect leftRect = Rect.fromLTWH(pad, pad, colWidth, availH);
+    final RRect leftRRect = RRect.fromRectAndRadius(leftRect, Radius.circular(availW * 0.16));
+    canvas.drawRRect(leftRRect, paint);
+
+    // 2. Right Top Stacked Square
+    final double rightLeft = pad + colWidth + gap;
+    final double vertGap = availH * 0.16;
+    final double sqHeight = (availH - vertGap) / 2;
+
+    final Rect topRect = Rect.fromLTWH(rightLeft, pad, colWidth, sqHeight);
+    final RRect topRRect = RRect.fromRectAndRadius(topRect, Radius.circular(availW * 0.14));
+    canvas.drawRRect(topRRect, paint);
+
+    // 3. Right Bottom Stacked Square
+    final Rect bottomRect = Rect.fromLTWH(rightLeft, pad + sqHeight + vertGap, colWidth, sqHeight);
+    final RRect bottomRRect = RRect.fromRectAndRadius(bottomRect, Radius.circular(availW * 0.14));
+    canvas.drawRRect(bottomRRect, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _LayoutGridNavIconPainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
+}
 

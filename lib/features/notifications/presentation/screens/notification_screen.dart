@@ -124,17 +124,22 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final scaffoldBg = theme.scaffoldBackgroundColor;
+    final textColor = theme.colorScheme.onSurface;
+
     final mentionsCount = _notifications.where((n) => n['category'] == 'Mentions').length;
     final followersCount = _notifications.where((n) => n['category'] == 'Followers').length;
     final invitesCount = _notifications.where((n) => n['category'] == 'Invites').length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: scaffoldBg,
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 480),
-            color: const Color(0xFFF9FAFB),
+            constraints: const BoxConstraints(maxWidth: 414),
+            color: scaffoldBg,
             child: Column(
               children: [
                 // Top header

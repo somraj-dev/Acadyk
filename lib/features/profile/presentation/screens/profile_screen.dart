@@ -27,13 +27,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final scaffoldBg = theme.scaffoldBackgroundColor;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: scaffoldBg,
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 480),
-            color: const Color(0xFFF8F9FA),
+            constraints: const BoxConstraints(maxWidth: 414),
+            color: scaffoldBg,
             child: Stack(
               children: [
                 // Scrollable content

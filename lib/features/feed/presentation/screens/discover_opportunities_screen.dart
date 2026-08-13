@@ -33,13 +33,19 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final scaffoldBg = theme.scaffoldBackgroundColor;
+    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
+    final textColor = theme.colorScheme.onSurface;
+
     return Container(
-      color: const Color(0xFFF3F2EF),
+      color: scaffoldBg,
       child: Column(
         children: [
           // Screen Title / Search Header
           Container(
-            color: Colors.white,
+            color: cardBg,
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
             child: Row(
               children: [
