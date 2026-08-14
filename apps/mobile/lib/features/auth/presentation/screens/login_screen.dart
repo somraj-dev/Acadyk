@@ -265,12 +265,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 360;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: isCompact ? 16.0 : 24.0,
+              vertical: 16.0,
+            ),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 440),
               child: Column(
@@ -281,12 +287,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: _buildHeaderLogos(),
                   ),
                   const SizedBox(height: 22.0),
-                  const Text(
+                  Text(
                     'Your Next Opportunity\nStarts Here',
                     style: TextStyle(
-                      fontSize: 26.0,
+                      fontSize: isCompact ? 23.0 : 26.0,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
+                      color: const Color(0xFF111827),
                       height: 1.25,
                     ),
                   ),

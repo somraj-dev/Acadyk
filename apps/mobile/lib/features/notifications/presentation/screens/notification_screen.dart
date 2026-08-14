@@ -132,12 +132,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final followersCount = _notifications.where((n) => n['category'] == 'Followers').length;
     final invitesCount = _notifications.where((n) => n['category'] == 'Invites').length;
 
+    final isTablet = MediaQuery.of(context).size.width >= 600;
+
     return Scaffold(
       backgroundColor: scaffoldBg,
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 414),
+            constraints: BoxConstraints(maxWidth: isTablet ? 720 : double.infinity),
             color: scaffoldBg,
             child: Column(
               children: [

@@ -27,161 +27,164 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final GlobalKey _activityKey = GlobalKey();
 
   @override
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final scaffoldBg = theme.scaffoldBackgroundColor;
+    final mediaQuery = MediaQuery.of(context);
+    final topPadding = mediaQuery.padding.top;
+    final isTablet = mediaQuery.size.width >= 600;
+    final maxContentWidth = isTablet ? 720.0 : double.infinity;
 
     return Scaffold(
       backgroundColor: scaffoldBg,
-      body: SafeArea(
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 414),
-            color: scaffoldBg,
-            child: Stack(
-              children: [
-                // Scrollable content
-                Positioned.fill(
-                  child: ListView(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      // =============================================
-                      // SECTION 1: Profile Header Card
-                      // =============================================
-                      _buildProfileHeaderCard(),
-                      const SizedBox(height: 8),
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(maxWidth: maxContentWidth),
+          color: scaffoldBg,
+          child: Stack(
+            children: [
+              // Scrollable content
+              Positioned.fill(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    // =============================================
+                    // SECTION 1: Profile Header Card
+                    // =============================================
+                    _buildProfileHeaderCard(),
+                    const SizedBox(height: 8),
 
-                      // =============================================
-                      // SECTION 2: Summary / About
-                      // =============================================
-                      _buildAboutSection(),
+                    // =============================================
+                    // SECTION 2: Summary / About
+                    // =============================================
+                    _buildAboutSection(),
 
-                      const SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
-                      // =============================================
-                      // SECTION 3: Listed / Featured
-                      // =============================================
-                      _buildFeaturedSection(),
+                    // =============================================
+                    // SECTION 3: Listed / Featured
+                    // =============================================
+                    _buildFeaturedSection(),
 
-                      const SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
-                      // =============================================
-                      // SECTION 4: Activity
-                      // =============================================
-                      _buildActivitySection(),
+                    // =============================================
+                    // SECTION 4: Activity
+                    // =============================================
+                    _buildActivitySection(),
 
-                      const SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
-                      // =============================================
-                      // SECTION 5: Experience
-                      // =============================================
-                      _buildExperienceSection(),
+                    // =============================================
+                    // SECTION 5: Experience
+                    // =============================================
+                    _buildExperienceSection(),
 
-                      const SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
-                      // =============================================
-                      // SECTION 6: Education
-                      // =============================================
-                      _buildEducationSection(),
-                      const SizedBox(height: 8),
+                    // =============================================
+                    // SECTION 6: Education
+                    // =============================================
+                    _buildEducationSection(),
+                    const SizedBox(height: 8),
 
-                      // =============================================
-                      // SECTION 7: Projects
-                      // =============================================
-                      _buildProjectsSection(),
-                      const SizedBox(height: 8),
+                    // =============================================
+                    // SECTION 7: Projects
+                    // =============================================
+                    _buildProjectsSection(),
+                    const SizedBox(height: 8),
 
-                      // =============================================
-                      // SECTION 8: Skills & Connected Apps
-                      // =============================================
-                      _buildSkillsSection(),
-                      const SizedBox(height: 8),
-                      _buildConnectedAppsSection(),
+                    // =============================================
+                    // SECTION 8: Skills & Connected Apps
+                    // =============================================
+                    _buildSkillsSection(),
+                    const SizedBox(height: 8),
+                    _buildConnectedAppsSection(),
 
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+                    const SizedBox(height: 32),
+                  ],
                 ),
+              ),
 
-                // Transparent top overlay bar with dark translucent icons over banner
-                Positioned(
-                  top: 12,
-                  left: 16,
-                  right: 16,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Back button
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).maybePop(),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                            size: 20,
-                          ),
+              // Transparent top overlay bar with safe positioning across all phone punch holes & iPhone notches
+              Positioned(
+                top: topPadding > 0 ? topPadding + 6 : 14,
+                left: 16,
+                right: 16,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Back button
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).maybePop(),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.45),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 20,
                         ),
                       ),
+                    ),
 
-                      // Right side search and menu options
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () {},
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.45),
-                                shape: BoxShape.circle,
-                              ),
-                              alignment: Alignment.center,
-                              child: const Icon(
-                                Icons.search,
-                                color: Colors.white,
-                                size: 20,
-                              ),
+                    // Right side search and menu options
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {},
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.search,
+                              color: Colors.white,
+                              size: 20,
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const YourAccountScreen()),
-                              );
-                            },
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.45),
-                                shape: BoxShape.circle,
-                              ),
-                              alignment: Alignment.center,
-                              child: const Icon(
-                                Icons.menu,
-                                color: Colors.white,
-                                size: 20,
-                              ),
+                        ),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const YourAccountScreen()),
+                            );
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.menu,
+                              color: Colors.white,
+                              size: 20,
                             ),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

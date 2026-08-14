@@ -113,6 +113,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final iconColor = isDark ? Colors.white : Colors.black87;
     final searchBgColor = isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6);
 
+    final isTablet = MediaQuery.of(context).size.width >= 600;
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: scaffoldBg,
@@ -120,7 +122,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 414), // Standard mobile frame width
+            constraints: BoxConstraints(maxWidth: isTablet ? 720 : double.infinity),
             color: scaffoldBg,
             child: Scaffold(
               backgroundColor: scaffoldBg,
@@ -2242,10 +2244,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   void _showCreatePostBottomSheet(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width >= 600;
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF202022),
-      constraints: const BoxConstraints(maxWidth: 414),
+      constraints: BoxConstraints(maxWidth: isTablet ? 600 : double.infinity),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -2466,9 +2469,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final drawerBg = isDark ? const Color(0xFF161B22) : Colors.white;
     final headerTextColor = isDark ? Colors.white : const Color(0xFF111827);
     final subTextColor = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final drawerWidth = min(320.0, screenWidth * 0.85);
 
     return Drawer(
-      width: 300,
+      width: drawerWidth,
       backgroundColor: drawerBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
@@ -4197,12 +4202,13 @@ class _RepostScreenState extends State<RepostScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width >= 600;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 414),
+            constraints: BoxConstraints(maxWidth: isTablet ? 720 : double.infinity),
             color: Colors.white,
             child: Column(
               children: [
@@ -4767,12 +4773,13 @@ class _ReportPostScreenState extends State<ReportPostScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width >= 600;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 414),
+            constraints: BoxConstraints(maxWidth: isTablet ? 720 : double.infinity),
             color: Colors.white,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -5040,12 +5047,13 @@ class _SharePostScreenState extends State<SharePostScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width >= 600;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 414),
+            constraints: BoxConstraints(maxWidth: isTablet ? 720 : double.infinity),
             color: Colors.white,
             child: Column(
               children: [
