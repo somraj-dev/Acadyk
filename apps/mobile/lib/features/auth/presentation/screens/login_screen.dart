@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:acadyk/common/providers/auth_provider.dart';
+import 'package:acadyk/common/providers/theme_provider.dart';
 import '../../../../common/widgets/logo_widget.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -214,10 +215,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         email: email,
                         password: password,
                       );
+                      if (mounted) {
+                        try {
+                          Provider.of<ThemeProvider>(context, listen: false).setThemeMode(ThemeMode.light);
+                        } catch (_) {}
+                      }
                     }
                   } else {
                     // OTP or Direct bypass for instant seamless sign in
                     authProvider.bypassSignIn();
+                    try {
+                      Provider.of<ThemeProvider>(context, listen: false).setThemeMode(ThemeMode.light);
+                    } catch (_) {}
                   }
                 } catch (e) {
                   if (mounted) {
@@ -311,6 +320,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     text: 'Continue with MITS-DU',
                     onTap: () {
                       Provider.of<AuthProvider>(context, listen: false).bypassSignIn();
+                      try {
+                        Provider.of<ThemeProvider>(context, listen: false).setThemeMode(ThemeMode.light);
+                      } catch (_) {}
                     },
                   ),
                   const SizedBox(height: 20.0),

@@ -8,7 +8,7 @@ class SettingsState {
   final bool privateAccount;
 
   const SettingsState({
-    this.themeMode = ThemeMode.system,
+    this.themeMode = ThemeMode.light,
     this.pushNotificationsEnabled = true,
     this.emailNotificationsEnabled = true,
     this.privateAccount = false,
