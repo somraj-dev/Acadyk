@@ -31,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final Set<int> _expandedProjectIndices = {};
   bool _showAllExperience = false;
   bool _showAllSkills = false;
+  bool _showAllClubs = false;
 
   bool _isActivityLiked = false;
   int _activityLikesCount = 12;
@@ -162,6 +163,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // SECTION 8: Skills
                     _buildSkillsSection(),
+                    const SizedBox(height: 8),
+
+                    // SECTION 9: Clubs & Organizations
+                    _buildClubsSection(),
 
                     const SizedBox(height: 32),
                   ],
@@ -2016,6 +2021,256 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Text(skill['association']!, style: const TextStyle(fontSize: 13, color: Color(0xFF191919))),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  // =============================================================
+  // SECTION 9: Clubs & Organizations
+  // =============================================================
+  List<Map<String, dynamic>> _getClubsList() {
+    final String name = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
+
+    if (widget.isOwnProfile || name.contains('Somraj')) {
+      return [
+        {
+          'name': 'Student Development Cell (SDC)',
+          'role': 'Technical Core Lead & Platform Architect',
+          'organization': 'MITS-DU Student Innovation & Technology Council',
+          'duration': 'Aug 2024 – Present · 2 yrs',
+          'badge': 'Active Lead',
+          'badgeColor': const Color(0xFF0A66C2),
+          'icon': Icons.groups_rounded,
+          'iconBg': const Color(0xFF0F4C81),
+          'description': 'Leading campus software architectures, open-source repositories, and student hackathons.',
+        },
+        {
+          'name': 'Google Developer Groups (GDG) on Campus',
+          'role': 'AI/ML & Mobile App Core Member',
+          'organization': 'GDG MITS Gwalior Chapter',
+          'duration': 'Sep 2024 – Present',
+          'badge': 'Core Member',
+          'badgeColor': const Color(0xFF059669),
+          'icon': Icons.code_rounded,
+          'iconBg': const Color(0xFF1E293B),
+          'description': 'Mentoring students in Flutter, TensorFlow, and cloud architectures.',
+        },
+        {
+          'name': 'ACM Student Chapter MITS',
+          'role': 'Competitive Programming & Systems Research',
+          'organization': 'ACM Chapter, Department of CSE & IT',
+          'duration': '2024 – Present',
+          'badge': 'Member',
+          'badgeColor': const Color(0xFF7C3AED),
+          'icon': Icons.terminal_rounded,
+          'iconBg': const Color(0xFF4C1D95),
+          'description': 'Organizing coding contests, algorithmic workshops, and research symposiums.',
+        },
+        {
+          'name': 'MITS Robotics & AI Club (RAI)',
+          'role': 'Edge Computing & Vision Systems Contributor',
+          'organization': 'MITS Innovation Hub',
+          'duration': '2024 – 2025',
+          'badge': 'Alumni / Contributor',
+          'badgeColor': const Color(0xFF64748B),
+          'icon': Icons.smart_toy_rounded,
+          'iconBg': const Color(0xFF334155),
+          'description': 'Designed lightweight neural network architectures for embedded microcontrollers.',
+        },
+      ];
+    } else {
+      final List<dynamic>? userClubs = widget.userData?['clubs'] as List<dynamic>?;
+      if (userClubs != null && userClubs.isNotEmpty) {
+        return userClubs.map((c) => Map<String, dynamic>.from(c as Map)).toList();
+      }
+      return [
+        {
+          'name': 'Student Development Cell (SDC)',
+          'role': 'Technical Contributor',
+          'organization': 'MITS-DU Student Council',
+          'duration': '2024 – Present',
+          'badge': 'Active',
+          'badgeColor': const Color(0xFF0A66C2),
+          'icon': Icons.groups_rounded,
+          'iconBg': const Color(0xFF0F4C81),
+          'description': 'Collaborating on student campus projects and workshops.',
+        },
+        {
+          'name': 'Google Developer Groups (GDG) on Campus',
+          'role': 'Campus Member',
+          'organization': 'GDG MITS Chapter',
+          'duration': '2024 – Present',
+          'badge': 'Member',
+          'badgeColor': const Color(0xFF059669),
+          'icon': Icons.code_rounded,
+          'iconBg': const Color(0xFF1E293B),
+          'description': 'Participating in developer events and technology sessions.',
+        },
+      ];
+    }
+  }
+
+  Widget _buildClubsSection() {
+    final clubs = _getClubsList();
+    final displayedClubs = _showAllClubs ? clubs : clubs.take(2).toList();
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Clubs & Organizations (${clubs.length})',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          for (int i = 0; i < displayedClubs.length; i++) ...[
+            _buildClubItem(displayedClubs[i]),
+            if (i < displayedClubs.length - 1) ...[
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: Color(0xFFE0E0E0)),
+              const SizedBox(height: 16),
+            ],
+          ],
+          if (clubs.length > 2) ...[
+            const SizedBox(height: 16),
+            Center(
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _showAllClubs = !_showAllClubs;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _showAllClubs ? 'Show less' : 'Show all clubs (${clubs.length})',
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        _showAllClubs ? Icons.keyboard_arrow_up : Icons.arrow_forward,
+                        size: 18,
+                        color: const Color(0xFF0A66C2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClubItem(Map<String, dynamic> club) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: club['iconBg'] as Color? ?? const Color(0xFF0F4C81),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            club['icon'] as IconData? ?? Icons.groups_rounded,
+            size: 24,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      club['name'] as String,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF191919),
+                      ),
+                    ),
+                  ),
+                  if (club['badge'] != null) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: (club['badgeColor'] as Color? ?? const Color(0xFF0A66C2)).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: (club['badgeColor'] as Color? ?? const Color(0xFF0A66C2)).withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        club['badge'] as String,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: club['badgeColor'] as Color? ?? const Color(0xFF0A66C2),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                club['role'] as String,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF334155),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                club['organization'] as String,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+              Text(
+                club['duration'] as String,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
+              if (club['description'] != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  club['description'] as String,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF191919),
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ],
     );
