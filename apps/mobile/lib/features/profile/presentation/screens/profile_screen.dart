@@ -160,10 +160,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildProjectsSection(),
                     const SizedBox(height: 8),
 
-                    // SECTION 8: Skills & Connected Apps
+                    // SECTION 8: Skills
                     _buildSkillsSection(),
-                    const SizedBox(height: 8),
-                    _buildConnectedAppsSection(),
 
                     const SizedBox(height: 32),
                   ],
@@ -1908,105 +1906,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildConnectedAppsSection() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(16.0),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFBDBDBD), style: BorderStyle.solid),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text(
-                  'Connected apps',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Add the products you use to stand out and get more profile views.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF5E5E5E), height: 1.4),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(child: _buildAppChip('Gamma', Icons.g_mobiledata, const Color(0xFF7C3AED))),
-                const SizedBox(width: 10),
-                Expanded(child: _buildAppChip('IntelliJ\nIDEA', Icons.code, const Color(0xFFE91E63))),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(child: _buildAppChip('HubSpot', Icons.hub, const Color(0xFFFF7043))),
-                const SizedBox(width: 10),
-                Expanded(child: _buildAppChip('Replit', Icons.terminal, const Color(0xFFFF5722))),
-              ],
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Connected apps manager opened')),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF0A66C2),
-                  side: const BorderSide(color: Color(0xFF0A66C2)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-                child: const Text(
-                  'Add connected apps',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildAppChip(String label, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(icon, size: 18, color: color),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF191919)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildBannerImageWidget() {
     if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty && _coverPhotoUrl!.startsWith('http')) {
