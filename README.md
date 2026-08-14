@@ -31,3 +31,12 @@ Acadyk/
    ```bash
    cd apps/mobile && flutter run
    ```
+
+4. Run web application on localhost (for manual verification):
+   ```bash
+   make web
+   # or
+   cd apps/mobile && flutter run -d web-server --web-port 8080 --web-hostname localhost
+   ```
+   Open [http://localhost:8080](http://localhost:8080) in your browser.
+

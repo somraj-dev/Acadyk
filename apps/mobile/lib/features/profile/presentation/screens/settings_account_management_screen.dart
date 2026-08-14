@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import '../../../../common/providers/theme_provider.dart';
 import 'settings_edit_profile_screen.dart';
+import 'appearance_screen.dart';
 
 class SettingsAccountManagementScreen extends StatefulWidget {
   const SettingsAccountManagementScreen({super.key});
@@ -14,10 +17,28 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
 
   @override
   Widget build(BuildContext context) {
-    const bgColor = Colors.white;
-    const tileTextColor = Colors.black;
-    const descColor = Color(0xFF737373);
-    const headerColor = Color(0xFF191919);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0D1117) : Colors.white;
+    final tileTextColor = isDark ? const Color(0xFFF3F4F6) : Colors.black;
+    final descColor = isDark ? const Color(0xFF8B949E) : const Color(0xFF737373);
+    final headerColor = isDark ? Colors.white : const Color(0xFF191919);
+    final chevronColor = isDark ? const Color(0xFF6E7681) : Colors.black45;
+
+    ThemeProvider? themeProvider;
+    try {
+      themeProvider = Provider.of<ThemeProvider>(context, listen: true);
+    } catch (_) {
+      themeProvider = null;
+    }
+
+    String themeModeLabel = 'System default';
+    if (themeProvider != null) {
+      if (themeProvider.themeMode == ThemeMode.light) {
+        themeModeLabel = 'Light';
+      } else if (themeProvider.themeMode == ThemeMode.dark) {
+        themeModeLabel = 'Dark';
+      }
+    }
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -27,10 +48,10 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
         scrolledUnderElevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.left_chevron, color: tileTextColor, size: 22),
+          icon: Icon(CupertinoIcons.left_chevron, color: tileTextColor, size: 22),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Account management',
           style: TextStyle(
             color: headerColor,
@@ -48,7 +69,7 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               children: [
                 // Top subtitle description
-                const Text(
+                Text(
                   'Make changes to your personal information or account type',
                   style: TextStyle(
                     color: descColor,
@@ -58,9 +79,11 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                 const SizedBox(height: 24),
 
                 // Section 1: Your account
-                _buildSectionHeader('Your account'),
-                _buildPinterestTile(
+                _buildSectionHeader('Your account', headerColor),
+                _buildTile(
                   title: 'Personal information',
+                  textColor: tileTextColor,
+                  chevronColor: chevronColor,
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const SettingsEditProfileScreen()),
@@ -70,32 +93,55 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                 _buildEmailTile(
                   title: 'Email address',
                   email: 'iitainsomraj701@gmail.com',
+                  textColor: tileTextColor,
+                  descColor: descColor,
+                  chevronColor: chevronColor,
                 ),
-                _buildPinterestTile(
+                _buildTile(
                   title: 'Password',
                   trailingText: 'Change password',
+                  textColor: tileTextColor,
+                  descColor: descColor,
+                  chevronColor: chevronColor,
                 ),
-                _buildPinterestTileWithDesc(
+                _buildTileWithDesc(
                   title: 'Convert to a business account',
                   description: 'Grow your business or brand with tools such as ads and analytics. Your content, profile and followers will stay the same.',
+                  textColor: tileTextColor,
+                  descColor: descColor,
+                  chevronColor: chevronColor,
                 ),
-                _buildPinterestTile(
+                _buildTile(
                   title: 'App theme',
-                  trailingText: 'System default',
+                  trailingText: themeModeLabel,
+                  textColor: tileTextColor,
+                  descColor: descColor,
+                  chevronColor: chevronColor,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const AppearanceScreen()),
+                    );
+                  },
                 ),
-                _buildSoundsTile(),
+                _buildSoundsTile(tileTextColor, descColor),
 
                 const SizedBox(height: 16),
 
                 // Section 2: Deactivation and deletion
-                _buildSectionHeader('Deactivation and deletion'),
-                _buildPinterestTileWithDesc(
+                _buildSectionHeader('Deactivation and deletion', headerColor),
+                _buildTileWithDesc(
                   title: 'Deactivate account',
-                  description: 'Deactivate to temporarily hide your Pins and profile',
+                  description: 'Deactivate to temporarily hide your posts and profile',
+                  textColor: tileTextColor,
+                  descColor: descColor,
+                  chevronColor: chevronColor,
                 ),
-                _buildPinterestTileWithDesc(
+                _buildTileWithDesc(
                   title: 'Delete your data and account',
                   description: 'Permanently delete your data and everything associated with your account',
+                  textColor: tileTextColor,
+                  descColor: descColor,
+                  chevronColor: chevronColor,
                 ),
 
                 const SizedBox(height: 48),
@@ -107,13 +153,13 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, Color headerColor) {
     return Padding(
       padding: const EdgeInsets.only(top: 16.0, bottom: 12.0),
       child: Text(
         title,
-        style: const TextStyle(
-          color: Colors.black,
+        style: TextStyle(
+          color: headerColor,
           fontSize: 16.0,
           fontWeight: FontWeight.bold,
         ),
@@ -121,7 +167,14 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
     );
   }
 
-  Widget _buildPinterestTile({required String title, String? trailingText, VoidCallback? onTap}) {
+  Widget _buildTile({
+    required String title,
+    String? trailingText,
+    required Color textColor,
+    Color? descColor,
+    required Color chevronColor,
+    VoidCallback? onTap,
+  }) {
     return InkWell(
       onTap: onTap ?? () {},
       child: Padding(
@@ -131,27 +184,27 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15.5,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: textColor,
                 ),
               ),
             ),
             if (trailingText != null) ...[
               Text(
                 trailingText,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF737373),
+                  color: descColor ?? const Color(0xFF737373),
                 ),
               ),
               const SizedBox(width: 8),
             ],
-            const Icon(
+            Icon(
               CupertinoIcons.right_chevron,
               size: 15,
-              color: Colors.black45,
+              color: chevronColor,
             ),
           ],
         ),
@@ -159,7 +212,14 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
     );
   }
 
-  Widget _buildPinterestTileWithDesc({required String title, required String description, VoidCallback? onTap}) {
+  Widget _buildTileWithDesc({
+    required String title,
+    required String description,
+    required Color textColor,
+    required Color descColor,
+    required Color chevronColor,
+    VoidCallback? onTap,
+  }) {
     return InkWell(
       onTap: onTap ?? () {},
       child: Padding(
@@ -173,18 +233,18 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15.5,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: textColor,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF737373),
+                      color: descColor,
                       height: 1.35,
                     ),
                   ),
@@ -192,10 +252,10 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
               ),
             ),
             const SizedBox(width: 12),
-            const Icon(
+            Icon(
               CupertinoIcons.right_chevron,
               size: 15,
-              color: Colors.black45,
+              color: chevronColor,
             ),
           ],
         ),
@@ -203,7 +263,13 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
     );
   }
 
-  Widget _buildEmailTile({required String title, required String email}) {
+  Widget _buildEmailTile({
+    required String title,
+    required String email,
+    required Color textColor,
+    required Color descColor,
+    required Color chevronColor,
+  }) {
     return InkWell(
       onTap: () {},
       child: Padding(
@@ -217,17 +283,17 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15.5,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: textColor,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE2F0D9), // Light green background
+                      color: const Color(0xFFE2F0D9),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Row(
@@ -255,16 +321,16 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
               children: [
                 Text(
                   email,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF737373),
+                    color: descColor,
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(
+                Icon(
                   CupertinoIcons.right_chevron,
                   size: 15,
-                  color: Colors.black45,
+                  color: chevronColor,
                 ),
               ],
             ),
@@ -274,7 +340,7 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
     );
   }
 
-  Widget _buildSoundsTile() {
+  Widget _buildSoundsTile(Color textColor, Color descColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14.0),
       child: Row(
@@ -283,21 +349,21 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'App sounds',
                   style: TextStyle(
                     fontSize: 15.5,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                    color: textColor,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  'Turn on app sounds from the Pinterest app',
+                  'Turn on app sounds from the Acadyk app',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF737373),
+                    color: descColor,
                     height: 1.35,
                   ),
                 ),

@@ -13,8 +13,8 @@ import '../../../profile/presentation/screens/edit_status_screen.dart';
 import '../../../profile/presentation/screens/story_view_screen.dart';
 
 
-import '../../../profile/presentation/screens/appearance_screen.dart';
 import '../../../profile/presentation/screens/about_account_screen.dart';
+import '../../../profile/presentation/screens/my_courses_screen.dart';
 import 'post_detail_screen.dart';
 import 'startup_gallery_screen.dart';
 import 'exhibition_screen.dart';
@@ -24,7 +24,6 @@ import '../../../notifications/presentation/screens/notification_screen.dart';
 import '../../../community/presentation/screens/discover_communities_screen.dart';
 import '../../../profile/presentation/screens/space_screen.dart';
 import '../../../profile/presentation/screens/settings_activity_screen.dart';
-import '../../../profile/presentation/screens/settings_upgrade_screen.dart';
 import '../../../chat/presentation/screens/message_center_screen.dart';
 import '../data/mock_feed_data.dart';
 class HomeFeedScreen extends StatefulWidget {
@@ -2514,7 +2513,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     MaterialPageRoute(builder: (_) => const ProfileScreen()),
                   );
                 }),
-                _buildDrawerNavItem('My saves'),
+                _buildDrawerNavItem('My Courses', onTap: () {
+                  Navigator.of(context).pop(); // close drawer
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MyCoursesScreen()),
+                  );
+                }),
                 _buildDrawerNavItem('Startup Galary', onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => const StartupGalleryScreen(),
@@ -2553,26 +2557,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     builder: (context) => const SettingsActivityScreen(),
                   ));
                 }),
-                _buildDrawerNavItem('Copilot settings'),
-                _buildDrawerNavItem('Feature preview'),
-                _buildDrawerNavItem('Appearance', onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const AppearanceScreen(),
-                  ));
-                }),
+                _buildDrawerNavItem('Feedback Form'),
                 _buildDrawerNavItem('Accessibility'),
-                _buildDrawerNavItem('Upgrade', onTap: () {
-                  Navigator.of(context).pop(); // close drawer
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const SettingsUpgradeScreen(),
-                  ));
-                }),
-
-                const SizedBox(height: 8),
-                Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E0E0)),
-                const SizedBox(height: 8),
-
-                _buildDrawerNavItem('Sign out'),
               ],
             ),
           ),
