@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:acadyk/common/services/supabase_service.dart';
+import 'package:acadyk/common/services/auth_service.dart';
 import 'settings_account_management_screen.dart';
 import 'settings_profile_visibility_screen.dart';
 import 'settings_accounts_centre_screen.dart';
@@ -247,7 +247,7 @@ class YourAccountScreen extends StatelessWidget {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await SupabaseService.client.auth.signOut();
+                await AuthService.signOut();
               } catch (_) {}
               if (context.mounted) {
                 Navigator.of(context).popUntil((route) => route.isFirst);

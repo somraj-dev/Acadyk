@@ -1,7 +1,75 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../../common/services/storage_service.dart';
+import '../../../../core/network/api_client.dart';
 
-class SettingsResumeScreen extends StatelessWidget {
+class SettingsResumeScreen extends StatefulWidget {
   const SettingsResumeScreen({super.key});
+
+  @override
+  State<SettingsResumeScreen> createState() => _SettingsResumeScreenState();
+}
+
+class _SettingsResumeScreenState extends State<SettingsResumeScreen> {
+  File? _selectedFile;
+  bool _isUploading = false;
+
+  Future<void> _pickResume() async {
+    final picked = await StorageService.pickImage(); // File picker fallback
+    if (picked != null) {
+      setState(() {
+        _selectedFile = picked;
+      });
+    }
+  }
+
+  Future<void> _saveResume() async {
+    if (_selectedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a resume file to upload')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      final fileUrl = await StorageService.uploadFile(
+        bucket: 'resumes',
+        file: _selectedFile!,
+        remotePath: 'resumes/${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+
+      if (fileUrl != null) {
+        await ApiClient.post('/me/resumes', data: {
+          'title': 'My Latest Resume',
+          'fileUrl': fileUrl,
+          'isPrimary': true,
+        });
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Resume uploaded successfully!'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading resume: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,14 +134,14 @@ class SettingsResumeScreen extends StatelessWidget {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: _pickResume,
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
                       minimumSize: const Size(0, 0),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: const Text(
-                      'Create',
+                      'Select File',
                       style: TextStyle(
                         color: Color(0xFF0073B1),
                         fontWeight: FontWeight.bold,
@@ -95,56 +163,59 @@ class SettingsResumeScreen extends StatelessWidget {
               const SizedBox(height: 24),
               
               // Dashed upload container
-              CustomPaint(
-                painter: DashedBorderPainter(
-                  color: const Color(0xFFC4D9EC),
-                  strokeWidth: 1.2,
-                  borderRadius: 12.0,
-                  dashLength: 6.0,
-                  gap: 4.0,
-                ),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 44, horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F8FD),
-                    borderRadius: BorderRadius.circular(12),
+              GestureDetector(
+                onTap: _pickResume,
+                child: CustomPaint(
+                  painter: DashedBorderPainter(
+                    color: const Color(0xFFC4D9EC),
+                    strokeWidth: 1.2,
+                    borderRadius: 12.0,
+                    dashLength: 6.0,
+                    gap: 4.0,
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE4F0FC),
-                          shape: BoxShape.circle,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 44, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F8FD),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFE4F0FC),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.cloud_upload_outlined,
+                            color: Color(0xFF0073B1),
+                            size: 24,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.cloud_upload_outlined,
-                          color: Color(0xFF0073B1),
-                          size: 24,
+                        const SizedBox(height: 16),
+                        Text(
+                          _selectedFile != null ? 'Selected: ${_selectedFile!.path.split(Platform.pathSeparator).last}' : 'Update Resume',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Color(0xFF0073B1),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Update Resume',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Color(0xFF0073B1),
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Supported file formats DOC, DOCX, PDF. File size limit 10 MB.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF8E8E8E),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Supported file formats DOC, DOCX, PDF. File size limit 10 MB.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF8E8E8E),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -176,17 +247,21 @@ class SettingsResumeScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                       elevation: 0,
                     ),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text(
-                      'Save',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
+                    onPressed: _isUploading ? null : _saveResume,
+                    child: _isUploading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text(
+                            'Save',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
                   ),
                 ],
               ),

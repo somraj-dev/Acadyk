@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_client.dart';
 
 class SettingsCertificatesScreen extends StatefulWidget {
   const SettingsCertificatesScreen({super.key});
@@ -245,17 +246,47 @@ class _SettingsCertificatesScreenState extends State<SettingsCertificatesScreen>
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE2E8F0),
+                        backgroundColor: const Color(0xFF0073B1),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () async {
+                        final title = _titleCtrl.text.trim();
+                        final org = _orgCtrl.text.trim();
+                        if (title.isEmpty || org.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter Certificate Title and Organization')),
+                          );
+                          return;
+                        }
+
+                        try {
+                          await ApiClient.post('/me/certificates', data: {
+                            'title': title,
+                            'issuingOrg': org,
+                            'skills': _skillsCtrl.text.trim(),
+                            'description': _descriptionCtrl.text.trim(),
+                          });
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Certificate saved successfully!'), backgroundColor: Colors.green),
+                            );
+                            Navigator.of(context).pop(true);
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error saving certificate: $e'), backgroundColor: Colors.red),
+                            );
+                          }
+                        }
+                      },
                       child: const Text(
                         'Save',
                         style: TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14.5,
                         ),

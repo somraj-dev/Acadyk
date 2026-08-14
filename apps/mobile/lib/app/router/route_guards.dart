@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../common/services/supabase_service.dart';
+import '../../common/services/auth_service.dart';
 
 class RouteGuards {
   static bool isAuthenticated() {
-    return SupabaseService.client.auth.currentUser != null;
+    return AuthService.isAuthenticated;
   }
 
   static String? checkAuthRedirect(BuildContext context, String currentPath) {

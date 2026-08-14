@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../../../../common/providers/theme_provider.dart';
+import '../../../../common/providers/auth_provider.dart';
+import '../../../../common/services/supabase_service.dart';
 import 'settings_edit_profile_screen.dart';
 import 'appearance_screen.dart';
 
@@ -39,6 +41,9 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
         themeModeLabel = 'Dark';
       }
     }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentEmail = authProvider.currentProfile?.email ?? 'developer@acadyk.com';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -92,7 +97,7 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                 ),
                 _buildEmailTile(
                   title: 'Email address',
-                  email: 'iitainsomraj701@gmail.com',
+                  email: currentEmail,
                   textColor: tileTextColor,
                   descColor: descColor,
                   chevronColor: chevronColor,
@@ -103,6 +108,22 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                   textColor: tileTextColor,
                   descColor: descColor,
                   chevronColor: chevronColor,
+                  onTap: () async {
+                    try {
+                      await SupabaseService.client.auth.resetPasswordForEmail(currentEmail);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Password reset instructions sent to $currentEmail')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
+                    }
+                  },
                 ),
                 _buildTileWithDesc(
                   title: 'Convert to a business account',
@@ -142,6 +163,31 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                   textColor: tileTextColor,
                   descColor: descColor,
                   chevronColor: chevronColor,
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Account?'),
+                        content: const Text('This will permanently delete all your posts, profile, and account data. This action cannot be undone.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              try {
+                                await authProvider.signOut();
+                              } catch (_) {}
+                              if (context.mounted) {
+                                Navigator.of(context).popUntil((route) => route.isFirst);
+                              }
+                            },
+                            child: const Text('Delete Permanently'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 48),

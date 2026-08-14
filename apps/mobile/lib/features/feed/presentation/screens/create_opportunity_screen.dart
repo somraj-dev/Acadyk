@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_client.dart';
 import '../services/opportunities_manager.dart';
 
 class CreateOpportunityScreen extends StatefulWidget {
@@ -111,6 +112,20 @@ class _CreateOpportunityScreenState extends State<CreateOpportunityScreen> {
     };
 
     OpportunitiesManager.addOpportunity(newOpportunity);
+
+    // Synchronize with Spring Boot Backend API
+    ApiClient.post('/opportunities', data: {
+      'title': _titleController.text.trim(),
+      'companyName': _orgController.text.trim().isNotEmpty ? _orgController.text.trim() : 'Acadyk Partner',
+      'opportunityType': 'INTERNSHIP',
+      'description': _descController.text.trim(),
+      'requirements': _selectedEligibility.join(', '),
+      'location': _isOnline ? 'Remote' : 'Onsite',
+      'isRemote': _isOnline,
+      'stipendOrSalary': '₹ 1,50,000',
+    }).catchError((e) {
+      debugPrint('[CreateOpportunityScreen] Backend sync note: $e');
+    });
 
     // Show success dialog
     showDialog(

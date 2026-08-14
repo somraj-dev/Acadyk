@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_client.dart';
 
 class SettingsEducationScreen extends StatefulWidget {
   const SettingsEducationScreen({super.key});
@@ -297,17 +298,50 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE2E8F0), // Disabled color until fields complete, or active blue
+                        backgroundColor: const Color(0xFF0073B1),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () async {
+                        final institute = _collegeCtrl.text.trim();
+                        if (institute.isEmpty || _selectedQualification == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please fill in required fields (Institute and Qualification)')),
+                          );
+                          return;
+                        }
+
+                        try {
+                          await ApiClient.post('/me/education', data: {
+                            'institutionName': institute,
+                            'degree': _selectedQualification,
+                            'fieldOfStudy': _selectedCourse ?? _selectedSpecialization ?? 'General',
+                            'startYear': int.tryParse(_startYearCtrl.text.trim()) ?? 2022,
+                            'endYear': int.tryParse(_endYearCtrl.text.trim()),
+                            'grade': _cgpaCtrl.text.trim().isNotEmpty ? _cgpaCtrl.text.trim() : _percentageCtrl.text.trim(),
+                            'activities': _skillsCtrl.text.trim(),
+                            'description': _descriptionCtrl.text.trim(),
+                          });
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Education saved successfully!'), backgroundColor: Colors.green),
+                            );
+                            Navigator.of(context).pop(true);
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error saving education: $e'), backgroundColor: Colors.red),
+                            );
+                          }
+                        }
+                      },
                       child: const Text(
                         'Save',
                         style: TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14.5,
                         ),

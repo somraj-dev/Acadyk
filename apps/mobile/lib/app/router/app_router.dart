@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/feed/presentation/screens/home_feed_screen.dart';
+import '../../features/feed/presentation/screens/discover_opportunities_screen.dart';
+import '../../features/feed/presentation/screens/clubs_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/appearance_screen.dart';
+import '../../features/profile/presentation/screens/settings_account_management_screen.dart';
 import '../../features/notifications/presentation/screens/notification_screen.dart';
 import '../../features/chat/presentation/screens/message_center_screen.dart';
 import 'route_names.dart';
@@ -42,6 +45,18 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RouteNames.messages,
       builder: (context, state) => const MessageCenterScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.opportunities,
+      builder: (context, state) => const DiscoverOpportunitiesScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.clubs,
+      builder: (context, state) => const ClubsScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.settings,
+      builder: (context, state) => const SettingsAccountManagementScreen(),
     ),
   ],
 );

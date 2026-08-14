@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_client.dart';
 
 class SettingsResponsibilitiesScreen extends StatefulWidget {
   const SettingsResponsibilitiesScreen({super.key});
@@ -275,17 +276,50 @@ class _SettingsResponsibilitiesScreenState extends State<SettingsResponsibilitie
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE2E8F0),
+                        backgroundColor: const Color(0xFF0073B1),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () async {
+                        final pos = _positionCtrl.text.trim();
+                        final org = _organisationCtrl.text.trim();
+                        if (pos.isEmpty || org.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter Position and Organisation')),
+                          );
+                          return;
+                        }
+
+                        try {
+                          await ApiClient.post('/me/experiences', data: {
+                            'title': pos,
+                            'companyName': org,
+                            'location': _locationCtrl.text.trim(),
+                            'isRemote': _workFromHome,
+                            'isCurrent': _currentlyWorking,
+                            'description': _descriptionCtrl.text.trim(),
+                            'skills': _skillsCtrl.text.trim(),
+                          });
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Responsibility saved successfully!'), backgroundColor: Colors.green),
+                            );
+                            Navigator.of(context).pop(true);
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error saving responsibility: $e'), backgroundColor: Colors.red),
+                            );
+                          }
+                        }
+                      },
                       child: const Text(
                         'Save',
                         style: TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14.5,
                         ),

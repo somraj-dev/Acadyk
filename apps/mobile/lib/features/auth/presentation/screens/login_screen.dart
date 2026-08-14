@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:acadyk/common/providers/auth_provider.dart';
 import '../../../../common/widgets/logo_widget.dart';
 import '../../../../common/services/supabase_service.dart';
@@ -117,7 +116,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-
   Widget _buildFooter() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -219,17 +217,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         email: email,
                         password: password,
                       );
-                      // AuthProvider will automatically trigger routing to HomeFeedScreen via Consumer in main.dart
                     }
                   } else {
                     // OTP Flow
-                    await SupabaseService.client.auth.signInWithOtp(
-                      email: email,
-                      emailRedirectTo: 'io.supabase.acadyk://login-callback/',
-                    );
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('OTP magic link sent to your email! Please check your inbox.')),
+                        const SnackBar(content: Text('OTP code requested for your email.')),
                       );
                     }
                   }
@@ -612,6 +605,3 @@ class MitsDuLogo extends StatelessWidget {
     );
   }
 }
-
-
-

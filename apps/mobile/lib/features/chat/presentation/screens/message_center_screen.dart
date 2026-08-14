@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:acadyk/common/services/message_service.dart';
-import 'package:acadyk/common/services/supabase_service.dart';
+import 'package:acadyk/common/services/auth_service.dart';
 import 'direct_message_screen.dart';
 
 class MessageCenterScreen extends StatefulWidget {
@@ -141,7 +141,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final bgColor = theme.scaffoldBackgroundColor;
     final textColor = theme.colorScheme.onSurface;
-    final currentUserId = SupabaseService.client.auth.currentUser?.id ?? '';
+    final currentUserId = AuthService.currentUser?.id ?? '';
 
     return Scaffold(
       backgroundColor: bgColor,

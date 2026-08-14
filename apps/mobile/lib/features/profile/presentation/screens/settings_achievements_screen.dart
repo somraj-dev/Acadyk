@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_client.dart';
 
 class SettingsAchievementsScreen extends StatefulWidget {
   const SettingsAchievementsScreen({super.key});
@@ -165,17 +166,46 @@ class _SettingsAchievementsScreenState extends State<SettingsAchievementsScreen>
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE2E8F0),
+                        backgroundColor: const Color(0xFF0073B1),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () async {
+                        final title = _titleCtrl.text.trim();
+                        if (title.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter Achievement Title')),
+                          );
+                          return;
+                        }
+
+                        try {
+                          await ApiClient.post('/me/certificates', data: {
+                            'title': title,
+                            'issuingOrg': 'Acadyk Awards',
+                            'description': _descriptionCtrl.text.trim(),
+                            'skills': _skillsCtrl.text.trim(),
+                          });
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Achievement saved successfully!'), backgroundColor: Colors.green),
+                            );
+                            Navigator.of(context).pop(true);
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error saving achievement: $e'), backgroundColor: Colors.red),
+                            );
+                          }
+                        }
+                      },
                       child: const Text(
                         'Save',
                         style: TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14.5,
                         ),

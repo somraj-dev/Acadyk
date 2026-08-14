@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../common/services/profile_service.dart';
+import '../../../../common/services/auth_service.dart';
 
 class ProfileManager {
   static String name = 'Somraj Lodhi';
@@ -7,7 +9,7 @@ class ProfileManager {
   static String website = 'http://www.quantaforze.com';
   static String dateOfBirth = 'June 1, 2006';
   static String avatarUrl = 'assets/images/somraj_avatar.jpg';
-  static String bannerUrl = 'assets/images/young_entrepreneur.jpg'; // Default banner asset
+  static String bannerUrl = 'assets/images/young_entrepreneur.jpg';
 
   static final ValueNotifier<bool> profileUpdateNotifier = ValueNotifier<bool>(false);
 
@@ -30,5 +32,20 @@ class ProfileManager {
     
     // Trigger listeners across the app
     profileUpdateNotifier.value = !profileUpdateNotifier.value;
+
+    // Synchronize to PostgreSQL via Spring Boot REST backend
+    final currentUserId = AuthService.currentUser?.id;
+    if (currentUserId != null) {
+      ProfileService.updateProfile(currentUserId, {
+        'fullName': newName,
+        'bio': newBio,
+        'location': newLocation,
+        'website': newWebsite,
+        if (newAvatar != null) 'profilePhotoUrl': newAvatar,
+        if (newBanner != null) 'coverPhotoUrl': newBanner,
+      }).catchError((e) {
+        debugPrint('[ProfileManager] Backend profile sync warning: $e');
+      });
+    }
   }
 }

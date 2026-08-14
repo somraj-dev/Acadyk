@@ -28,7 +28,7 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
   @override
   void initState() {
     super.initState();
-    OpportunitiesManager.loadFromSupabase();
+    OpportunitiesManager.loadFromBackend();
   }
 
   @override
