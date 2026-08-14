@@ -1324,52 +1324,167 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showPostOptionsModal(BuildContext context) {
+    final String authorName = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
+    final String authorAvatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/somraj_avatar.jpg');
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) {
+      builder: (BuildContext context) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 6),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
-              ),
-              ListTile(
-                leading: const Icon(Icons.bookmark_outline),
-                title: const Text('Save Post'),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() => _isActivityBookmarked = true);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post saved!')));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.link),
-                title: const Text('Copy link to post'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Link copied!')));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.flag_outlined, color: Colors.redAccent),
-                title: const Text('Report post', style: TextStyle(color: Colors.redAccent)),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post reported for review.')));
-                },
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.only(top: 12.0, bottom: 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top drag handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Top row of actions (Save, Repost, Share)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildTopActionIcon(
+                      _isActivityBookmarked ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
+                      'Save',
+                      color: _isActivityBookmarked ? const Color(0xFF1E88E5) : Colors.black,
+                      onTap: () {
+                        setState(() {
+                          _isActivityBookmarked = !_isActivityBookmarked;
+                        });
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(_isActivityBookmarked ? 'Post saved to bookmarks!' : 'Post removed from bookmarks'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildTopActionIcon(
+                      CupertinoIcons.repeat,
+                      'Repost',
+                      onTap: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Post reposted to your network!')),
+                        );
+                      },
+                    ),
+                    _buildTopActionIcon(
+                      CupertinoIcons.paperplane,
+                      'Share',
+                      onTap: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Share options loaded!')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Vertical list actions (Hide, About this account, Report)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    children: [
+                      _buildListAction(CupertinoIcons.eye_slash, 'Hide', onTap: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Post hidden from your feed')),
+                        );
+                      }),
+                      const SizedBox(height: 20),
+                      _buildListAction(CupertinoIcons.person, 'About this account', onTap: () {
+                        Navigator.pop(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AboutAccountScreen(
+                              accountData: {
+                                'name': authorName,
+                                'avatarUrl': authorAvatar,
+                                'dateJoined': 'June 2024',
+                                'location': _profileLocation ?? 'Gwalior, India',
+                                'sharedFollowers': 18,
+                              },
+                            ),
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 20),
+                      _buildListAction(
+                        CupertinoIcons.exclamationmark_bubble,
+                        'Report',
+                        color: const Color(0xFFED4956),
+                        onTap: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Post reported for review.')),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTopActionIcon(IconData icon, String label, {Color color = Colors.black, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        children: [
+          Container(
+            width: 65,
+            height: 65,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2F2F2),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(icon, color: color, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w400),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListAction(IconData icon, String label, {Color color = Colors.black, VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 26),
+          const SizedBox(width: 16),
+          Text(
+            label,
+            style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w400),
+          ),
+        ],
+      ),
     );
   }
 
