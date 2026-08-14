@@ -2039,8 +2039,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'role': 'Technical Core Lead & Platform Architect',
           'organization': 'MITS-DU Student Innovation & Technology Council',
           'duration': 'Aug 2024 – Present · 2 yrs',
-          'badge': 'Active Lead',
-          'badgeColor': const Color(0xFF0A66C2),
           'icon': Icons.groups_rounded,
           'iconBg': const Color(0xFF0F4C81),
           'description': 'Leading campus software architectures, open-source repositories, and student hackathons.',
@@ -2050,8 +2048,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'role': 'AI/ML & Mobile App Core Member',
           'organization': 'GDG MITS Gwalior Chapter',
           'duration': 'Sep 2024 – Present',
-          'badge': 'Core Member',
-          'badgeColor': const Color(0xFF059669),
           'icon': Icons.code_rounded,
           'iconBg': const Color(0xFF1E293B),
           'description': 'Mentoring students in Flutter, TensorFlow, and cloud architectures.',
@@ -2061,8 +2057,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'role': 'Competitive Programming & Systems Research',
           'organization': 'ACM Chapter, Department of CSE & IT',
           'duration': '2024 – Present',
-          'badge': 'Member',
-          'badgeColor': const Color(0xFF7C3AED),
           'icon': Icons.terminal_rounded,
           'iconBg': const Color(0xFF4C1D95),
           'description': 'Organizing coding contests, algorithmic workshops, and research symposiums.',
@@ -2072,8 +2066,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'role': 'Edge Computing & Vision Systems Contributor',
           'organization': 'MITS Innovation Hub',
           'duration': '2024 – 2025',
-          'badge': 'Alumni / Contributor',
-          'badgeColor': const Color(0xFF64748B),
           'icon': Icons.smart_toy_rounded,
           'iconBg': const Color(0xFF334155),
           'description': 'Designed lightweight neural network architectures for embedded microcontrollers.',
@@ -2090,8 +2082,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'role': 'Technical Contributor',
           'organization': 'MITS-DU Student Council',
           'duration': '2024 – Present',
-          'badge': 'Active',
-          'badgeColor': const Color(0xFF0A66C2),
           'icon': Icons.groups_rounded,
           'iconBg': const Color(0xFF0F4C81),
           'description': 'Collaborating on student campus projects and workshops.',
@@ -2101,8 +2091,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'role': 'Campus Member',
           'organization': 'GDG MITS Chapter',
           'duration': '2024 – Present',
-          'badge': 'Member',
-          'badgeColor': const Color(0xFF059669),
           'icon': Icons.code_rounded,
           'iconBg': const Color(0xFF1E293B),
           'description': 'Participating in developer events and technology sessions.',
@@ -2197,42 +2185,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      club['name'] as String,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF191919),
-                      ),
-                    ),
-                  ),
-                  if (club['badge'] != null) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: (club['badgeColor'] as Color? ?? const Color(0xFF0A66C2)).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: (club['badgeColor'] as Color? ?? const Color(0xFF0A66C2)).withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        club['badge'] as String,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: club['badgeColor'] as Color? ?? const Color(0xFF0A66C2),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+              Text(
+                club['name'] as String,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF191919),
+                ),
               ),
               const SizedBox(height: 2),
               Text(
