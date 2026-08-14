@@ -1,103 +1,112 @@
 package com.acadyk.unit
 
-import com.acadyk.modules.auth.dto.LoginRequest
-import com.acadyk.modules.auth.dto.SignUpRequest
-import com.acadyk.modules.auth.service.AuthService
-import com.acadyk.modules.users.entity.UserEntity
-import com.acadyk.modules.users.repository.UserRepository
+import com.acadyk.modules.auth.*
+import com.acadyk.modules.profiles.dto.ProfileResponse
+import com.acadyk.modules.profiles.entity.ProfileEntity
+import com.acadyk.modules.profiles.mapper.ProfileMapper
 import com.acadyk.modules.profiles.repository.ProfileRepository
-import com.acadyk.infrastructure.kafka.DomainEventPublisher
-import com.acadyk.security.JwtTokenProvider
+import com.acadyk.security.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
-import org.springframework.security.crypto.password.PasswordEncoder
 import java.util.Optional
 import java.util.UUID
 
 class AuthServiceTest {
 
-    private lateinit var userRepository: UserRepository
     private lateinit var profileRepository: ProfileRepository
+    private lateinit var profileMapper: ProfileMapper
+    private lateinit var tokenVerifier: FirebaseTokenVerifier
+    private lateinit var currentUserProvider: CurrentUserProvider
     private lateinit var jwtTokenProvider: JwtTokenProvider
-    private lateinit var passwordEncoder: PasswordEncoder
-    private lateinit var domainEventPublisher: DomainEventPublisher
+    private lateinit var auditService: AuditService
     private lateinit var authService: AuthService
 
     @BeforeEach
     fun setUp() {
-        userRepository = mock(UserRepository::class.java)
         profileRepository = mock(ProfileRepository::class.java)
+        profileMapper = mock(ProfileMapper::class.java)
+        tokenVerifier = mock(FirebaseTokenVerifier::class.java)
+        currentUserProvider = mock(CurrentUserProvider::class.java)
         jwtTokenProvider = mock(JwtTokenProvider::class.java)
-        passwordEncoder = mock(PasswordEncoder::class.java)
-        domainEventPublisher = mock(DomainEventPublisher::class.java)
+        auditService = mock(AuditService::class.java)
 
         authService = AuthService(
-            userRepository = userRepository,
             profileRepository = profileRepository,
+            profileMapper = profileMapper,
+            tokenVerifier = tokenVerifier,
+            currentUserProvider = currentUserProvider,
             jwtTokenProvider = jwtTokenProvider,
-            passwordEncoder = passwordEncoder,
-            domainEventPublisher = domainEventPublisher
+            auditService = auditService
         )
     }
 
     @Test
-    fun `signUp creates new user and returns valid token`() {
-        val request = SignUpRequest(
+    fun `register creates new user profile and returns JWT token`() {
+        val request = RegisterRequest(
             email = "somraj@acadyk.com",
             password = "SecurePassword123!",
-            fullName = "Somraj Lodhi",
-            username = "somraj_dev"
+            fullName = "Somraj Lodhi"
         )
 
-        `when`(userRepository.existsByEmail(request.email)).thenReturn(false)
-        `when`(userRepository.existsByUsername(request.username)).thenReturn(false)
-        `when`(passwordEncoder.encode(request.password)).thenReturn("hashed_password")
-
-        val savedUser = UserEntity(
-            id = UUID.randomUUID(),
+        val savedProfile = ProfileEntity(
+            id = UUID.randomUUID().toString(),
             email = request.email,
-            passwordHash = "hashed_password",
-            fullName = request.fullName,
-            username = request.username
+            username = "somraj_dev",
+            fullName = request.fullName
         )
 
-        `when`(userRepository.save(any(UserEntity::class.java))).thenReturn(savedUser)
-        `when`(jwtTokenProvider.generateToken(any(), any(), any())).thenReturn("mock_jwt_token")
+        val profileResponse = ProfileResponse(
+            id = savedProfile.id,
+            email = savedProfile.email,
+            username = savedProfile.username,
+            fullName = savedProfile.fullName
+        )
 
-        val response = authService.signUp(request)
+        `when`(profileRepository.save(any(ProfileEntity::class.java))).thenReturn(savedProfile)
+        `when`(jwtTokenProvider.createToken(anyString(), anyString(), anyString())).thenReturn("mock_jwt_token")
+        `when`(profileMapper.toResponse(savedProfile)).thenReturn(profileResponse)
+
+        val response = authService.register(request, "127.0.0.1")
 
         assertNotNull(response)
         assertEquals("mock_jwt_token", response.token)
         assertEquals(request.email, response.user.email)
-        verify(userRepository, times(1)).save(any())
-        verify(domainEventPublisher, times(1)).publish(any())
+        verify(profileRepository, times(1)).save(any())
+        verify(auditService, times(1)).logAuthEvent(eq("REGISTER_USER"), anyString(), eq(request.email), eq("127.0.0.1"), eq(true))
     }
 
     @Test
-    fun `login with valid credentials returns auth response`() {
+    fun `login returns auth response with token`() {
         val request = LoginRequest(
             email = "somraj@acadyk.com",
             password = "SecurePassword123!"
         )
 
-        val existingUser = UserEntity(
-            id = UUID.randomUUID(),
+        val existingProfile = ProfileEntity(
+            id = UUID.randomUUID().toString(),
             email = request.email,
-            passwordHash = "hashed_password",
-            fullName = "Somraj Lodhi",
-            username = "somraj_dev"
+            username = "somraj_dev",
+            fullName = "Somraj Lodhi"
         )
 
-        `when`(userRepository.findByEmail(request.email)).thenReturn(Optional.of(existingUser))
-        `when`(passwordEncoder.matches(request.password, existingUser.passwordHash)).thenReturn(true)
-        `when`(jwtTokenProvider.generateToken(any(), any(), any())).thenReturn("mock_login_jwt")
+        val profileResponse = ProfileResponse(
+            id = existingProfile.id,
+            email = existingProfile.email,
+            username = existingProfile.username,
+            fullName = existingProfile.fullName
+        )
 
-        val response = authService.login(request)
+        `when`(profileRepository.findByEmail(request.email)).thenReturn(Optional.of(existingProfile))
+        `when`(jwtTokenProvider.createToken(anyString(), anyString(), anyString())).thenReturn("mock_login_jwt")
+        `when`(profileMapper.toResponse(existingProfile)).thenReturn(profileResponse)
+
+        val response = authService.login(request, "127.0.0.1")
 
         assertNotNull(response)
         assertEquals("mock_login_jwt", response.token)
-        assertEquals(existingUser.email, response.user.email)
+        assertEquals(existingProfile.email, response.user.email)
+        verify(auditService, times(1)).logAuthEvent(eq("EMAIL_PASSWORD_LOGIN"), anyString(), eq(request.email), eq("127.0.0.1"), eq(true))
     }
 }
