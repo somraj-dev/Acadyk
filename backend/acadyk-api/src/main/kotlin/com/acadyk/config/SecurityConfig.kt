@@ -47,8 +47,13 @@ class SecurityConfig(
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
+        val envOrigins = System.getenv("CORS_ALLOWED_ORIGINS")?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
         val configuration = CorsConfiguration().apply {
-            allowedOriginPatterns = listOf("*")
+            if (!envOrigins.isNullOrEmpty()) {
+                allowedOrigins = envOrigins
+            } else {
+                allowedOriginPatterns = listOf("*")
+            }
             allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
             allowedHeaders = listOf(
                 "Authorization",
@@ -57,9 +62,11 @@ class SecurityConfig(
                 "Accept",
                 "Origin",
                 "Access-Control-Request-Method",
-                "Access-Control-Request-Headers"
+                "Access-Control-Request-Headers",
+                "X-Request-ID",
+                "X-Correlation-ID"
             )
-            exposedHeaders = listOf("Authorization", "Content-Disposition")
+            exposedHeaders = listOf("Authorization", "Content-Disposition", "X-Request-ID", "X-Correlation-ID")
             allowCredentials = true
             maxAge = 3600L
         }

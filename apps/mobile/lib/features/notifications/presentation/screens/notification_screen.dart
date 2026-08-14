@@ -147,22 +147,27 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).pop(),
-                            child: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Your notifications',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).pop(),
+                              child: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 12),
+                            const Flexible(
+                              child: Text(
+                                'Your notifications',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       GestureDetector(
                         onTap: _markAllAsRead,

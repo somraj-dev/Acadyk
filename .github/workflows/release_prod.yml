@@ -1,0 +1,33 @@
+name: Production Release & Deployment
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  production-deploy:
+    name: Build & Deploy Production Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Tag Multi-Arch Docker Image
+        run: |
+          docker build \
+            -t ghcr.io/${{ github.repository }}/acadyk-api:${{ github.event.release.tag_name }} \
+            -t ghcr.io/${{ github.repository }}/acadyk-api:latest \
+            -f backend/acadyk-api/Dockerfile \
+            ./backend/acadyk-api
+
+      - name: Push Container Images to Registry
+        run: |
+          docker push ghcr.io/${{ github.repository }}/acadyk-api:${{ github.event.release.tag_name }}
+          docker push ghcr.io/${{ github.repository }}/acadyk-api:latest

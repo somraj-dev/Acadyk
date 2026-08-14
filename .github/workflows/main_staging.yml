@@ -1,0 +1,30 @@
+name: Staging Deployment
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy-staging:
+    name: Build Docker & Deploy Staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Docker Image
+        run: |
+          docker build -t acadyk-api:staging -f backend/acadyk-api/Dockerfile ./backend/acadyk-api
+
+      - name: Verify Staging Docker Compose Syntax
+        run: |
+          docker compose -f docker-compose.staging.yml config

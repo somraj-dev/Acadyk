@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  acadyk-api:
+    image: ${DOCKER_REGISTRY:-ghcr.io/somraj-dev}/acadyk-api:${IMAGE_TAG:-latest}
+    container_name: acadyk-prod-api
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: ${PROD_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${PROD_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${PROD_DB_PASSWORD}
+      REDIS_HOST: ${PROD_REDIS_HOST}
+      REDIS_PORT: ${PROD_REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${PROD_REDIS_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${PROD_KAFKA_BROKERS}
+      ELASTICSEARCH_URIS: ${PROD_ES_URIS}
+      AWS_S3_BUCKET: ${PROD_S3_BUCKET}
+      AWS_REGION: ${PROD_AWS_REGION:-us-east-1}
+      CORS_ALLOWED_ORIGINS: ${PROD_CORS_ORIGINS:-https://acadyk.com,https://app.acadyk.com}
+      SENTRY_DSN: ${PROD_SENTRY_DSN:-}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
