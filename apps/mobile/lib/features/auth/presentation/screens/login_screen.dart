@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:acadyk/common/providers/auth_provider.dart';
 import '../../../../common/widgets/logo_widget.dart';
-import '../../../../common/services/supabase_service.dart';
+import '../../../../common/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -479,7 +479,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                         return;
                                       }
                                       try {
-                                        await SupabaseService.client.auth.resetPasswordForEmail(email);
+                                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                                        await authProvider.sendPasswordReset(email);
                                         if (mounted) {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             const SnackBar(content: Text('Password reset link sent to your email!')),

@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../../../../common/providers/theme_provider.dart';
 import '../../../../common/providers/auth_provider.dart';
-import '../../../../common/services/supabase_service.dart';
 import 'settings_edit_profile_screen.dart';
 import 'appearance_screen.dart';
 
@@ -110,7 +109,7 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                   chevronColor: chevronColor,
                   onTap: () async {
                     try {
-                      await SupabaseService.client.auth.resetPasswordForEmail(currentEmail);
+                      await authProvider.sendPasswordReset(currentEmail);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Password reset instructions sent to $currentEmail')),
