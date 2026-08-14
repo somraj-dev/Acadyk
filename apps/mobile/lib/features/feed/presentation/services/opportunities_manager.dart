@@ -97,6 +97,4 @@ class OpportunitiesManager {
       debugPrint('[OpportunitiesManager] Backend load note: $e');
     }
   }
-
-  static void loadFromSupabase() => loadFromBackend();
 }

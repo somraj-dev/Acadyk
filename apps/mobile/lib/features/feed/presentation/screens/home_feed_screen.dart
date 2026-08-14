@@ -63,14 +63,14 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   int? _replyingToCommentIndex;
   String? _replyingToName;
 
-  List<Map<String, dynamic>> _supabasePosts = [];
+  List<Map<String, dynamic>> _feedPosts = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _activeTab == 4 ? 3 : (_activeTab == 3 ? 2 : _activeTab));
-    _loadSupabasePosts();
+    _loadBackendPosts();
     _setupRealtimeSubscription();
   }
 
@@ -82,17 +82,17 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     super.dispose();
   }
 
-  void _loadSupabasePosts() async {
-    final posts = await _fetchPostsFromSupabase();
+  void _loadBackendPosts() async {
+    final posts = await _fetchPostsFromBackend();
     if (mounted) {
       setState(() {
-        _supabasePosts = posts;
+        _feedPosts = posts;
         _isLoading = false;
       });
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchPostsFromSupabase() async {
+  Future<List<Map<String, dynamic>>> _fetchPostsFromBackend() async {
     try {
       return await PostService.getFeedPosts();
     } catch (e) {
@@ -274,8 +274,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                         ),
                                       )
                                     else ...[
-                                      if (_supabasePosts.isNotEmpty)
-                                        ..._supabasePosts.map((post) => _buildDatabasePostCard(post)),
+                                      if (_feedPosts.isNotEmpty)
+                                        ..._feedPosts.map((post) => _buildDatabasePostCard(post)),
                                       // Mock posts from MITS Gwalior
                                       ...MockFeedData.mockPosts.map((post) => _buildMockPostCard(post)),
                                     ],
