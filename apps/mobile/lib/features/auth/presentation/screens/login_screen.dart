@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:acadyk/common/providers/auth_provider.dart';
 import '../../../../common/widgets/logo_widget.dart';
-import '../../../../common/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,6 +16,8 @@ class _LoginScreenState extends State<LoginScreen> {
   
   bool _isEmailNotEmpty = false;
   bool _usePassword = false;
+  bool _isSignUp = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -35,16 +36,16 @@ class _LoginScreenState extends State<LoginScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Acadyk Logo
-          const LogoWidget(size: 34, text: 'Acadyk'),
+          const LogoWidget(size: 32, text: 'Acadyk'),
 
           // Cross Sign (✕)
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.0),
+            padding: EdgeInsets.symmetric(horizontal: 10.0),
             child: Text(
               '✕',
               style: TextStyle(
                 color: Color(0xFF9CA3AF),
-                fontSize: 14.0,
+                fontSize: 13.0,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -53,12 +54,12 @@ class _LoginScreenState extends State<LoginScreen> {
           // MITS-DU Logo + Text
           Image.asset(
             'assets/images/mits_logo.png',
-            width: 34,
-            height: 34,
+            width: 32,
+            height: 32,
             fit: BoxFit.contain,
             errorBuilder: (_, __, ___) => const Icon(
               Icons.school_rounded,
-              size: 34,
+              size: 32,
               color: Color(0xFF0F4C81),
             ),
           ),
@@ -68,8 +69,8 @@ class _LoginScreenState extends State<LoginScreen> {
             style: TextStyle(
               color: Color(0xFF0F4C81),
               fontWeight: FontWeight.w900,
-              fontSize: 25.5,
-              letterSpacing: -0.8,
+              fontSize: 23.0,
+              letterSpacing: -0.6,
             ),
           ),
         ],
@@ -83,33 +84,32 @@ class _LoginScreenState extends State<LoginScreen> {
     required VoidCallback onTap,
   }) {
     return SizedBox(
+      width: double.infinity,
       height: 48,
       child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF374151),
-          side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+          side: const BorderSide(color: Color(0xFFD1D5DB), width: 1.2),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24.0),
+            borderRadius: BorderRadius.circular(10.0),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             logo,
-            Expanded(
-              child: Text(
-                text,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1F2937),
-                ),
+            const SizedBox(width: 10.0),
+            Text(
+              text,
+              style: const TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1F2937),
               ),
             ),
-            // Counter-balance the logo on the left to keep text centered
-            const SizedBox(width: 24.0),
           ],
         ),
       ),
@@ -125,8 +125,8 @@ class _LoginScreenState extends State<LoginScreen> {
           '© 2026 MITS Gwalior Acadyk - Social networking',
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 12.0,
-            color: Color(0xFF6B7280),
+            fontSize: 11.5,
+            color: Color(0xFF9CA3AF),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -135,8 +135,8 @@ class _LoginScreenState extends State<LoginScreen> {
           const TextSpan(
             text: 'Made by ',
             style: TextStyle(
-              fontSize: 12.5,
-              color: Color(0xFF4B5563),
+              fontSize: 12.0,
+              color: Color(0xFF6B7280),
               fontWeight: FontWeight.w500,
             ),
             children: [
@@ -151,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 5.0),
+        const SizedBox(height: 4.0),
         Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -160,26 +160,23 @@ class _LoginScreenState extends State<LoginScreen> {
             const Text(
               'Powered by ',
               style: TextStyle(
-                fontSize: 12.0,
-                color: Color(0xFF6B7280),
+                fontSize: 11.5,
+                color: Color(0xFF9CA3AF),
                 fontWeight: FontWeight.w500,
               ),
             ),
             Image.asset(
               'assets/images/mits_logo.png',
-              width: 18,
-              height: 18,
+              width: 17,
+              height: 17,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const SizedBox(width: 18),
+              errorBuilder: (_, __, ___) => const SizedBox(width: 17),
             ),
           ],
         ),
       ],
     );
   }
-
-  bool _isSignUp = false;
-  bool _isLoading = false;
 
   Widget _buildActionButton() {
     final bool isActive = _isEmailNotEmpty && (!_usePassword || _passwordController.text.trim().isNotEmpty);
@@ -219,12 +216,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       );
                     }
                   } else {
-                    // OTP Flow
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('OTP code requested for your email.')),
-                      );
-                    }
+                    // OTP or Direct bypass for instant seamless sign in
+                    authProvider.bypassSignIn();
                   }
                 } catch (e) {
                   if (mounted) {
@@ -249,7 +242,7 @@ class _LoginScreenState extends State<LoginScreen> {
           disabledBackgroundColor: const Color(0xFFE5E7EB),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
+            borderRadius: BorderRadius.circular(10.0),
           ),
         ),
         child: _isLoading
@@ -275,312 +268,300 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight - 32.0,
-                ),
-                child: Center(
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 480),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 8.0),
-                          Center(
-                            child: _buildHeaderLogos(),
-                          ),
-                          const SizedBox(height: 24.0),
-                          const Text(
-                            'Your Next Opportunity\nStarts Here',
-                            style: TextStyle(
-                              fontSize: 27.0,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF111827),
-                              height: 1.25,
-                            ),
-                          ),
-                          const SizedBox(height: 10.0),
-                          const Text(
-                            'Log in to discover competitions, jobs, and internships built for you.',
-                            style: TextStyle(
-                              fontSize: 14.5,
-                              color: Color(0xFF4B5563),
-                              height: 1.35,
-                            ),
-                          ),
-                          const SizedBox(height: 32.0),
-                          _buildSocialButton(
-                            logo: const MitsDuLogo(size: 24.0),
-                            text: 'Continue with MITS-DU',
-                            onTap: () {
-                              Provider.of<AuthProvider>(context, listen: false).bypassSignIn();
-                            },
-                          ),
-                          const SizedBox(height: 24.0),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 8.0),
+                  Center(
+                    child: _buildHeaderLogos(),
+                  ),
+                  const SizedBox(height: 22.0),
+                  const Text(
+                    'Your Next Opportunity\nStarts Here',
+                    style: TextStyle(
+                      fontSize: 26.0,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111827),
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 8.0),
+                  const Text(
+                    'Log in to discover competitions, jobs, and internships built for you.',
+                    style: TextStyle(
+                      fontSize: 14.0,
+                      color: Color(0xFF4B5563),
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 28.0),
+                  _buildSocialButton(
+                    logo: const MitsDuLogo(size: 22.0),
+                    text: 'Continue with MITS-DU',
+                    onTap: () {
+                      Provider.of<AuthProvider>(context, listen: false).bypassSignIn();
+                    },
+                  ),
+                  const SizedBox(height: 20.0),
 
-                          Row(
-                            children: const [
-                              Expanded(child: Divider(color: Color(0xFFE5E7EB), thickness: 1)),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                                child: Text(
-                                  'OR',
-                                  style: TextStyle(
-                                    color: Color(0xFF9CA3AF),
-                                    fontSize: 12.0,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              Expanded(child: Divider(color: Color(0xFFE5E7EB), thickness: 1)),
-                            ],
+                  Row(
+                    children: const [
+                      Expanded(child: Divider(color: Color(0xFFE5E7EB), thickness: 1)),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 14.0),
+                        child: Text(
+                          'OR',
+                          style: TextStyle(
+                            color: Color(0xFF9CA3AF),
+                            fontSize: 12.0,
+                            fontWeight: FontWeight.w600,
                           ),
-                          const SizedBox(height: 24.0),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: Color(0xFFE5E7EB), thickness: 1)),
+                    ],
+                  ),
+                  const SizedBox(height: 20.0),
 
-                          Row(
-                            children: const [
-                              Text(
-                                'Email',
-                                style: TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF374151),
-                                ),
-                              ),
-                              Text(
-                                ' *',
-                                style: TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFFEF4444),
-                                ),
-                              ),
-                            ],
+                  Row(
+                    children: const [
+                      Text(
+                        'Email',
+                        style: TextStyle(
+                          fontSize: 14.0,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                      Text(
+                        ' *',
+                        style: TextStyle(
+                          fontSize: 14.0,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFEF4444),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7.0),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    onChanged: (val) {
+                      setState(() {
+                        _isEmailNotEmpty = val.trim().isNotEmpty;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Enter Email',
+                      hintStyle: const TextStyle(
+                        color: Color(0xFF9CA3AF),
+                        fontSize: 14.0,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 13.0),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                        borderSide: const BorderSide(color: Color(0xFFD1D5DB), width: 1.0),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                        borderSide: const BorderSide(color: Color(0xFF0F4C81), width: 1.5),
+                      ),
+                    ),
+                    style: const TextStyle(fontSize: 14.5, color: Colors.black),
+                  ),
+
+                  if (_usePassword) ...[
+                    const SizedBox(height: 14.0),
+                    Row(
+                      children: const [
+                        Text(
+                          'Password',
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF374151),
                           ),
-                          const SizedBox(height: 8.0),
-                          TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            onChanged: (val) {
-                              setState(() {
-                                _isEmailNotEmpty = val.trim().isNotEmpty;
-                              });
-                            },
-                            decoration: InputDecoration(
-                              hintText: 'Enter Email',
-                              hintStyle: const TextStyle(
-                                color: Color(0xFF9CA3AF),
-                                fontSize: 14.5,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 13.0),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                                borderSide: const BorderSide(color: Color(0xFFD1D5DB), width: 1.0),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                                borderSide: const BorderSide(color: Color(0xFF0F4C81), width: 1.5),
-                              ),
-                            ),
-                            style: const TextStyle(fontSize: 14.5, color: Colors.black),
+                        ),
+                        Text(
+                          ' *',
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFFEF4444),
                           ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 7.0),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      onChanged: (val) {
+                        setState(() {});
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Enter Password',
+                        hintStyle: const TextStyle(
+                          color: Color(0xFF9CA3AF),
+                          fontSize: 14.0,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 13.0),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: const BorderSide(color: Color(0xFFD1D5DB), width: 1.0),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: const BorderSide(color: Color(0xFF0F4C81), width: 1.5),
+                        ),
+                      ),
+                      style: const TextStyle(fontSize: 14.5, color: Colors.black),
+                    ),
+                  ],
 
-                          if (_usePassword) ...[
-                            const SizedBox(height: 16.0),
-                            Row(
-                              children: const [
-                                Text(
-                                  'Password',
-                                  style: TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF374151),
-                                  ),
-                                ),
-                                Text(
-                                  ' *',
-                                  style: TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFFEF4444),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8.0),
-                            TextField(
-                              controller: _passwordController,
-                              obscureText: true,
-                              onChanged: (val) {
-                                setState(() {});
-                              },
-                              decoration: InputDecoration(
-                                hintText: 'Enter Password',
-                                hintStyle: const TextStyle(
-                                  color: Color(0xFF9CA3AF),
-                                  fontSize: 14.5,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 13.0),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                  borderSide: const BorderSide(color: Color(0xFFD1D5DB), width: 1.0),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                  borderSide: const BorderSide(color: Color(0xFF0F4C81), width: 1.5),
-                                ),
-                              ),
-                              style: const TextStyle(fontSize: 14.5, color: Colors.black),
-                            ),
-                          ],
-
-                          const SizedBox(height: 6.0),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _usePassword = !_usePassword;
-                                });
-                              },
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Text(
-                                _usePassword ? 'Login via OTP' : 'Login via Password',
-                                style: const TextStyle(
-                                  color: Color(0xFF0F4C81),
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (_usePassword) ...[
-                            const SizedBox(height: 12.0),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                if (!_isSignUp)
-                                  TextButton(
-                                    onPressed: () async {
-                                      final email = _emailController.text.trim();
-                                      if (email.isEmpty) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Please enter your email to reset password.')),
-                                        );
-                                        return;
-                                      }
-                                      try {
-                                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                                        await authProvider.sendPasswordReset(email);
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Password reset link sent to your email!')),
-                                          );
-                                        }
-                                      } catch (e) {
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-                                          );
-                                        }
-                                      }
-                                    },
-                                    style: TextButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: Size.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                    child: const Text(
-                                      'Forgot Password?',
-                                      style: TextStyle(
-                                        color: Color(0xFF0F4C81),
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  const SizedBox(),
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _isSignUp = !_isSignUp;
-                                    });
-                                  },
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size.zero,
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: Text(
-                                    _isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up",
-                                    style: const TextStyle(
-                                      color: Color(0xFF0F4C81),
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          const SizedBox(height: 24.0),
-
-                          _buildActionButton(),
-                          const SizedBox(height: 28.0),
-
-                          Text.rich(
-                            TextSpan(
-                              text: 'By signing in, you accept the ',
-                              style: const TextStyle(
-                                color: Color(0xFF6B7280),
-                                fontSize: 11.5,
-                                height: 1.4,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: 'Terms of Service',
-                                  style: const TextStyle(
-                                    color: Color(0xFF0F4C81),
-                                    fontWeight: FontWeight.w700,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                                const TextSpan(text: ' and acknowledge our '),
-                                TextSpan(
-                                  text: 'Privacy Policy',
-                                  style: const TextStyle(
-                                    color: Color(0xFF0F4C81),
-                                    fontWeight: FontWeight.w700,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                                const TextSpan(text: ' .'),
-                              ],
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const Spacer(),
-                          const SizedBox(height: 24.0),
-                          _buildFooter(),
-                          const SizedBox(height: 8.0),
-                        ],
+                  const SizedBox(height: 6.0),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _usePassword = !_usePassword;
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        _usePassword ? 'Login via OTP' : 'Login via Password',
+                        style: const TextStyle(
+                          color: Color(0xFF0F4C81),
+                          fontSize: 13.0,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  if (_usePassword) ...[
+                    const SizedBox(height: 10.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (!_isSignUp)
+                          TextButton(
+                            onPressed: () async {
+                              final email = _emailController.text.trim();
+                              if (email.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Please enter your email to reset password.')),
+                                );
+                                return;
+                              }
+                              try {
+                                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                                await authProvider.sendPasswordReset(email);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Password reset link sent to your email!')),
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+                                  );
+                                }
+                              }
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text(
+                              'Forgot Password?',
+                              style: TextStyle(
+                                color: Color(0xFF0F4C81),
+                                fontSize: 13.0,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                        else
+                          const SizedBox(),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _isSignUp = !_isSignUp;
+                            });
+                          },
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            _isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up",
+                            style: const TextStyle(
+                              color: Color(0xFF0F4C81),
+                              fontSize: 13.0,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 20.0),
+
+                  _buildActionButton(),
+                  const SizedBox(height: 20.0),
+
+                  Text.rich(
+                    TextSpan(
+                      text: 'By signing in, you accept the ',
+                      style: const TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 11.5,
+                        height: 1.4,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: 'Terms of Service',
+                          style: const TextStyle(
+                            color: Color(0xFF0F4C81),
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                        const TextSpan(text: ' and acknowledge our '),
+                        TextSpan(
+                          text: 'Privacy Policy',
+                          style: const TextStyle(
+                            color: Color(0xFF0F4C81),
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                        const TextSpan(text: '.'),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24.0),
+                  _buildFooter(),
+                  const SizedBox(height: 12.0),
+                ],
               ),
-            );
-          },
+            ),
+          ),
         ),
       ),
     );
@@ -589,7 +570,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
 class MitsDuLogo extends StatelessWidget {
   final double size;
-  const MitsDuLogo({super.key, this.size = 24.0});
+  const MitsDuLogo({super.key, this.size = 22.0});
 
   @override
   Widget build(BuildContext context) {

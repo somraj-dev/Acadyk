@@ -2464,99 +2464,225 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   Widget _buildProfileDrawer() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final drawerBg = isDark ? const Color(0xFF161B22) : Colors.white;
+    final headerTextColor = isDark ? Colors.white : const Color(0xFF111827);
+    final subTextColor = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
 
     return Drawer(
-      width: 310,
+      width: 300,
       backgroundColor: drawerBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
-          topRight: Radius.circular(0),
-          bottomRight: Radius.circular(0),
+          topRight: Radius.circular(16),
+          bottomRight: Radius.circular(16),
         ),
       ),
-      child: Column(
-        children: [
-          // Scrollable top content
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-              children: [
-                _buildDrawerNavItem('Profile', onTap: () {
-                  Navigator.of(context).pop(); // close drawer
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                  );
-                }),
-                _buildDrawerNavItem('My Courses', onTap: () {
-                  Navigator.of(context).pop(); // close drawer
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const MyCoursesScreen()),
-                  );
-                }),
-                _buildDrawerNavItem('Startup Galary', onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const StartupGalleryScreen(),
-                  ));
-                }),
-                _buildDrawerNavItem('Clubs', onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const ClubsScreen(),
-                  ));
-                }),
-                _buildDrawerNavItem('Exhibition', onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const ExhibitionScreen(),
-                  ));
-                }),
-                _buildDrawerNavItem('Space', onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const SpaceScreen(),
-                  ));
-                }),
-                _buildDrawerNavItem('Community', onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const DiscoverCommunitiesScreen(),
-                  ));
-                }),
-                
-                const SizedBox(height: 8),
-                Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E0E0)),
-                const SizedBox(height: 8),
-
-                _buildDrawerNavItem('Settings', onTap: () {
-                  Navigator.of(context).pop(); // close drawer
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const SettingsActivityScreen(),
-                  ));
-                }),
-                _buildDrawerNavItem('Feedback Form'),
-                _buildDrawerNavItem('Accessibility'),
-              ],
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Top Profile Header with Avatar & Name
+            InkWell(
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 14.0),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: const Color(0xFF0F4C81),
+                      child: const Icon(Icons.person, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: 14.0),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Somraj Lodhi',
+                            style: TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.w700,
+                              color: headerTextColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2.0),
+                          Text(
+                            '@somraj-dev',
+                            style: TextStyle(
+                              fontSize: 13.0,
+                              color: subTextColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: subTextColor,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+            Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB)),
+
+            // Scrollable top content
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+                children: [
+                  _buildDrawerNavItem(
+                    'Profile',
+                    icon: Icons.person_outline_rounded,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                      );
+                    },
+                  ),
+                  _buildDrawerNavItem(
+                    'My Courses',
+                    icon: Icons.school_outlined,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const MyCoursesScreen()),
+                      );
+                    },
+                  ),
+                  _buildDrawerNavItem(
+                    'Startup Gallery',
+                    icon: Icons.rocket_launch_outlined,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const StartupGalleryScreen(),
+                      ));
+                    },
+                  ),
+                  _buildDrawerNavItem(
+                    'Clubs',
+                    icon: Icons.groups_outlined,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const ClubsScreen(),
+                      ));
+                    },
+                  ),
+                  _buildDrawerNavItem(
+                    'Exhibition',
+                    icon: Icons.palette_outlined,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const ExhibitionScreen(),
+                      ));
+                    },
+                  ),
+                  _buildDrawerNavItem(
+                    'Space',
+                    icon: Icons.explore_outlined,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const SpaceScreen(),
+                      ));
+                    },
+                  ),
+                  _buildDrawerNavItem(
+                    'Community',
+                    icon: Icons.forum_outlined,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const DiscoverCommunitiesScreen(),
+                      ));
+                    },
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB)),
+                  const SizedBox(height: 8),
+
+                  _buildDrawerNavItem(
+                    'Settings',
+                    icon: Icons.settings_outlined,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const SettingsActivityScreen(),
+                      ));
+                    },
+                  ),
+                  _buildDrawerNavItem(
+                    'Feedback Form',
+                    icon: Icons.rate_review_outlined,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Feedback form opened')),
+                      );
+                    },
+                  ),
+                  _buildDrawerNavItem(
+                    'Accessibility',
+                    icon: Icons.accessibility_new_outlined,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDrawerNavItem(String title, {String? trailingBadge, VoidCallback? onTap}) {
+  Widget _buildDrawerNavItem(
+    String title, {
+    IconData? icon,
+    String? trailingBadge,
+    VoidCallback? onTap,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final navTextColor = isDark ? Colors.white : const Color(0xFF191919);
+    final navTextColor = isDark ? Colors.white : const Color(0xFF1F2937);
+    final iconColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563);
+
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 11.0),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 15.0,
-                fontWeight: FontWeight.w500,
-                color: navTextColor,
+            if (icon != null) ...[
+              Icon(icon, size: 20, color: iconColor),
+              const SizedBox(width: 14),
+            ],
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15.0,
+                  fontWeight: FontWeight.w500,
+                  color: navTextColor,
+                ),
               ),
             ),
             if (trailingBadge != null)
