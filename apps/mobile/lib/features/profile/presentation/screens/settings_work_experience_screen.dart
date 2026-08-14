@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_client.dart';
 
 class SettingsWorkExperienceScreen extends StatefulWidget {
   const SettingsWorkExperienceScreen({super.key});
@@ -328,17 +329,44 @@ class _SettingsWorkExperienceScreenState extends State<SettingsWorkExperienceScr
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE2E8F0),
+                        backgroundColor: const Color(0xFF0073B1),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () async {
+                        final org = _selectedOrganisation ?? 'Acadyk Partner';
+                        final title = _selectedDesignation ?? 'Software Engineer';
+
+                        try {
+                          await ApiClient.post('/me/experiences', data: {
+                            'companyName': org,
+                            'title': title,
+                            'location': _locationCtrl.text.trim().isNotEmpty ? _locationCtrl.text.trim() : 'India',
+                            'isRemote': _workFromHome,
+                            'isCurrent': _currentlyWorking,
+                            'description': _descriptionCtrl.text.trim(),
+                            'skills': _skillsCtrl.text.trim(),
+                          });
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Experience saved successfully!'), backgroundColor: Colors.green),
+                            );
+                            Navigator.of(context).pop(true);
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error saving experience: $e'), backgroundColor: Colors.red),
+                            );
+                          }
+                        }
+                      },
                       child: const Text(
                         'Save',
                         style: TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14.5,
                         ),

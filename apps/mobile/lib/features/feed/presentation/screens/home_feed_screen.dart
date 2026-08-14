@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:math';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:acadyk/common/services/supabase_service.dart';
 import 'package:acadyk/common/services/post_service.dart';
 import 'discover_opportunities_screen.dart';
 import 'select_opportunity_screen.dart';
@@ -85,30 +83,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   void _loadSupabasePosts() async {
-    if (SupabaseService.hasValidCredentials) {
-      final posts = await _fetchPostsFromSupabase();
-      if (mounted) {
-        setState(() {
-          _supabasePosts = posts;
-          _isLoading = false;
-        });
-      }
-    } else {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    final posts = await _fetchPostsFromSupabase();
+    if (mounted) {
+      setState(() {
+        _supabasePosts = posts;
+        _isLoading = false;
+      });
     }
   }
 
   Future<List<Map<String, dynamic>>> _fetchPostsFromSupabase() async {
     try {
-      final response = await SupabaseService.client
-          .from('posts')
-          .select('*, profiles(*)')
-          .order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(response);
+      return await PostService.getFeedPosts();
     } catch (e) {
       print('Error fetching posts: $e');
       return [];
@@ -116,19 +102,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   void _setupRealtimeSubscription() {
-    if (SupabaseService.hasValidCredentials) {
-      SupabaseService.client
-          .channel('public:posts')
-          .onPostgresChanges(
-            event: PostgresChangeEvent.all,
-            schema: 'public',
-            table: 'posts',
-            callback: (payload) {
-              _loadSupabasePosts();
-            },
-          )
-          .subscribe();
-    }
+    // Realtime posts subscription via WebSocketService
   }
 
   @override
@@ -3186,26 +3160,24 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               children: [
                 GestureDetector(
                   onTap: () async {
+                    final previousState = _likedPosts[postId] ?? false;
                     setState(() {
-                      _bookmarkedPosts[postId] = !isLiked;
+                      _likedPosts[postId] = !previousState;
                     });
                     try {
-                      if (SupabaseService.hasValidCredentials) {
-                        final userId = SupabaseService.client.auth.currentUser?.id;
-                        if (userId != null) {
-                          if (isLiked) {
-                            await SupabaseService.client
-                                .from('likes')
-                                .delete()
-                                .match({'user_id': userId, 'post_id': postId});
-                          } else {
-                            await SupabaseService.client
-                                .from('likes')
-                                .insert({'user_id': userId, 'post_id': postId});
-                          }
-                        }
+                      final newState = await PostService.toggleLike(postId, previousState);
+                      if (mounted && _likedPosts[postId] != newState) {
+                        setState(() {
+                          _likedPosts[postId] = newState;
+                        });
                       }
-                    } catch (_) {}
+                    } catch (_) {
+                      if (mounted) {
+                        setState(() {
+                          _likedPosts[postId] = previousState; // Rollback
+                        });
+                      }
+                    }
                   },
                   child: Row(
                     children: [

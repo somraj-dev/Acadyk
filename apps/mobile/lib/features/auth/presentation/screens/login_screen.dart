@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:acadyk/common/providers/auth_provider.dart';
 import '../../../../common/widgets/logo_widget.dart';
 import '../../../../common/widgets/google_logo.dart';
 import '../../../../common/widgets/github_logo.dart';
 import '../../../feed/presentation/screens/home_feed_screen.dart';
-import '../../../../common/services/supabase_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -116,13 +114,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     }
                   } else {
                     // OTP Flow
-                    await SupabaseService.client.auth.signInWithOtp(
-                      email: email,
-                      emailRedirectTo: 'io.supabase.acadyk://login-callback/',
-                    );
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('OTP magic link sent to your email! Please check your inbox.')),
+                        const SnackBar(content: Text('OTP code requested for your email.')),
                       );
                     }
                   }
@@ -210,6 +204,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 36.0),
 
+                _buildSocialButton(
+                  logo: const GoogleLogo(size: 20.0),
+                  text: 'Continue with Google',
+                  onTap: () async {
+                    await Provider.of<AuthProvider>(context, listen: false).signInWithGoogle();
+                  },
+                ),
+                const SizedBox(height: 12.0),
                 _buildSocialButton(
                   logo: const GitHubLogo(size: 20.0),
                   text: 'Login with GitHub',
@@ -383,7 +385,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               return;
                             }
                             try {
-                              await SupabaseService.client.auth.resetPasswordForEmail(email);
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('Password reset link sent to your email!')),

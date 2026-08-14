@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_client.dart';
 import '../services/startup_manager.dart';
 import 'add_cofounder_screen.dart';
 
@@ -104,6 +105,18 @@ class _CreateStartupScreenState extends State<CreateStartupScreen> {
     };
 
     StartupManager.addStartup(newStartup);
+
+    // Synchronize with Spring Boot Backend API
+    ApiClient.post('/startups', data: {
+      'name': _companyNameCtrl.text.trim(),
+      'pitch': _companyDescCtrl.text.trim(),
+      'description': _whatCompanyMakesCtrl.text.trim().isNotEmpty ? _whatCompanyMakesCtrl.text.trim() : _companyDescCtrl.text.trim(),
+      'website': _companyUrlCtrl.text.trim().isNotEmpty ? _companyUrlCtrl.text.trim() : 'https://acadyk.com',
+      'stage': _hasInvestment == true ? 'Seed' : 'Idea',
+      'industry': 'Technology',
+    }).catchError((e) {
+      debugPrint('[CreateStartupScreen] Backend sync note: $e');
+    });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

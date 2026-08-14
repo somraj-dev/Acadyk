@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'settings_edit_profile_screen.dart';
+import 'package:acadyk/common/services/auth_service.dart';
 
 class SettingsAccountManagementScreen extends StatefulWidget {
   const SettingsAccountManagementScreen({super.key});
@@ -74,6 +75,23 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                 _buildPinterestTile(
                   title: 'Password',
                   trailingText: 'Change password',
+                  onTap: () async {
+                    final email = AuthService.currentUser?.email ?? 'developer@acadyk.com';
+                    try {
+                      await AuthService.sendPasswordReset(email);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Password reset instructions sent to $email')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
+                    }
+                  },
                 ),
                 _buildPinterestTileWithDesc(
                   title: 'Convert to a business account',
@@ -96,6 +114,31 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                 _buildPinterestTileWithDesc(
                   title: 'Delete your data and account',
                   description: 'Permanently delete your data and everything associated with your account',
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Account?'),
+                        content: const Text('This will permanently delete all your posts, profile, and account data. This action cannot be undone.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              try {
+                                await AuthService.deleteAccount();
+                              } catch (_) {}
+                              if (context.mounted) {
+                                Navigator.of(context).popUntil((route) => route.isFirst);
+                              }
+                            },
+                            child: const Text('Delete Permanently'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 48),

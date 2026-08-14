@@ -7,8 +7,9 @@ import 'your_account_screen.dart';
 import '../../../chat/presentation/screens/direct_message_screen.dart';
 import 'edit_status_screen.dart';
 import 'connections_list_screen.dart';
-import 'package:acadyk/common/services/supabase_service.dart';
+import 'package:acadyk/common/services/auth_service.dart';
 import 'package:acadyk/common/services/storage_service.dart';
+import 'package:acadyk/common/services/profile_service.dart';
 
 
 class ProfileScreen extends StatefulWidget {
@@ -272,13 +273,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.pop(context);
 
                 try {
-                  final currentUser = SupabaseService.client.auth.currentUser;
+                  final currentUser = AuthService.currentUser;
                   if (currentUser != null) {
-                    await SupabaseService.client.from('profiles').update({
+                    await ProfileService.updateProfile(currentUser.id, {
                       'full_name': newName,
                       'bio': newBio,
                       'location': newLoc,
-                    }).eq('id', currentUser.id);
+                    });
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Profile updated successfully!')),
@@ -407,14 +408,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final userId = widget.isOwnProfile
-          ? SupabaseService.client.auth.currentUser?.id
+          ? AuthService.currentUser?.id
           : widget.userData?['id'];
       if (userId != null) {
-        final data = await SupabaseService.client
-            .from('profiles')
-            .select()
-            .eq('id', userId)
-            .maybeSingle();
+        final data = await ProfileService.getProfile(userId);
         if (data != null && mounted) {
           setState(() {
             _profileName = data['full_name'];
@@ -471,13 +468,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               const SnackBar(content: Text('Uploading cover photo...')),
                             );
                             final url = await StorageService.uploadCoverPhoto(
-                              SupabaseService.client.auth.currentUser!.id,
+                              AuthService.currentUser!.id,
                               file,
                             );
                             if (url != null) {
-                              await SupabaseService.client.from('profiles').update({
-                                'cover_photo_url': url,
-                              }).eq('id', SupabaseService.client.auth.currentUser!.id);
+                              await ProfileService.updateProfile(
+                                AuthService.currentUser!.id,
+                                {'cover_photo_url': url},
+                              );
                               setState(() {
                                 _coverPhotoUrl = url;
                               });
@@ -541,13 +539,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       const SnackBar(content: Text('Uploading profile photo...')),
                                     );
                                     final url = await StorageService.uploadProfilePhoto(
-                                      SupabaseService.client.auth.currentUser!.id,
+                                      AuthService.currentUser!.id,
                                       file,
                                     );
                                     if (url != null) {
-                                      await SupabaseService.client.from('profiles').update({
-                                        'profile_photo_url': url,
-                                      }).eq('id', SupabaseService.client.auth.currentUser!.id);
+                                      await ProfileService.updateProfile(
+                                        AuthService.currentUser!.id,
+                                        {'profile_photo_url': url},
+                                      );
                                       setState(() {
                                         _profilePhotoUrl = url;
                                       });

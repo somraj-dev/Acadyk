@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:acadyk/common/services/message_service.dart';
-import 'package:acadyk/common/services/supabase_service.dart';
+import 'package:acadyk/common/services/auth_service.dart';
 
 class DirectMessageScreen extends StatefulWidget {
   final String name;
@@ -77,7 +77,7 @@ class _DirectMessageScreenState extends State<DirectMessageScreen> {
   }
 
   List<Map<String, dynamic>> _getMockMessages() {
-    final currentUserId = SupabaseService.client.auth.currentUser?.id ?? 'me';
+    final currentUserId = AuthService.currentUser?.id ?? 'me';
     return [
       {
         'id': 'msg_1',
@@ -113,7 +113,7 @@ class _DirectMessageScreenState extends State<DirectMessageScreen> {
     if (text.isEmpty || _activeConversationId == null) return;
     _controller.clear();
 
-    final currentUserId = SupabaseService.client.auth.currentUser?.id ?? 'me';
+    final currentUserId = AuthService.currentUser?.id ?? 'me';
     final newMessage = {
       'id': 'msg_${DateTime.now().millisecondsSinceEpoch}',
       'sender_id': currentUserId,
@@ -137,7 +137,7 @@ class _DirectMessageScreenState extends State<DirectMessageScreen> {
     const bgColor = Colors.white;
     const textPrimary = Color(0xFF111827);
     const textSecondary = Color(0xFF6B7280);
-    final currentUserId = SupabaseService.client.auth.currentUser?.id;
+    final currentUserId = AuthService.currentUser?.id;
 
     return Scaffold(
       backgroundColor: bgColor,

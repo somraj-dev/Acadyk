@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:acadyk/common/services/notification_service.dart';
-import 'package:acadyk/common/services/supabase_service.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});

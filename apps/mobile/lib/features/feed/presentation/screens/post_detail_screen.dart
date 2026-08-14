@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:acadyk/common/services/post_service.dart';
-import 'package:acadyk/common/services/supabase_service.dart';
 import '../../../profile/presentation/screens/edit_status_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../profile/presentation/services/profile_manager.dart';

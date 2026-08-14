@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:acadyk/common/providers/profile_provider.dart';
 import 'package:acadyk/common/services/storage_service.dart';
 import 'package:acadyk/common/services/post_service.dart';
-import 'package:acadyk/common/services/supabase_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});

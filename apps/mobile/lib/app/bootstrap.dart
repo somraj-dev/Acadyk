@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart' as legacy_provider;
-import '../common/services/supabase_service.dart';
+import '../common/services/auth_service.dart';
+import '../core/network/websocket_service.dart';
 import '../common/providers/auth_provider.dart';
 import '../common/providers/profile_provider.dart';
 import '../common/providers/theme_provider.dart';
@@ -10,9 +11,10 @@ import 'app.dart';
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await SupabaseService.initialize();
+    await AuthService.init();
+    WebSocketService.connect();
   } catch (e) {
-    debugPrint('Supabase initialization error: $e');
+    debugPrint('Service initialization error: $e');
   }
 
   runApp(

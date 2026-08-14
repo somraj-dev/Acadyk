@@ -1,52 +1,56 @@
-import 'supabase_service.dart';
+import '../../core/network/api_client.dart';
 
 class PostService {
   static Future<List<Map<String, dynamic>>> getFeedPosts({int limit = 20, int offset = 0}) async {
     try {
-      if (!SupabaseService.hasValidCredentials) return [];
-      final response = await SupabaseService.client
-          .from('posts')
-          .select('*, profiles(*)')
-          .order('created_at', ascending: false)
-          .range(offset, offset + limit - 1);
-      return List<Map<String, dynamic>>.from(response);
+      final page = offset ~/ (limit > 0 ? limit : 20);
+      final response = await ApiClient.get('/posts', queryParameters: {
+        'page': page,
+        'size': limit,
+      });
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          final payload = resData['data'];
+          if (payload is Map && payload.containsKey('content') && payload['content'] is List) {
+            return List<Map<String, dynamic>>.from(payload['content']);
+          }
+          if (payload is List) {
+            return List<Map<String, dynamic>>.from(payload);
+          }
+        } else if (resData is List) {
+          return List<Map<String, dynamic>>.from(resData);
+        }
+      }
     } catch (e) {
       print('Error getting feed posts: $e');
-      return [];
     }
+    return [];
   }
 
   static Future<Map<String, dynamic>?> createPost(String content, {String? postType, String? imageUrl}) async {
     try {
-      if (!SupabaseService.hasValidCredentials) return null;
-      final userId = SupabaseService.client.auth.currentUser?.id;
-      if (userId == null) return null;
-
-      final postResponse = await SupabaseService.client.from('posts').insert({
-        'user_id': userId,
+      final response = await ApiClient.post('/posts', data: {
         'content': content,
-        'post_type': postType ?? 'text',
-      }).select('*, profiles(*)').single();
-
-      if (imageUrl != null && imageUrl.isNotEmpty) {
-        await SupabaseService.client.from('post_images').insert({
-          'post_id': postResponse['id'],
-          'image_url': imageUrl,
-        });
-        postResponse['image_url'] = imageUrl;
+        'postType': postType ?? 'text',
+        'imageUrl': imageUrl,
+      });
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          return resData['data'] as Map<String, dynamic>?;
+        }
+        return response.data as Map<String, dynamic>?;
       }
-
-      return postResponse;
     } catch (e) {
       print('Error creating post: $e');
-      return null;
     }
+    return null;
   }
 
   static Future<void> deletePost(String postId) async {
     try {
-      if (!SupabaseService.hasValidCredentials) return;
-      await SupabaseService.client.from('posts').delete().eq('id', postId);
+      await ApiClient.delete('/posts/$postId');
     } catch (e) {
       print('Error deleting post: $e');
       rethrow;
@@ -55,116 +59,92 @@ class PostService {
 
   static Future<bool> toggleLike(String postId, bool currentLikeState) async {
     try {
-      if (!SupabaseService.hasValidCredentials) return currentLikeState;
-      final userId = SupabaseService.client.auth.currentUser?.id;
-      if (userId == null) return currentLikeState;
-
-      if (currentLikeState) {
-        await SupabaseService.client
-            .from('likes')
-            .delete()
-            .match({'user_id': userId, 'post_id': postId});
-        return false;
-      } else {
-        await SupabaseService.client
-            .from('likes')
-            .insert({'user_id': userId, 'post_id': postId});
-        return true;
+      final response = await ApiClient.post('/posts/$postId/like');
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          return resData['data']?['isReacted'] ?? resData['data']?['liked'] ?? !currentLikeState;
+        }
+        if (resData is Map) {
+          return resData['liked'] ?? !currentLikeState;
+        }
       }
     } catch (e) {
       print('Error toggling like: $e');
-      return currentLikeState;
     }
+    return !currentLikeState;
   }
 
   static Future<List<Map<String, dynamic>>> getComments(String postId) async {
     try {
-      if (!SupabaseService.hasValidCredentials) return [];
-      final response = await SupabaseService.client
-          .from('comments')
-          .select('*, profiles(*)')
-          .eq('post_id', postId)
-          .order('created_at', ascending: true);
-      return List<Map<String, dynamic>>.from(response);
+      final response = await ApiClient.get('/posts/$postId/comments');
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          final payload = resData['data'];
+          if (payload is Map && payload.containsKey('content') && payload['content'] is List) {
+            return List<Map<String, dynamic>>.from(payload['content']);
+          }
+          if (payload is List) {
+            return List<Map<String, dynamic>>.from(payload);
+          }
+        } else if (resData is List) {
+          return List<Map<String, dynamic>>.from(resData);
+        }
+      }
     } catch (e) {
       print('Error getting comments: $e');
-      return [];
     }
+    return [];
   }
 
   static Future<Map<String, dynamic>?> addComment(String postId, String content, {String? parentId}) async {
     try {
-      if (!SupabaseService.hasValidCredentials) return null;
-      final userId = SupabaseService.client.auth.currentUser?.id;
-      if (userId == null) return null;
-
-      final Map<String, dynamic> data = {
-        'post_id': postId,
-        'user_id': userId,
+      final response = await ApiClient.post('/posts/$postId/comments', data: {
         'content': content,
-      };
-      if (parentId != null) {
-        data['parent_id'] = parentId;
+        'parentId': parentId,
+      });
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          return resData['data'] as Map<String, dynamic>?;
+        }
+        return response.data as Map<String, dynamic>?;
       }
-
-      return await SupabaseService.client.from('comments').insert(data).select('*, profiles(*)').single();
     } catch (e) {
       print('Error adding comment: $e');
-      return null;
     }
+    return null;
   }
 
   static Future<bool> toggleBookmark(String postId, bool currentBookmarkState) async {
     try {
-      final userId = SupabaseService.client.auth.currentUser?.id;
-      if (userId == null) return currentBookmarkState;
-      if (currentBookmarkState) {
-        await SupabaseService.client
-            .from('bookmarks')
-            .delete()
-            .match({'user_id': userId, 'post_id': postId});
-        return false;
-      } else {
-        await SupabaseService.client
-            .from('bookmarks')
-            .insert({'user_id': userId, 'post_id': postId});
-        return true;
+      final response = await ApiClient.post('/posts/$postId/bookmark');
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          return resData['data']?['isBookmarked'] ?? !currentBookmarkState;
+        }
+        if (resData is Map) {
+          return resData['bookmarked'] ?? !currentBookmarkState;
+        }
       }
     } catch (e) {
       print('Error toggling bookmark: $e');
-      return currentBookmarkState;
     }
+    return !currentBookmarkState;
   }
 
   static Future<bool> isBookmarked(String postId) async {
     try {
-      final userId = SupabaseService.client.auth.currentUser?.id;
-      if (userId == null) return false;
-      final res = await SupabaseService.client
-          .from('bookmarks')
-          .select()
-          .eq('user_id', userId)
-          .eq('post_id', postId)
-          .maybeSingle();
-      return res != null;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  static Future<bool> isLiked(String postId) async {
-    try {
-      final userId = SupabaseService.client.auth.currentUser?.id;
-      if (userId == null) return false;
-      final res = await SupabaseService.client
-          .from('likes')
-          .select()
-          .eq('user_id', userId)
-          .eq('post_id', postId)
-          .maybeSingle();
-      return res != null;
-    } catch (e) {
-      return false;
-    }
+      final response = await ApiClient.get('/posts/$postId');
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          return resData['data']?['isBookmarked'] ?? false;
+        }
+      }
+    } catch (_) {}
+    return false;
   }
 }

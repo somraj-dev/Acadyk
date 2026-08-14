@@ -72,7 +72,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>io.supabase.acadyk</string>
+				<string>acadyk</string>
 			</array>
 		</dict>
 	</array>

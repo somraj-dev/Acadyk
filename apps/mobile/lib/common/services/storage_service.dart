@@ -1,8 +1,8 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'supabase_service.dart';
+import '../../core/network/api_client.dart';
 
 class StorageService {
   static final ImagePicker _picker = ImagePicker();
@@ -25,26 +25,34 @@ class StorageService {
     return null;
   }
 
-  /// Upload a file to a specific Supabase storage bucket
+  /// Upload file via multipart request through backend S3 gateway
   static Future<String?> uploadFile({
     required String bucket,
     required File file,
     required String remotePath,
   }) async {
     try {
-      // Upload the file
-      await SupabaseService.client.storage.from(bucket).upload(
-            remotePath,
-            file,
-            fileOptions: const FileOptions(upsert: true),
-          );
+      final fileName = p.basename(file.path);
+      final formData = FormData.fromMap({
+        'bucket': bucket,
+        'path': remotePath,
+        'file': await MultipartFile.fromFile(file.path, filename: fileName),
+      });
 
-      // Get public URL
-      return SupabaseService.getPublicUrl(bucket, remotePath);
+      final response = await ApiClient.post('/files/upload', data: formData);
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          return resData['data']?['fileUrl']?.toString();
+        }
+        if (resData is Map) {
+          return resData['fileUrl']?.toString() ?? resData['url']?.toString();
+        }
+      }
     } catch (e) {
-      print('Error uploading file to storage bucket $bucket: $e');
-      return null;
+      print('Error uploading file: $e');
     }
+    return null;
   }
 
   /// Upload profile picture helper
