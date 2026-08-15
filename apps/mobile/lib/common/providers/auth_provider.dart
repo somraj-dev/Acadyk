@@ -36,7 +36,7 @@ class AuthProvider extends ChangeNotifier {
       'id': 'mock-dev-user-id-999',
       'email': 'developer@acadyk.com',
       'full_name': 'Somraj Lodhi',
-      'username': 'somraj-dev',
+      'username': 'BTAM25O1080',
     });
 
     _currentUser = mockUser;
@@ -53,7 +53,7 @@ class AuthProvider extends ChangeNotifier {
         'id': userId,
         'email': _currentUser?.email ?? 'developer@acadyk.com',
         'full_name': _currentUser?.fullName ?? 'Somraj Lodhi',
-        'username': 'somraj-dev',
+        'username': 'BTAM25O1080',
       });
       _currentProfile = mockProfile;
     }

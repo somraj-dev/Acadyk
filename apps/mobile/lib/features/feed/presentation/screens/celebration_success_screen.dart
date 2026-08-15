@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'event_detail_screen.dart';
 
 class CelebrationSuccessScreen extends StatelessWidget {
   final String eventTitle;
@@ -466,9 +465,11 @@ class CelebrationSuccessScreen extends StatelessWidget {
   Widget _buildMainEventCard(BuildContext context, Map<String, dynamic> item, Color cardBg) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => EventDetailScreen(eventData: item['event']),
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Coming soon!'),
+            duration: Duration(seconds: 2),
           ),
         );
       },

@@ -25,7 +25,7 @@ class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen> {
   void initState() {
     super.initState();
     // Automatically transition to the Celebration screen (opportunities checklist) after 2 seconds
-    _timer = Timer(const Duration(seconds: 2), () {
+    _timer = Timer(Duration(seconds: 2), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(

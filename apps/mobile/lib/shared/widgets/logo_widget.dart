@@ -12,15 +12,17 @@ class LogoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final safeSize = (size > 0 && !size.isNaN && !size.isInfinite) ? size : 32.0;
+
     return Image.asset(
       'assets/images/acadyk_logo.png',
-      width: size,
-      height: size,
+      width: safeSize,
+      height: safeSize,
       color: color,
       errorBuilder: (context, error, stackTrace) {
         return Container(
-          width: size,
-          height: size,
+          width: safeSize,
+          height: safeSize,
           decoration: const BoxDecoration(
             color: Color(0xFF0A66C2),
             shape: BoxShape.circle,
@@ -31,7 +33,7 @@ class LogoWidget extends StatelessWidget {
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: size * 0.5,
+              fontSize: safeSize * 0.5,
             ),
           ),
         );

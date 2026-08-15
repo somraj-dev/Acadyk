@@ -11,6 +11,8 @@ import '../../../feed/presentation/screens/post_detail_screen.dart';
 import 'package:acadyk/common/services/auth_service.dart';
 import 'package:acadyk/common/services/storage_service.dart';
 import 'package:acadyk/common/services/profile_service.dart';
+import 'package:acadyk/common/services/post_service.dart';
+import 'package:acadyk/common/services/follow_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final bool isOwnProfile;
@@ -64,11 +66,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _loadProfileData();
     ProfileManager.profileUpdateNotifier.addListener(_onProfileUpdated);
+    PostService.feedChangeNotifier.addListener(_onProfileUpdated);
+    FollowService.followChangeNotifier.addListener(_onProfileUpdated);
   }
 
   @override
   void dispose() {
     ProfileManager.profileUpdateNotifier.removeListener(_onProfileUpdated);
+    PostService.feedChangeNotifier.removeListener(_onProfileUpdated);
+    FollowService.followChangeNotifier.removeListener(_onProfileUpdated);
     _scrollController.dispose();
     super.dispose();
   }
@@ -771,7 +777,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final String bio = _profileBio ?? widget.userData?['headline'] ?? (widget.isOwnProfile ? ProfileManager.bio : 'Innovator at MITS');
     final String avatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/somraj_avatar.jpg');
 
-    return [
+    final List<Map<String, dynamic>> userCreatedItems = [];
+    if (widget.isOwnProfile || name.contains('Somraj')) {
+      final userPosts = PostService.getUserCreatedPosts();
+      for (final p in userPosts) {
+        userCreatedItems.add({
+          'category': 'Post',
+          'text': p['content'] ?? '',
+          'imageAsset': (p['imageUrl'] != null && (p['imageUrl'] as String).isNotEmpty) ? p['imageUrl'] : 'assets/images/arogya_dashboard.jpg',
+          'reactions': p['likes'] ?? 0,
+          'authorName': name,
+          'authorHeadline': bio,
+          'authorAvatar': avatar,
+          'timeAgo': p['timeAgo'] ?? 'Just now',
+        });
+      }
+    }
+
+    final defaultItems = [
       {
         'category': 'Post',
         'text': "Healthcare isn't broken because of lack of technology — it's broken because of fragmentation across diagnostic workflows.",
@@ -803,6 +826,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'timeAgo': '3w',
       },
     ];
+
+    return [...userCreatedItems, ...defaultItems];
   }
 
   Widget _buildFeaturedSection() {
@@ -906,18 +931,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 8),
             ClipRRect(
-              child: Image.asset(
-                item['imageAsset'],
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: 160,
-                errorBuilder: (_, __, ___) => Container(
-                  height: 160,
-                  color: const Color(0xFFF1F5F9),
-                  alignment: Alignment.center,
-                  child: const Icon(Icons.image, color: Color(0xFF94A3B8), size: 36),
-                ),
-              ),
+              child: item['imageAsset'].toString().startsWith('http')
+                  ? Image.network(
+                      item['imageAsset'],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 160,
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 160,
+                        color: const Color(0xFFF1F5F9),
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.image, color: Color(0xFF94A3B8), size: 36),
+                      ),
+                    )
+                  : Image.asset(
+                      item['imageAsset'],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 160,
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 160,
+                        color: const Color(0xFFF1F5F9),
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.image, color: Color(0xFF94A3B8), size: 36),
+                      ),
+                    ),
             ),
             Padding(
               padding: const EdgeInsets.all(12),

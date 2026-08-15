@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:acadyk/common/providers/profile_provider.dart';
 import 'package:acadyk/common/services/storage_service.dart';
 import 'package:acadyk/common/services/post_service.dart';
+import 'package:acadyk/common/services/auth_service.dart';
+import 'package:acadyk/features/profile/presentation/services/profile_manager.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -28,7 +30,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Widget build(BuildContext context) {
     final profileProvider = Provider.of<ProfileProvider>(context);
     final profile = profileProvider.profile;
-    final avatarUrl = profile?.profilePhotoUrl;
+    final avatarUrl = profile?.profilePhotoUrl ?? ProfileManager.avatarUrl;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -69,15 +71,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                 final text = _textController.text.trim();
                                 if (text.isEmpty && _pickedImage == null) return;
 
+                                final nav = Navigator.of(context);
+                                final sm = ScaffoldMessenger.of(context);
+
                                 setState(() {
                                   _isLoading = true;
                                 });
 
                                 try {
                                   String? uploadedUrl;
-                                  if (_pickedImage != null && profile != null) {
+                                  if (_pickedImage != null) {
+                                    final userId = profile?.id ?? AuthService.currentUser?.id ?? 'somraj_dev';
                                     uploadedUrl = await StorageService.uploadPostImage(
-                                      profile.id,
+                                      userId,
                                       _pickedImage!,
                                     );
                                   }
@@ -89,11 +95,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                   );
 
                                   if (mounted) {
-                                    Navigator.pop(context, true);
+                                    nav.pop(true);
                                   }
                                 } catch (e) {
                                   if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    sm.showSnackBar(
                                       SnackBar(content: Text('Error creating post: $e')),
                                     );
                                   }
@@ -129,9 +135,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           // User Avatar
                           CircleAvatar(
                             radius: 20,
-                            backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                            backgroundImage: avatarUrl.startsWith('http')
                                 ? NetworkImage(avatarUrl) as ImageProvider
-                                : const AssetImage('assets/images/somraj_avatar.jpg'),
+                                : AssetImage(avatarUrl) as ImageProvider,
                           ),
                           const SizedBox(width: 12),
                           // Text Input

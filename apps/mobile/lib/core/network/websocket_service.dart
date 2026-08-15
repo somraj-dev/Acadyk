@@ -174,7 +174,7 @@ class WebSocketService {
 
   static void _startHeartbeat() {
     _heartbeatTimer?.cancel();
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+    _heartbeatTimer = Timer.periodic(Duration(seconds: 15), (_) {
       if (_isConnected) {
         _channel?.sink.add('\n');
       }
@@ -200,9 +200,10 @@ class WebSocketService {
 
     _reconnectAttempts++;
     final delaySeconds = min(pow(2, _reconnectAttempts).toInt(), 30);
-    debugPrint('[WebSocket] Scheduling reconnection in $delaySeconds seconds (attempt $_reconnectAttempts)');
+    final safeDelay = (delaySeconds > 0 && !delaySeconds.isNaN) ? delaySeconds : 5;
+    debugPrint('[WebSocket] Scheduling reconnection in $safeDelay seconds (attempt $_reconnectAttempts)');
 
-    _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
+    _reconnectTimer = Timer(Duration(seconds: safeDelay), () {
       connect();
     });
   }

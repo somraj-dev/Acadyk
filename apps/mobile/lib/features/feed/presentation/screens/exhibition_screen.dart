@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'event_detail_screen.dart';
 import 'startup_details_screen.dart';
 
 class ExhibitionScreen extends StatelessWidget {
@@ -416,9 +415,11 @@ class ExhibitionScreen extends StatelessWidget {
             ),
           );
         } else {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => EventDetailScreen(eventData: item['event']),
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Coming soon!'),
+              duration: Duration(seconds: 2),
             ),
           );
         }

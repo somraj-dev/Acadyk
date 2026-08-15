@@ -285,15 +285,36 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                   ),
                                 );
                               },
-                              child: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  image: DecorationImage(
-                                    image: AssetImage(widget.authorAvatar),
-                                    fit: BoxFit.cover,
-                                  ),
+                              child: ClipOval(
+                                child: Container(
+                                  width: 44,
+                                  height: 44,
+                                  color: const Color(0xFF3B82F6),
+                                  child: widget.authorAvatar.startsWith('http')
+                                      ? Image.network(
+                                          widget.authorAvatar,
+                                          width: 44,
+                                          height: 44,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Center(
+                                            child: Text(
+                                              widget.authorName.isNotEmpty ? widget.authorName[0] : 'A',
+                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                                            ),
+                                          ),
+                                        )
+                                      : Image.asset(
+                                          widget.authorAvatar.isNotEmpty ? widget.authorAvatar : 'assets/images/somraj_avatar.jpg',
+                                          width: 44,
+                                          height: 44,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Center(
+                                            child: Text(
+                                              widget.authorName.isNotEmpty ? widget.authorName[0] : 'A',
+                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                                            ),
+                                          ),
+                                        ),
                                 ),
                               ),
                             ),
@@ -382,91 +403,116 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       // ============================
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                              fontSize: 14.5,
-                              color: Color(0xFF191919),
-                              height: 1.55,
-                            ),
-                            children: [
-                              const TextSpan(
-                                text: 'We raised \$4.3M, led by ',
-                              ),
-                              const TextSpan(
-                                text: 'Pantera Capital',
-                                style: TextStyle(
-                                  color: Color(0xFF0A66C2),
-                                  fontWeight: FontWeight.bold,
+                        child: widget.postText.isNotEmpty
+                            ? Text(
+                                widget.postText,
+                                style: const TextStyle(
+                                  fontSize: 14.5,
+                                  color: Color(0xFF191919),
+                                  height: 1.55,
+                                ),
+                              )
+                            : RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                    fontSize: 14.5,
+                                    color: Color(0xFF191919),
+                                    height: 1.55,
+                                  ),
+                                  children: [
+                                    const TextSpan(
+                                      text: 'We raised \$4.3M, led by ',
+                                    ),
+                                    const TextSpan(
+                                      text: 'Pantera Capital',
+                                      style: TextStyle(
+                                        color: Color(0xFF0A66C2),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const TextSpan(text: '.\n\n'),
+                                    const TextSpan(
+                                      text: 'Soon, there will be more agents than people online. Those agents will book flights, hire contractors, enrich customer data, conduct research, and complete transactions without a human in the loop. But today, agents are stuck with whatever tools they were originally given. The moment they need something new, they fail, hallucinate, or hand the problem back to a human.\n\n',
+                                    ),
+                                    const TextSpan(
+                                      text: 'Orthogonal fixes this. Through a single integration, agents can discover the capabilities they need in the moment, orchestrate them, and pay for them instantly. An agent describes what it wants, and Orthogonal composes the result, calling the right services in the right order.\n\n',
+                                    ),
+                                    const TextSpan(
+                                      text: 'Our goal is simple: when an agent needs a capability it doesn\'t already have, Orthogonal will be the first place it goes.\n\n',
+                                    ),
+                                    const TextSpan(text: 'Thanks to '),
+                                    const TextSpan(
+                                      text: 'Pantera Capital',
+                                      style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+                                    ),
+                                    const TextSpan(text: ', '),
+                                    const TextSpan(
+                                      text: 'Y Combinator',
+                                      style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+                                    ),
+                                    const TextSpan(text: ', '),
+                                    const TextSpan(
+                                      text: 'Pioneer Fund',
+                                      style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+                                    ),
+                                    const TextSpan(text: ', '),
+                                    const TextSpan(
+                                      text: 'Decasonic',
+                                      style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+                                    ),
+                                    const TextSpan(text: ', '),
+                                    const TextSpan(
+                                      text: 'Blast Club',
+                                      style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+                                    ),
+                                    const TextSpan(text: ', '),
+                                    const TextSpan(
+                                      text: 'Outbound Capital',
+                                      style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+                                    ),
+                                    const TextSpan(text: ', Rice Capital ('),
+                                    const TextSpan(
+                                      text: 'Taro Fukuyama',
+                                      style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+                                    ),
+                                    const TextSpan(text: '), Surreal by Premise ('),
+                                    const TextSpan(
+                                      text: 'Mercedes Bent',
+                                      style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+                                    ),
+                                    const TextSpan(text: ' & '),
+                                    const TextSpan(
+                                      text: 'Vanessa Larco',
+                                      style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+                                    ),
+                                    const TextSpan(text: '), '),
+                                    const TextSpan(
+                                      text: 'Batch Ventures',
+                                      style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
+                                    ),
+                                    const TextSpan(
+                                      text: ' (CTO Fund), and our strategic investors for backing us. We\'re building the default front door for the internet.',
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const TextSpan(text: '.\n\n'),
-                              const TextSpan(
-                                text: 'Soon, there will be more agents than people online. Those agents will book flights, hire contractors, enrich customer data, conduct research, and complete transactions without a human in the loop. But today, agents are stuck with whatever tools they were originally given. The moment they need something new, they fail, hallucinate, or hand the problem back to a human.\n\n',
-                              ),
-                              const TextSpan(
-                                text: 'Orthogonal fixes this. Through a single integration, agents can discover the capabilities they need in the moment, orchestrate them, and pay for them instantly. An agent describes what it wants, and Orthogonal composes the result, calling the right services in the right order.\n\n',
-                              ),
-                              const TextSpan(
-                                text: 'Our goal is simple: when an agent needs a capability it doesn\'t already have, Orthogonal will be the first place it goes.\n\n',
-                              ),
-                              const TextSpan(text: 'Thanks to '),
-                              const TextSpan(
-                                text: 'Pantera Capital',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              const TextSpan(text: ', '),
-                              const TextSpan(
-                                text: 'Y Combinator',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              const TextSpan(text: ', '),
-                              const TextSpan(
-                                text: 'Pioneer Fund',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              const TextSpan(text: ', '),
-                              const TextSpan(
-                                text: 'Decasonic',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              const TextSpan(text: ', '),
-                              const TextSpan(
-                                text: 'Blast Club',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              const TextSpan(text: ', '),
-                              const TextSpan(
-                                text: 'Outbound Capital',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              const TextSpan(text: ', Rice Capital ('),
-                              const TextSpan(
-                                text: 'Taro Fukuyama',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              const TextSpan(text: '), Surreal by Premise ('),
-                              const TextSpan(
-                                text: 'Mercedes Bent',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              const TextSpan(text: ' & '),
-                              const TextSpan(
-                                text: 'Vanessa Larco',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              const TextSpan(text: '), '),
-                              const TextSpan(
-                                text: 'Batch Ventures',
-                                style: TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-                              ),
-                              const TextSpan(
-                                text: ' (CTO Fund), and our strategic investors for backing us. We\'re building the default front door for the internet.',
-                              ),
-                            ],
+                      ),
+                      if (widget.post != null && widget.post!['image_url'] != null && widget.post!['image_url'].toString().isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8.0),
+                            child: Image.network(
+                              widget.post!['image_url'],
+                              width: double.infinity,
+                              height: 180,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                       const SizedBox(height: 20),
 
                       // Action/Engagement row

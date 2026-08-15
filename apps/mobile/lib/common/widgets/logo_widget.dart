@@ -14,24 +14,26 @@ class LogoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final safeSize = (size > 0 && !size.isNaN && !size.isInfinite) ? size : 36.0;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(size * 0.25),
+          borderRadius: BorderRadius.circular(safeSize * 0.25),
           child: Image.asset(
             'assets/images/acadyk_logo.png',
-            width: size,
-            height: size,
+            width: safeSize,
+            height: safeSize,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => Container(
-              width: size,
-              height: size,
+              width: safeSize,
+              height: safeSize,
               decoration: BoxDecoration(
                 color: const Color(0xFF0F4C81),
-                borderRadius: BorderRadius.circular(size * 0.25),
+                borderRadius: BorderRadius.circular(safeSize * 0.25),
               ),
               alignment: Alignment.center,
               child: Text(
@@ -39,7 +41,7 @@ class LogoWidget extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: size * 0.5,
+                  fontSize: safeSize * 0.5,
                 ),
               ),
             ),
@@ -51,7 +53,7 @@ class LogoWidget extends StatelessWidget {
           style: TextStyle(
             color: const Color(0xFF0F4C81),
             fontWeight: FontWeight.w900,
-            fontSize: size * 0.75,
+            fontSize: safeSize * 0.75,
             letterSpacing: -0.8,
           ),
         ),

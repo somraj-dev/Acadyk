@@ -22,6 +22,10 @@ import '../../../notifications/presentation/screens/notification_screen.dart';
 import '../../../community/presentation/screens/discover_communities_screen.dart';
 import '../../../profile/presentation/screens/space_screen.dart';
 import '../../../profile/presentation/screens/settings_activity_screen.dart';
+import '../../../profile/presentation/screens/feedback_form_screen.dart';
+import '../../../profile/presentation/services/profile_manager.dart';
+import '../../../../common/services/auth_service.dart';
+import '../../../../common/services/follow_service.dart';
 import '../../../chat/presentation/screens/message_center_screen.dart';
 import '../data/mock_feed_data.dart';
 class HomeFeedScreen extends StatefulWidget {
@@ -69,12 +73,28 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _activeTab == 4 ? 3 : (_activeTab == 3 ? 2 : _activeTab));
+    ProfileManager.profileUpdateNotifier.addListener(_onProfileUpdated);
+    PostService.feedChangeNotifier.addListener(_onFeedChanged);
+    FollowService.followChangeNotifier.addListener(_onProfileUpdated);
     _loadBackendPosts();
     _setupRealtimeSubscription();
   }
 
+  void _onFeedChanged() {
+    _loadBackendPosts();
+  }
+
+  void _onProfileUpdated() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void dispose() {
+    ProfileManager.profileUpdateNotifier.removeListener(_onProfileUpdated);
+    PostService.feedChangeNotifier.removeListener(_onFeedChanged);
+    FollowService.followChangeNotifier.removeListener(_onProfileUpdated);
     _pageController.dispose();
     _commentInputCtrl.dispose();
     _commentFocusNode.dispose();
@@ -163,10 +183,14 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                           child: Container(
                                             width: 34,
                                             height: 34,
-                                            decoration: const BoxDecoration(
+                                            decoration: BoxDecoration(
                                               shape: BoxShape.circle,
                                               image: DecorationImage(
-                                                image: AssetImage('assets/images/alina_avatar.jpg'),
+                                                image: (ProfileManager.avatarUrl.startsWith('http')
+                                                    ? NetworkImage(ProfileManager.avatarUrl)
+                                                    : AssetImage(ProfileManager.avatarUrl.isNotEmpty
+                                                        ? ProfileManager.avatarUrl
+                                                        : 'assets/images/somraj_avatar.jpg')) as ImageProvider,
                                                 fit: BoxFit.cover,
                                               ),
                                             ),
@@ -276,7 +300,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                       )
                                     else ...[
                                       if (_feedPosts.isNotEmpty)
-                                        ..._feedPosts.map((post) => _buildDatabasePostCard(post)),
+                                        ..._feedPosts.map((post) => _buildMockPostCard(post)),
                                       // Mock posts from MITS Gwalior
                                       ...MockFeedData.mockPosts.map((post) => _buildMockPostCard(post)),
                                     ],
@@ -2442,7 +2466,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               ),
             ),
             child: StatusAvatar(
-              avatarAsset: 'assets/images/somraj_avatar.jpg',
+              avatarAsset: ProfileManager.avatarUrl.isNotEmpty
+                  ? ProfileManager.avatarUrl
+                  : 'assets/images/somraj_avatar.jpg',
               radius: 13.5,
               enableTapToViewStory: false,
               onDefaultTap: () {
@@ -2470,7 +2496,24 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final headerTextColor = isDark ? Colors.white : const Color(0xFF111827);
     final subTextColor = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
     final screenWidth = MediaQuery.of(context).size.width;
-    final drawerWidth = min(320.0, screenWidth * 0.85);
+    final drawerWidth = (screenWidth > 0 && !screenWidth.isNaN && !screenWidth.isInfinite)
+        ? min(320.0, screenWidth * 0.85)
+        : 300.0;
+
+    final currentName = ProfileManager.name.isNotEmpty
+        ? ProfileManager.name
+        : (AuthService.currentUser?.fullName ?? 'Somraj Lodhi');
+    final usernameRaw = ProfileManager.username.isNotEmpty
+        ? ProfileManager.username
+        : (AuthService.currentUser?.username ?? 'BTAM25O1080');
+    final handleText = usernameRaw;
+    final avatarUrl = ProfileManager.avatarUrl.isNotEmpty
+        ? ProfileManager.avatarUrl
+        : 'assets/images/somraj_avatar.jpg';
+
+    final ImageProvider drawerAvatarProvider = avatarUrl.startsWith('http')
+        ? NetworkImage(avatarUrl)
+        : AssetImage(avatarUrl) as ImageProvider;
 
     return Drawer(
       width: drawerWidth,
@@ -2498,9 +2541,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 child: Row(
                   children: [
                     CircleAvatar(
-                      radius: 22,
+                      radius: 24,
                       backgroundColor: const Color(0xFF0F4C81),
-                      child: const Icon(Icons.person, color: Colors.white, size: 24),
+                      backgroundImage: drawerAvatarProvider,
+                      onBackgroundImageError: (_, __) {},
                     ),
                     const SizedBox(width: 14.0),
                     Expanded(
@@ -2509,7 +2553,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Somraj Lodhi',
+                            currentName,
                             style: TextStyle(
                               fontSize: 16.0,
                               fontWeight: FontWeight.w700,
@@ -2520,7 +2564,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           ),
                           const SizedBox(height: 2.0),
                           Text(
-                            '@somraj-dev',
+                            handleText,
                             style: TextStyle(
                               fontSize: 13.0,
                               color: subTextColor,
@@ -2532,11 +2576,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         ],
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: subTextColor,
-                      size: 20,
-                    ),
                   ],
                 ),
               ),
@@ -2546,11 +2585,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             // Scrollable top content
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+                padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 8.0),
                 children: [
                   _buildDrawerNavItem(
                     'Profile',
-                    icon: Icons.person_outline_rounded,
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(
@@ -2560,7 +2598,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                   _buildDrawerNavItem(
                     'My Courses',
-                    icon: Icons.school_outlined,
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(
@@ -2570,7 +2607,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                   _buildDrawerNavItem(
                     'Startup Gallery',
-                    icon: Icons.rocket_launch_outlined,
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(MaterialPageRoute(
@@ -2580,7 +2616,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                   _buildDrawerNavItem(
                     'Clubs',
-                    icon: Icons.groups_outlined,
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(MaterialPageRoute(
@@ -2590,7 +2625,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                   _buildDrawerNavItem(
                     'Exhibition',
-                    icon: Icons.palette_outlined,
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(MaterialPageRoute(
@@ -2600,7 +2634,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                   _buildDrawerNavItem(
                     'Space',
-                    icon: Icons.explore_outlined,
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(MaterialPageRoute(
@@ -2610,7 +2643,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                   _buildDrawerNavItem(
                     'Community',
-                    icon: Icons.forum_outlined,
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(MaterialPageRoute(
@@ -2625,7 +2657,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
                   _buildDrawerNavItem(
                     'Settings',
-                    icon: Icons.settings_outlined,
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(MaterialPageRoute(
@@ -2635,17 +2666,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                   _buildDrawerNavItem(
                     'Feedback Form',
-                    icon: Icons.rate_review_outlined,
                     onTap: () {
                       Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Feedback form opened')),
-                      );
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const FeedbackFormScreen(),
+                      ));
                     },
                   ),
                   _buildDrawerNavItem(
                     'Accessibility',
-                    icon: Icons.accessibility_new_outlined,
                     onTap: () {
                       Navigator.of(context).pop();
                     },
@@ -2666,14 +2695,14 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final navTextColor = isDark ? Colors.white : const Color(0xFF1F2937);
+    final navTextColor = isDark ? Colors.white : const Color(0xFF1E293B);
     final iconColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563);
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 11.0),
+        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 12.0),
         child: Row(
           children: [
             if (icon != null) ...[
@@ -2684,9 +2713,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               child: Text(
                 title,
                 style: TextStyle(
-                  fontSize: 15.0,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.w400,
                   color: navTextColor,
+                  letterSpacing: -0.2,
                 ),
               ),
             ),
@@ -2783,25 +2813,24 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // MOCK POST CARD BUILDER
   // ------------------------------------------------------------------
   Widget _buildMockPostCard(Map<String, dynamic> post) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-                final String postId = post['id'] ?? 'mock_${post.hashCode}';
-    final String authorName = post['authorName'] ?? 'Unknown';
-    final String authorSubtitle = post['authorSubtitle'] ?? '';
-    final String authorInitials = post['authorInitials'] ?? '?';
-    final int authorBgColor = post['authorBgColor'] ?? 0xFF424242;
-    final bool isVerified = post['isVerified'] ?? false;
-    final String badgeType = post['badgeType'] ?? 'bronze';
-    final String timeAgo = post['timeAgo'] ?? '';
-    final String content = post['content'] ?? '';
-    final int likes = post['likes'] ?? 0;
-    final int comments = post['comments'] ?? 0;
-    final bool isCollab = post['isCollab'] ?? false;
-    final String postType = post['type'] ?? 'student';
+    final String postId = post['id']?.toString() ?? 'mock_${post.hashCode}';
+    final String authorName = post['authorName']?.toString() ?? 'Unknown';
+    final String authorSubtitle = post['authorSubtitle']?.toString() ?? '';
+    final String authorInitials = post['authorInitials']?.toString() ?? '?';
+    final int authorBgColor = (post['authorBgColor'] as num?)?.toInt() ?? 0xFF424242;
+    final bool isVerified = post['isVerified'] == true;
+    final String badgeType = post['badgeType']?.toString() ?? 'bronze';
+    final String timeAgo = post['timeAgo']?.toString() ?? '';
+    final String content = post['content']?.toString() ?? '';
+    final int likes = (post['likes'] as num?)?.toInt() ?? 0;
+    final int comments = (post['comments'] as num?)?.toInt() ?? 0;
+    final bool isCollab = post['isCollab'] == true;
+    final String postType = post['type']?.toString() ?? 'student';
 
     // Collab author data
-    final String collabName = post['collabAuthorName'] ?? '';
-    final String collabInitials = post['collabAuthorInitials'] ?? '';
-    final int collabBgColor = post['collabAuthorBgColor'] ?? 0xFF424242;
+    final String collabName = post['collabAuthorName']?.toString() ?? '';
+    final String collabInitials = post['collabAuthorInitials']?.toString() ?? '';
+    final int collabBgColor = (post['collabAuthorBgColor'] as num?)?.toInt() ?? 0xFF424242;
 
     // Determine if this is a notification-type post
     final bool isNotification = postType == 'notification';
@@ -2809,7 +2838,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     // Use MITS logo for MITS official posts
     final bool isMITSOfficial = authorName.startsWith('MITS');
 
-    final String mainAvatarAsset = isMITSOfficial ? 'assets/images/mits_logo.png' : '';
+    final String mainAvatarAsset = post['authorAvatar'] ?? (isMITSOfficial ? 'assets/images/mits_logo.png' : '');
+    final String? postImageUrl = post['imageUrl'] ?? post['image'];
 
     return Container(
       color: cardBg,
@@ -2898,6 +2928,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               bgColor: Color(authorBgColor),
                               size: 36,
                               isMITS: isMITSOfficial,
+                              avatarAsset: mainAvatarAsset,
                             ),
                           ),
                         ),
@@ -2959,6 +2990,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           bgColor: Color(authorBgColor),
                           size: 36,
                           isMITS: isMITSOfficial,
+                          avatarAsset: mainAvatarAsset,
                         ),
                       ),
                     ),
@@ -3025,7 +3057,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     authorHeadline: authorSubtitle,
                     authorAvatar: mainAvatarAsset,
                     postText: content,
-                    postImage: null,
+                    postImage: postImageUrl,
                     accountData: {
                       'name': authorName,
                       'avatarUrl': mainAvatarAsset,
@@ -3048,6 +3080,27 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           ),
           const SizedBox(height: 10),
 
+          if (postImageUrl != null && postImageUrl.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: postImageUrl.startsWith('http')
+                    ? Image.network(
+                        postImageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      )
+                    : Image.asset(
+                        postImageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
           // Engagement row
           _buildPostActionRow(
             postId: postId,
@@ -3068,7 +3121,24 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     required Color bgColor,
     required double size,
     required bool isMITS,
+    String? avatarAsset,
   }) {
+    if (avatarAsset != null && avatarAsset.isNotEmpty) {
+      final ImageProvider imageProvider = avatarAsset.startsWith('http')
+          ? NetworkImage(avatarAsset)
+          : AssetImage(avatarAsset) as ImageProvider;
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          image: DecorationImage(
+            image: imageProvider,
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    }
     if (isMITS) {
       return Container(
         width: size,
@@ -3146,228 +3216,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildDatabasePostCard(Map<String, dynamic> post) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-                final author = post['profiles'] as Map<String, dynamic>? ?? {};
-    final String authorName = author['full_name'] ?? 'Acadyk User';
-    final String authorHeadline = author['bio'] ?? 'Member @ Acadyk';
-    final String? authorAvatar = author['profile_photo_url'];
-    final bool isVerified = author['is_verified'] ?? false;
-    final bool isPremium = author['is_premium'] ?? false;
-    final String content = post['content'] ?? '';
-    final String? image = post['image_url'];
-    final String postId = post['id'].toString();
-
-    final int likesCount = post['likes_count'] ?? 0;
-    final int commentsCount = post['comments_count'] ?? 0;
-    final bool isLiked = _bookmarkedPosts[postId] ?? false;
-
-    return Container(
-      color: cardBg,
-      margin: const EdgeInsets.only(bottom: 8.0),
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ProfileScreen(isOwnProfile: false, userData: author),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFFF3F2EF),
-                      image: authorAvatar != null
-                          ? DecorationImage(image: NetworkImage(authorAvatar), fit: BoxFit.cover)
-                          : null,
-                    ),
-                    child: authorAvatar == null
-                        ? const Icon(Icons.person, color: Colors.grey)
-                        : null,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ProfileScreen(isOwnProfile: false, userData: author),
-                                ),
-                              );
-                            },
-                            child: Text(
-                              authorName,
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: textMain),
-                            ),
-                          ),
-                          if (isVerified) ...[
-                            const SizedBox(width: 4),
-                            const PremiumBadge(type: 'gold'),
-                          ] else if (isPremium) ...[
-                            const SizedBox(width: 4),
-                            const PremiumBadge(type: 'silver'),
-                          ],
-                        ],
-                      ),
-                      Text(
-                        authorHeadline,
-                        style: TextStyle(color: textSub, fontSize: 11.5),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.more_vert, color: textSub),
-                  onPressed: () {
-                    _showPostOptionsBottomSheet(
-                      context: context,
-                      postId: postId,
-                      authorName: authorName,
-                      authorHeadline: authorHeadline,
-                      authorAvatar: authorAvatar ?? '',
-                      postText: content,
-                      postImage: image,
-                      accountData: author,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Text(
-              content,
-              style: TextStyle(color: textMain, fontSize: 14.5, height: 1.3),
-            ),
-          ),
-          if (image != null && image.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Image.network(image, fit: BoxFit.cover, height: 240, width: double.infinity),
-          ],
-          // Reaction action row (Instagram/curated style)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () async {
-                    final previousState = _likedPosts[postId] ?? false;
-                    setState(() {
-                      _likedPosts[postId] = !previousState;
-                    });
-                    try {
-                      final newState = await PostService.toggleLike(postId, previousState);
-                      if (mounted && _likedPosts[postId] != newState) {
-                        setState(() {
-                          _likedPosts[postId] = newState;
-                        });
-                      }
-                    } catch (_) {
-                      if (mounted) {
-                        setState(() {
-                          _likedPosts[postId] = previousState; // Rollback
-                        });
-                      }
-                    }
-                  },
-                  child: Row(
-                    children: [
-                      Icon(
-                        isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-                        color: isLiked ? Color(0xFFF91880) : iconColor,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${isLiked ? likesCount + 1 : likesCount}',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: textMain),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PostDetailScreen(
-                          authorName: authorName,
-                          authorHeadline: authorHeadline,
-                          authorAvatar: authorAvatar != null && authorAvatar.isNotEmpty
-                              ? authorAvatar
-                              : 'assets/images/somraj_avatar.jpg',
-                          timeAgo: 'Just now',
-                          postText: content,
-                          post: post,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      Icon(
-                        CupertinoIcons.chat_bubble,
-                        color: iconColor,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '$commentsCount',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: textMain),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () async {
-                    final wasSaved = _savedPosts[postId] ?? false;
-                    setState(() {
-                      _savedPosts[postId] = !wasSaved;
-                    });
-                    await PostService.toggleBookmark(postId, wasSaved);
-                  },
-                  child: Icon(
-                    (_savedPosts[postId] ?? false)
-                        ? CupertinoIcons.bookmark_fill
-                        : CupertinoIcons.bookmark,
-                    color: (_savedPosts[postId] ?? false)
-                        ? const Color(0xFF1D9BF0)
-                        : iconColor,
-                    size: 24,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

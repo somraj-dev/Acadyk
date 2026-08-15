@@ -52,7 +52,7 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
 
   void _startTimer() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 2), (timer) {
       if (!mounted) return;
       setState(() {
         if (_currentPage < _carouselItems.length - 1) {

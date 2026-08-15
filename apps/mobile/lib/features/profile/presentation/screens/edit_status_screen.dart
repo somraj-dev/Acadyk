@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'story_view_screen.dart';
+import '../services/profile_manager.dart';
 
 class UserStatusState {
   static String? emoji;
@@ -456,11 +457,16 @@ class StatusAvatar extends StatelessWidget {
       builder: (context, statusValue, child) {
         final bool showRing = UserStatusState.hasStatus &&
             !isProfilePageAccountHolder &&
-            avatarAsset.contains('somraj_avatar.jpg');
+            (avatarAsset.contains('somraj_avatar.jpg') || avatarAsset == ProfileManager.avatarUrl);
+
+        final ImageProvider imageProvider = avatarAsset.startsWith('http')
+            ? NetworkImage(avatarAsset)
+            : AssetImage(avatarAsset.isNotEmpty ? avatarAsset : 'assets/images/somraj_avatar.jpg') as ImageProvider;
 
         Widget avatarWidget = CircleAvatar(
           radius: radius,
-          backgroundImage: AssetImage(avatarAsset),
+          backgroundImage: imageProvider,
+          onBackgroundImageError: (_, __) {},
         );
 
         if (showRing) {

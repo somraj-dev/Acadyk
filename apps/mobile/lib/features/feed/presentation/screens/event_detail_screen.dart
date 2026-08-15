@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'registration_form_screen.dart';
+import 'home_feed_screen.dart';
 
 class EventDetailScreen extends StatefulWidget {
-  final Map<String, dynamic> eventData;
+  final Map<String, dynamic>? eventData;
 
-  const EventDetailScreen({super.key, required this.eventData});
+  const EventDetailScreen({super.key, this.eventData});
 
   @override
   State<EventDetailScreen> createState() => _EventDetailScreenState();
@@ -13,1298 +15,795 @@ class EventDetailScreen extends StatefulWidget {
 class _EventDetailScreenState extends State<EventDetailScreen> {
   bool _isRegistered = false;
   int _activeFaqTab = 0; // 0 for FAQs, 1 for Discussions
-  String _selectedFaqCategory = 'Registration';
+  String _selectedCategory = 'Registration';
+  final Set<int> _expandedIndices = {};
+
+  final List<String> _categories = [
+    'Registration',
+    'Become a Coke Ambassador Round',
+    'Trivia & Rounds',
+    'Eligibility',
+    'General',
+  ];
+
+  final List<Map<String, String>> _faqList = [
+    {
+      'question': 'How can I participate in this competition?',
+      'answer': 'You can participate by clicking the "Register" button above. The registration is completely online and free of cost.',
+      'category': 'Registration',
+    },
+    {
+      'question': 'Is this competition open to students from all universities and courses?',
+      'answer': 'This challenge is specifically open for students, developers, and AI enthusiasts across all recognized universities and courses globally.',
+      'category': 'Eligibility',
+    },
+    {
+      'question': 'Is there a registration fee for participating in this competition?',
+      'answer': 'No, there are no registration fees or hidden charges associated with participating in the hackathon.',
+      'category': 'Registration',
+    },
+    {
+      'question': 'What details should I fill in if I am an upcoming/admitted MBA student?',
+      'answer': 'Please enter your current college name, your program details, your admission roll/reg number, and complete the profile details on Acadyk.',
+      'category': 'Registration',
+    },
+    {
+      'question': 'I am in waitlist and might convert to another college. How can I proceed?',
+      'answer': 'You can register with your primary target/current college. If your admission details change later, you can write to support@acadyk.com to update your details.',
+      'category': 'Become a Coke Ambassador Round',
+    },
+    {
+      'question': 'How can I delete my registration from this opportunity?',
+      'answer': 'To cancel or delete your registration, click the "Registered ✓" button above to toggle your status, or contact support directly.',
+      'category': 'Registration',
+    },
+    {
+      'question': 'I am unable to verify my phone number. What should I do?',
+      'answer': 'Ensure your network connection is stable. If you do not receive the OTP, try resending in 2 minutes, or request assistance via support channels.',
+      'category': 'General',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final event = widget.eventData;
-    final timeline = event['timeline'] as List<Map<String, dynamic>>;
-
-    final List<Map<String, dynamic>> importantDates = [
-      {'day': '3', 'month': 'Jul', 'dateText': '03 Jul 26, 11:59 PM IST', 'title': 'Registration Deadline'},
-      {'day': '4', 'month': 'Jul', 'dateText': '04 Jul 26, 08:00 PM IST', 'title': 'Brand Trivia Round Deadline'},
-      {'day': '5', 'month': 'Jul', 'dateText': '05 Jul 26, 11:59 PM IST', 'title': 'Become a Coke Ambassador Round Deadline'},
-      {'day': '15', 'month': 'Jul', 'dateText': '15 Jul 26, 08:00 PM IST', 'title': 'Simulation Round Deadline'},
-      {'day': '21', 'month': 'Jul', 'dateText': '21 Jul 26, 11:59 PM IST', 'title': 'Resume Submission Deadline'},
-    ];
-
-    final List<Map<String, dynamic>> rewards = [
-      {'amount': '₹1,00,000', 'label': 'Winner', 'isMerch': false},
-      {'amount': '₹75,000', 'label': '1st Runner Up', 'isMerch': false},
-      {'amount': '₹50,000', 'label': '2nd Runner Up', 'isMerch': false},
-      {'amount': '', 'label': '3rd & 4th Runner Ups', 'isMerch': true},
-    ];
-
-    final List<Map<String, String>> faqs = [
-      {
-        'question': 'How can I participate in this competition?',
-        'answer': 'You can participate by clicking the "Register" button below. The registration is completely online and free of cost.'
-      },
-      {
-        'question': 'Is this competition open to students from all universities and courses?',
-        'answer': 'This challenge is specifically open for 1st-year students pursuing full-time 2-year MBA/PGDM programs across eligible management institutes.'
-      },
-      {
-        'question': 'Is there a registration fee for participating in this competition?',
-        'answer': 'No, there are no registration fees or hidden charges associated with participating in the Coca-Cola Mantra Challenge.'
-      },
-      {
-        'question': 'What details should I fill in if I am an upcoming/admitted MBA student?',
-        'answer': 'Please enter your current college name, your program details, your admission roll/reg number, and complete the profile details on Acadyk.'
-      },
-      {
-        'question': 'I am in waitlist and might convert to another college. How can I proceed?',
-        'answer': 'You can register with your primary target/current college. If your admission details change later, you can write to support@acadyk.com to update college fields.'
-      },
-      {
-        'question': 'How can I delete my registration from this opportunity?',
-        'answer': 'To cancel or delete your registration, please navigate to your dashboard registrations tab or contact support directly.'
-      },
-      {
-        'question': 'I am unable to verify my phone number. What should I do?',
-        'answer': 'Ensure your network connection is stable. If you do not receive the OTP, try resending in 2 minutes, or request assistance via support channels.'
-      },
-    ];
+    final event = widget.eventData ?? {};
+    final String title = event['title'] ?? 'SLAB Hackathon -\nMITS (Gwalior)';
+    final String dates = event['dates'] ?? 'Saturday 22 August';
+    final String locationName = event['location'] ?? 'Madhav Institute of Technology & Science, Gwalior';
+    final String locationCity = event['locationCity'] ?? 'Gwalior, Madhya Pradesh';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F2EF),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: const BoxConstraints(maxWidth: 600),
             color: Colors.white,
             child: Column(
               children: [
-                // Header (No margins, matches screenshot)
-                _buildAppBar(context, event['title']),
-                
-                // Scrollable Body - Sections flow edge-to-edge
+                // Top App Bar
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(CupertinoIcons.back, color: Color(0xFF111827), size: 24),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          title.replaceAll('\n', ' - '),
+                          style: const TextStyle(
+                            color: Color(0xFF111827),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(CupertinoIcons.share, color: Color(0xFF4B5563), size: 20),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Link copied to clipboard!'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Scrollable Content
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 1. Top Banner Card (Edge-to-edge, rounded bottom)
-                        _buildBannerSection(event),
-                        _buildSectionSpacer(),
-                        
-                        // 2. Info & Stats block (Teal top border, full-width)
-                        _buildInfoStatsSection(event),
-                        _buildSectionSpacer(),
-                        
-                        // 3. Eligibility & Description
-                        _buildDescriptionSection(event),
-                        _buildSectionSpacer(),
-                        
-                        // 4. Stages & Timelines
-                        _buildStagesTimelineSection(timeline, event),
-                        _buildSectionSpacer(),
-                        
-                        // 5. Important dates & deadlines
-                        _buildImportantDatesSection(importantDates),
-                        _buildSectionSpacer(),
-                        
-                        // 6. Rewards and Prizes
-                        _buildRewardsSection(rewards),
-                        _buildSectionSpacer(),
-                        
-                        // 7. Feedback & Rating
-                        _buildFeedbackRatingSection(),
-                        _buildSectionSpacer(),
-                        
-                        // 8. FAQs / Discussions
-                        _buildFaqsSection(faqs),
-                        
-                        // Footer & Breadcrumbs
-                        _buildFooterSection(event),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 1. Main Title
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  color: Color(0xFF111827),
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.5,
+                                  height: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // 2. Date and Time Row
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 46,
+                                    height: 46,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF3F4F6),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: const [
+                                        Text(
+                                          'AUG',
+                                          style: TextStyle(
+                                            color: Color(0xFF6B7280),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                        Text(
+                                          '22',
+                                          style: TextStyle(
+                                            color: Color(0xFF111827),
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w800,
+                                            height: 1.1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          dates.contains('Saturday') ? dates : 'Saturday 22 August',
+                                          style: const TextStyle(
+                                            color: Color(0xFF111827),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        const Text(
+                                          '10:00 - 17:00',
+                                          style: TextStyle(
+                                            color: Color(0xFF6B7280),
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 18),
+
+                              // 3. Location Row
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 46,
+                                    height: 46,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF3F4F6),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                                    ),
+                                    child: const Icon(
+                                      CupertinoIcons.location,
+                                      color: Color(0xFF4B5563),
+                                      size: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                locationName,
+                                                style: const TextStyle(
+                                                  color: Color(0xFF111827),
+                                                  fontSize: 14.5,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            const Icon(
+                                              Icons.north_east,
+                                              color: Color(0xFF6B7280),
+                                              size: 14,
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          locationCity,
+                                          style: const TextStyle(
+                                            color: Color(0xFF6B7280),
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 28),
+
+                              // 4. Registration Box
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF9FAFB),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFF3F4F6),
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(13),
+                                          topRight: Radius.circular(13),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Registration',
+                                        style: TextStyle(
+                                          color: Color(0xFF6B7280),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          Text(
+                                            _isRegistered
+                                                ? '🎉 You are registered for this event!'
+                                                : 'Welcome! To join the event, please register below.',
+                                            style: TextStyle(
+                                              color: _isRegistered ? const Color(0xFF166534) : const Color(0xFF374151),
+                                              fontSize: 14,
+                                              fontWeight: _isRegistered ? FontWeight.w600 : FontWeight.normal,
+                                              height: 1.4,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              if (_isRegistered) {
+                                                setState(() {
+                                                  _isRegistered = false;
+                                                });
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Registration cancelled.'),
+                                                    backgroundColor: Color(0xFF374151),
+                                                    duration: Duration(seconds: 2),
+                                                  ),
+                                                );
+                                              } else {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => RegistrationFormScreen(
+                                                      eventId: event['id']?.toString() ?? 'slab-mits-2025',
+                                                      eventTitle: title.replaceAll('\n', ' - '),
+                                                      logoUrl: event['logoUrl'] ?? 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=150',
+                                                      organizer: event['organizer'] ?? 'Madhav Institute of Technology & Science, Gwalior',
+                                                    ),
+                                                  ),
+                                                ).then((result) {
+                                                  if (result == true) {
+                                                    setState(() {
+                                                      _isRegistered = true;
+                                                    });
+                                                  }
+                                                });
+                                              }
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: _isRegistered ? const Color(0xFF16A34A) : const Color(0xFF111827),
+                                              foregroundColor: Colors.white,
+                                              elevation: 0,
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              _isRegistered ? 'Registered ✓' : 'Register',
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+
+                              // 5. About Event Section
+                              const Text(
+                                'About Event',
+                                style: TextStyle(
+                                  color: Color(0xFF6B7280),
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                              const SizedBox(height: 16),
+
+                              _buildContentBlock(
+                                'Gwalior, we\'re bringing SLAB to MITS!\n\n'
+                                'SLAB Self-Learning Agent Browser is a hands-on hackathon hosted by webcmd, where you\'ll build Browser Agents that can research, test, monitor, book, shop, and complete useful work across real websites.\n\n'
+                                'Come with an idea, join a team, or build solo. No prior browser-automation experience is required. We\'ll begin with a practical Browser Agents 101 walkthrough so everyone can start building quickly.',
+                              ),
+
+                              _buildSectionHeader('THE THEME: BROWSER AGENTS'),
+                              _buildContentBlock('Build an agent that solves a meaningful, real-world browser workflow.'),
+
+                              _buildSectionHeader('BUILD WITH WEBCMD'),
+                              _buildContentBlock(
+                                'webcmd is self-learning browser infrastructure for AI agents.\n\n'
+                                'Your agent can explore an unfamiliar website, preserve what it learns, and transform stable workflows into reliable commands with structured output.\n\n'
+                                'Explore once. Learn the workflow. Reuse the command.',
+                              ),
+
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: RichText(
+                                  text: const TextSpan(
+                                    style: TextStyle(color: Color(0xFF374151), fontSize: 14, height: 1.5),
+                                    children: [
+                                      TextSpan(text: 'Get started: • '),
+                                      TextSpan(
+                                        text: 'https://github.com/agentrhq/webcmd?utm_source=luma',
+                                        style: TextStyle(
+                                          color: Color(0xFF2563EB),
+                                          decoration: TextDecoration.underline,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              _buildContentBlock('The webcmd team will be there to help with setup, browser workflows, adapters, and debugging.'),
+
+                              _buildSectionHeader('🛠️ BRING YOUR PREFERRED STACK'),
+                              _buildContentBlock('Use Codex, Claude Code, OpenClaw, Playwright, Browser Use, browser MCPs, local or hosted models, and any other tools that help your agent complete the job.'),
+
+                              _buildSectionHeader('⚖️ JUDGING 100 POINTS'),
+                              _buildContentBlock('🟢 Live reliability: 30  💡 Real-world usefulness: 25  🧠 Technical depth and recovery: 20  ✨ Creativity: 15  🎤 Demo and storytelling: 10'),
+
+                              _buildSectionHeader('🚨 TWO HARD RULES'),
+                              _buildContentBlock(
+                                'Your demo must run live or use a screen recording captured from a real execution.\n\n'
+                                'Build responsibly. Use your own accounts, respect platform terms, and keep a human approval step for payments, messages, submissions, deletions, and other sensitive actions.',
+                              ),
+
+                              _buildBulletPoint('👥 Build solo or form a team of up to four.'),
+                              _buildBulletPoint('🎒 Bring a laptop, your preferred model or API keys if you have them, and one browser workflow you\'d love to stop doing manually.'),
+                              _buildBulletPoint('🙌 Open to AI-agent builders, developers, students, founders, open-source contributors, automation enthusiasts, and anyone curious about giving agents useful access to the real web.'),
+                              _buildBulletPoint('No prior webcmd or browser-automation experience is needed.'),
+                              _buildBulletPoint('📍 Madhav Institute of Technology & Science, Gwalior'),
+                              _buildBulletPoint('Spots are limited. Hit RSVP and bring a friend who builds.'),
+
+                              const SizedBox(height: 32),
+                              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                              const SizedBox(height: 16),
+
+                              // Location Section
+                              const Text(
+                                'Location',
+                                style: TextStyle(
+                                  color: Color(0xFF6B7280),
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Bangalore, India\nIn-person',
+                                style: TextStyle(
+                                  color: Color(0xFF111827),
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.3,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                locationCity,
+                                style: const TextStyle(
+                                  color: Color(0xFF6B7280),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Divider between sections
+                        const Divider(height: 1, color: Color(0xFFE5E7EB)),
+
+                        // Second Page: FAQs / Discussions Section (Matching clean white UI)
+                        Container(
+                          width: double.infinity,
+                          color: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 1. Header with green/teal bar
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 4,
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF00796B),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'FAQs / Discussions',
+                                    style: TextStyle(
+                                      color: Color(0xFF111827),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 2. Tabs: FAQs / Discussions
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => setState(() => _activeFaqTab = 0),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          'FAQs',
+                                          style: TextStyle(
+                                            color: _activeFaqTab == 0 ? const Color(0xFF2563EB) : const Color(0xFF6B7280),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Container(
+                                          height: 2.5,
+                                          width: 42,
+                                          color: _activeFaqTab == 0 ? const Color(0xFF2563EB) : Colors.transparent,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  GestureDetector(
+                                    onTap: () => setState(() => _activeFaqTab = 1),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          'Discussions',
+                                          style: TextStyle(
+                                            color: _activeFaqTab == 1 ? const Color(0xFF2563EB) : const Color(0xFF6B7280),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Container(
+                                          height: 2.5,
+                                          width: 80,
+                                          color: _activeFaqTab == 1 ? const Color(0xFF2563EB) : Colors.transparent,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                              const SizedBox(height: 16),
+
+                              // 3. Category Filter Chips (horizontal scroll)
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: _categories.map((cat) {
+                                    final isSelected = _selectedCategory == cat;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 10.0),
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _selectedCategory = cat),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+                                            borderRadius: BorderRadius.circular(20),
+                                            border: Border.all(
+                                              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFD1D5DB),
+                                              width: 1.2,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            cat,
+                                            style: TextStyle(
+                                              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF374151),
+                                              fontSize: 13,
+                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // 4. Accordion List of FAQs
+                              ..._faqList.asMap().entries.map((entry) {
+                                final idx = entry.key;
+                                final faq = entry.value;
+                                final isExpanded = _expandedIndices.contains(idx);
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          if (isExpanded) {
+                                            _expandedIndices.remove(idx);
+                                          } else {
+                                            _expandedIndices.add(idx);
+                                          }
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 14.0),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                faq['question']!,
+                                                style: const TextStyle(
+                                                  color: Color(0xFF1F2937),
+                                                  fontSize: 14.5,
+                                                  fontWeight: FontWeight.w500,
+                                                  height: 1.35,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Icon(
+                                              isExpanded ? Icons.remove : Icons.add,
+                                              color: const Color(0xFF6B7280),
+                                              size: 20,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    if (isExpanded)
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 12.0, right: 16.0),
+                                        child: Text(
+                                          faq['answer']!,
+                                          style: const TextStyle(
+                                            color: Color(0xFF4B5563),
+                                            fontSize: 13.5,
+                                            height: 1.45,
+                                          ),
+                                        ),
+                                      ),
+                                    const Divider(height: 1, color: Color(0xFFF3F4F6)),
+                                  ],
+                                );
+                              }),
+
+                              const SizedBox(height: 24),
+
+                              // 5. Help / Footer notes
+                              const Text(
+                                'Can\'t find the answer you are looking for?',
+                                style: TextStyle(
+                                  color: Color(0xFF374151),
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              GestureDetector(
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Support team notified! We will get back to you shortly.'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  'Ask a question (Be specific)',
+                                  style: TextStyle(
+                                    color: Color(0xFF2563EB),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Timestamp & metadata
+                              Row(
+                                children: const [
+                                  Icon(Icons.access_time, color: Color(0xFF9CA3AF), size: 16),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Updated On: 26 Jun 26, 12:22 PM IST',
+                                    style: TextStyle(
+                                      color: Color(0xFF6B7280),
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: const [
+                                  Icon(Icons.info_outline, color: Color(0xFF9CA3AF), size: 16),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'The data on this page gets updated every 15 minutes.',
+                                    style: TextStyle(
+                                      color: Color(0xFF6B7280),
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const ReportPostScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Row(
+                                  children: const [
+                                    Icon(Icons.outlined_flag, color: Color(0xFFDC2626), size: 16),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Report An Issue',
+                                      style: TextStyle(
+                                        color: Color(0xFFDC2626),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
-                
-                // Sticky Bottom register bar
-                _buildStickyRegisterBar(event),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context, String title) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF1E1F22)),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFF1E1F22),
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.search, color: Color(0xFF1E1F22)),
-            onPressed: () {},
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionSpacer() {
-    return Container(
-      height: 10,
-      color: const Color(0xFFF3F2EF),
     );
   }
 
   Widget _buildSectionHeader(String title) {
-    return Row(
-      children: [
-        Container(
-          width: 4,
-          height: 18,
-          decoration: BoxDecoration(
-            color: const Color(0xFF007A87),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1E1F22),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // --- 1. BANNER SECTION ---
-  Widget _buildBannerSection(Map<String, dynamic> event) {
-    final bool isCoke = event['title'].toString().contains('Coca-Cola');
-    
-    return Container(
-      color: Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Brand Logo text
-                    if (isCoke)
-                      const Text(
-                        'Coca-Cola',
-                        style: TextStyle(
-                          fontFamily: 'Georgia',
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      )
-                    else
-                      const Icon(Icons.palette_outlined, color: Colors.blue, size: 28),
-                      
-                    // Event/Mantra Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade700,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        isCoke ? 'mantra' : 'challenge',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  event['title'],
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E1F22),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  isCoke
-                      ? "Where tomorrow's business leaders are forged today."
-                      : "A premium creative contest on Acadyk",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Text(
-                    isCoke ? 'Open to MBA Students' : 'Open to All Students',
-                    style: TextStyle(color: Colors.grey.shade800, fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Geometric abstract banner graphics
-          _buildAbstractPattern(isCoke),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAbstractPattern(bool isCoke) {
-    return Container(
-      height: 90,
-      color: const Color(0xFFFFF7E6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Container(
-              color: Colors.red.shade600,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: const [
-                  Icon(Icons.arrow_upward, color: Colors.white, size: 24),
-                  Icon(Icons.visibility_outlined, color: Colors.white, size: 24),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Container(
-              color: const Color(0xFFFF9E1B),
-              child: const Center(
-                child: Icon(Icons.star, color: Colors.white, size: 36),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Container(
-              color: const Color(0xFF00A3A6),
-              child: const Center(
-                child: Icon(Icons.arrow_forward, color: Colors.white, size: 36),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- 2. INFO & STATS SECTION (Teal top border) ---
-  Widget _buildInfoStatsSection(Map<String, dynamic> event) {
-    return Container(
-      color: Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Teal Top Border line
-          Container(
-            height: 4,
-            color: const Color(0xFF007A87),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Tags and Actions Row
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.public, size: 14, color: Colors.blue.shade800),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Online',
-                            style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold, fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    Icon(Icons.language, color: Colors.grey[600], size: 20),
-                    const SizedBox(width: 16),
-                    Icon(Icons.calendar_today, color: Colors.grey[600], size: 20),
-                    const SizedBox(width: 16),
-                    Icon(Icons.favorite_border, color: Colors.grey[600], size: 20),
-                    const SizedBox(width: 16),
-                    Icon(Icons.share_outlined, color: Colors.grey[600], size: 20),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Title and Logo Row
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            event['title'],
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E1F22)),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            event['organizer'],
-                            style: TextStyle(fontSize: 13, color: Colors.grey[750], fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Logo Box
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade200),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.all(4),
-                      child: Image.network(
-                        event['logoUrl'],
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: Colors.red.shade700,
-                          alignment: Alignment.center,
-                          child: const Text('M', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                
-                // Stats Row
-                Row(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Icon(Icons.people_outline, color: Colors.blue.shade800, size: 20),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Team Size', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                              Text(
-                                event['teamSize'],
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E1F22), fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Icon(Icons.ads_click, color: Colors.blue.shade800, size: 20),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Registered', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                              Text(
-                                '${_isRegistered ? event['registered'] + 1 : event['registered']}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E1F22), fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Registration details
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    border: Border.all(color: Colors.grey.shade200),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 18,
-                        backgroundImage: AssetImage('assets/images/somraj_avatar.jpg'),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              'Somraj Lodhi',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E1F22)),
-                            ),
-                            SizedBox(height: 1),
-                            Text(
-                              'iitainsomraj701@gmail.com',
-                              style: TextStyle(color: Colors.grey, fontSize: 11),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: _isRegistered ? Colors.green.shade100 : Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          _isRegistered ? 'Registered' : 'Not Registered',
-                          style: TextStyle(
-                            color: _isRegistered ? Colors.green.shade800 : Colors.orange.shade800,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Prizes Banner
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blue.shade50, Colors.blue.shade100],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Icon(Icons.emoji_events, color: Color(0xFFFFC107), size: 32),
-                      Column(
-                        children: [
-                          const Text(
-                            'Prizes worth',
-                            style: TextStyle(color: Color(0xFF1E1F22), fontSize: 11, fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 1),
-                          Text(
-                            event['prizes'],
-                            style: TextStyle(color: Colors.blue.shade900, fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                        ],
-                      ),
-                      const Icon(Icons.emoji_events, color: Color(0xFFFFC107), size: 32),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- 3. ELIGIBILITY & DESCRIPTION ---
-  Widget _buildDescriptionSection(Map<String, dynamic> event) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Eligibility'),
-          const SizedBox(height: 8),
-          Text(
-            event['eligibility'],
-            style: const TextStyle(fontSize: 13.5, color: Color(0xFF333333), height: 1.4),
-          ),
-          const SizedBox(height: 20),
-          _buildSectionHeader('All that you need to know'),
-          const SizedBox(height: 8),
-          Text(
-            event['description'],
-            style: const TextStyle(fontSize: 13.5, color: Color(0xFF333333), height: 1.45),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- 4. STAGES & TIMELINES ---
-  Widget _buildStagesTimelineSection(List<Map<String, dynamic>> timeline, Map<String, dynamic> event) {
-    final bool isCoke = event['title'].toString().contains('Coca-Cola');
-    
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Stages and Timelines'),
-          const SizedBox(height: 24),
-          
-          Column(
-            children: [
-              ...timeline.map((stage) {
-                final int index = timeline.indexOf(stage);
-                final bool isLast = index == timeline.length - 1 && !isCoke;
-                return _buildTimelineRow(stage, isLast);
-              }),
-              if (isCoke)
-                _buildTimelineRow({
-                  'day': 'Inter',
-                  'month': 'VIEWS',
-                  'title': 'Interviews',
-                  'startDate': '25 Jul 26, 09:00 AM IST',
-                  'endDate': '10 Aug 26, 06:00 PM IST',
-                  'desc': 'The final stage involves a personal interview with Senior Management at Coca-Cola India and Southwest Asia.'
-                }, true),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimelineRow(Map<String, dynamic> stage, bool isLast) {
-    final bool isLive = stage['isLive'] ?? false;
-    final String day = stage['day'] ?? '1';
-    final String month = stage['month'] ?? 'JAN';
-    final String dateRange = '${stage['startDate']} → ${stage['endDate']}';
-
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Left vertical dotted-like track
-          Column(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF004B87),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      day,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
-                    ),
-                    Text(
-                      month,
-                      style: const TextStyle(color: Colors.white, fontSize: 8),
-                    ),
-                  ],
-                ),
-              ),
-              if (!isLast)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    color: Colors.blue.shade100,
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 14),
-          
-          // Right content details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Date text aligned to the right of node
-                Text(
-                  dateRange,
-                  style: TextStyle(color: Colors.grey[750], fontSize: 11, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 6),
-                
-                // Stage detail card
-                Container(
-                  margin: const EdgeInsets.only(bottom: 24),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.grey.shade200),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              stage['title']!,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF1E1F22)),
-                            ),
-                          ),
-                          if (isLive)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.red.shade200),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 5,
-                                    height: 5,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.red,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Text(
-                                    'Live',
-                                    style: TextStyle(color: Colors.red, fontSize: 9, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        stage['desc']!,
-                        style: const TextStyle(color: Colors.grey, fontSize: 12, height: 1.35),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- 5. IMPORTANT DATES & DEADLINES ---
-  Widget _buildImportantDatesSection(List<Map<String, dynamic>> dates) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Important dates & deadlines?'),
-          const SizedBox(height: 16),
-          ...dates.map((date) => _buildDeadlineItemRow(date)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeadlineItemRow(Map<String, dynamic> date) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border.all(color: Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0073B1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  date['day']!,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-                Text(
-                  date['month']!,
-                  style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  date['dateText']!,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF1E1F22)),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  date['title']!,
-                  style: const TextStyle(color: Colors.grey, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- 6. REWARDS AND PRIZES ---
-  Widget _buildRewardsSection(List<Map<String, dynamic>> rewards) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Rewards and Prizes'),
-          const SizedBox(height: 16),
-          ...rewards.map((reward) => _buildRewardsCard(reward)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRewardsCard(Map<String, dynamic> reward) {
-    final bool isMerch = reward['isMerch'] ?? false;
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          children: [
-            // Left green/blue accent vertical block
-            Container(
-              width: 6,
-              decoration: BoxDecoration(
-                color: isMerch ? Colors.blue : Colors.greenAccent.shade400,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12),
-                ),
-              ),
-            ),
-            // Cash column
-            Container(
-              width: 100,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    isMerch ? Colors.blue.shade50.withOpacity(0.2) : Colors.green.shade50.withOpacity(0.2),
-                    Colors.white,
-                  ],
-                ),
-              ),
-              child: isMerch
-                  ? const Center(child: Icon(Icons.redeem, color: Colors.blue, size: 28))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          reward['amount'],
-                          style: TextStyle(
-                            color: Colors.green.shade800,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 1),
-                        const Text(
-                          'CASH',
-                          style: TextStyle(
-                            color: Color(0xFF1E293B),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-            Container(width: 1, color: Colors.grey.shade200),
-            // Prize name
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      reward['label'],
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Color(0xFF1E1F22),
-                      ),
-                    ),
-                    if (isMerch) ...[
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Exclusive Coca-Cola Merchandise.',
-                        style: TextStyle(color: Colors.grey, fontSize: 11),
-                      ),
-                    ]
-                  ],
-                ),
-              ),
-            ),
-          ],
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+      child: Text(
+        title,
+        style: const TextStyle(
+          color: Color(0xFF111827),
+          fontSize: 14.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
         ),
       ),
     );
   }
 
-  // --- 7. FEEDBACK & RATING ---
-  Widget _buildFeedbackRatingSection() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Feedback & Rating'),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              border: Border.all(color: Colors.grey.shade200),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Icon(Icons.edit_note_outlined, size: 32, color: Colors.grey[600]),
-                const SizedBox(height: 6),
-                const Text(
-                  'Write a review',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E1F22)),
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Register for this opportunity to give your feedback and review.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.35),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- 8. FAQS / DISCUSSIONS ---
-  Widget _buildFaqsSection(List<Map<String, String>> faqs) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('FAQs / Discussions'),
-          const SizedBox(height: 12),
-          
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => setState(() => _activeFaqTab = 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'FAQs',
-                      style: TextStyle(
-                        color: _activeFaqTab == 0 ? Colors.blue.shade800 : Colors.grey,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      height: 2.5,
-                      width: 44,
-                      color: _activeFaqTab == 0 ? Colors.blue.shade800 : Colors.transparent,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 20),
-              GestureDetector(
-                onTap: () => setState(() => _activeFaqTab = 1),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Discussions',
-                      style: TextStyle(
-                        color: _activeFaqTab == 1 ? Colors.blue.shade800 : Colors.grey,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      height: 2.5,
-                      width: 80,
-                      color: _activeFaqTab == 1 ? Colors.blue.shade800 : Colors.transparent,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-          const SizedBox(height: 14),
-
-          if (_activeFaqTab == 0) ...[
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFaqCategoryChip('Registration'),
-                  _buildFaqCategoryChip('Become a Coke Ambassador Round'),
-                  _buildFaqCategoryChip('Trivia'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...faqs.map((faq) => FAQAccordion(question: faq['question']!, answer: faq['answer']!)),
-          ] else ...[
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: Text('No discussions yet.', style: TextStyle(color: Colors.grey, fontSize: 12)),
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          
-          const Text(
-            "Can't find the answer you are looking for?",
-            style: TextStyle(color: Color(0xFF1E1F22), fontSize: 12, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 2),
-          GestureDetector(
-            onTap: () {},
-            child: Text(
-              'Ask a question (Be specific)',
-              style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ),
-          const SizedBox(height: 20),
-          _buildFooterInfoRow(Icons.access_time_outlined, 'Updated On: 26 Jun 26, 12:22 PM IST'),
-          const SizedBox(height: 6),
-          _buildFooterInfoRow(Icons.info_outline, 'The data on this page gets updated every 15 minutes.'),
-          const SizedBox(height: 6),
-          _buildFooterInfoRow(Icons.flag_outlined, 'Report An Issue', isAction: true),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFaqCategoryChip(String title) {
-    final bool isSelected = _selectedFaqCategory == title;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedFaqCategory = title),
-      child: Container(
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.transparent : Colors.grey[50],
-          border: Border.all(color: isSelected ? Colors.blue.shade800 : Colors.grey.shade300),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? Colors.blue.shade800 : Colors.grey[800],
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
+  Widget _buildContentBlock(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14.0),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF374151),
+          fontSize: 13.8,
+          height: 1.5,
         ),
       ),
     );
   }
 
-  Widget _buildFooterInfoRow(IconData icon, String text, {bool isAction = false}) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: isAction ? Colors.red.shade800 : Colors.black54),
-        const SizedBox(width: 6),
-        GestureDetector(
-          onTap: isAction ? () {} : null,
-          child: Text(
-            text,
-            style: TextStyle(
-              color: isAction ? Colors.red.shade800 : Colors.black54,
-              fontSize: 11.5,
-              fontWeight: isAction ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
+  Widget _buildBulletPoint(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF374151),
+          fontSize: 13.8,
+          height: 1.45,
         ),
-      ],
-    );
-  }
-
-  // --- FOOTER & BREADCRUMBS SECTION ---
-  Widget _buildFooterSection(Map<String, dynamic> event) {
-    return Container(
-      color: const Color(0xFFF3F2EF),
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.home_outlined, size: 14, color: Colors.grey[600]),
-              Text(' / Competition / ', style: TextStyle(color: Colors.grey[600], fontSize: 11)),
-              Expanded(
-                child: Text(
-                  event['title'],
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  'Powered By',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5),
-                ),
-                const SizedBox(height: 6),
-                // Acadyk Logo box representation
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F0F10),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'Acadyk',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.5),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Best Viewed in Chrome, Opera, Mozilla, EDGE & Safari. Copyright ©\n2026 FLIVE Consulting Pvt Ltd - All rights reserved.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 9.5, height: 1.4),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
-    );
-  }
-
-  // --- STICKY REGISTER BAR ---
-  Widget _buildStickyRegisterBar(Map<String, dynamic> event) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 20, top: 4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // "5 Days Left" floating tab badge
-          Transform.translate(
-            offset: const Offset(0, 10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-              decoration: const BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              ),
-              child: const Text(
-                '5 Days Left',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          ),
-          // Main Register Button
-          ElevatedButton(
-            onPressed: _isRegistered
-                ? null
-                : () async {
-                    final result = await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => RegistrationFormScreen(
-                          eventId: event['id']?.toString() ?? '',
-                          eventTitle: event['title'],
-                          logoUrl: event['logoUrl'],
-                          organizer: event['organizer'],
-                        ),
-                      ),
-                    );
-                    if (result == true) {
-                      setState(() {
-                        _isRegistered = true;
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Successfully Registered!'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    }
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF007A87),
-              disabledBackgroundColor: Colors.grey[400],
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              elevation: 0,
-            ),
-            child: Center(
-              child: Text(
-                _isRegistered ? 'Registered' : 'Register',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Expandable FAQ Accordion Widget
-class FAQAccordion extends StatefulWidget {
-  final String question;
-  final String answer;
-
-  const FAQAccordion({super.key, required this.question, required this.answer});
-
-  @override
-  State<FAQAccordion> createState() => _FAQAccordionState();
-}
-
-class _FAQAccordionState extends State<FAQAccordion> {
-  bool _isExpanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(
-            widget.question,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF1E1F22),
-            ),
-          ),
-          trailing: Icon(
-            _isExpanded ? Icons.remove : Icons.add,
-            color: Colors.black54,
-            size: 18,
-          ),
-          onTap: () {
-            setState(() {
-              _isExpanded = !_isExpanded;
-            });
-          },
-        ),
-        if (_isExpanded)
-          Padding(
-            padding: const EdgeInsets.only(top: 2, bottom: 10),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                widget.answer,
-                style: const TextStyle(color: Colors.black54, fontSize: 12, height: 1.35),
-              ),
-            ),
-          ),
-        const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-      ],
     );
   }
 }
