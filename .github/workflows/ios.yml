@@ -1,27 +1,82 @@
-name: iOS Build Pipeline
+name: iOS Release Build Pipeline
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   build-ios:
+    name: Build iOS Release Package (.app & .ipa)
     runs-on: macos-latest
     defaults:
       run:
         working-directory: apps/mobile
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: apps/mobile/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('apps/mobile/ios/Podfile.lock', 'apps/mobile/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
 
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build iOS No-Codesign
-        run: flutter build ios --release --no-codesign
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update || pod install
+          cd ..
+
+      - name: Build iPhone Release (.app & .ipa)
+        run: |
+          echo "Building iOS Release .app for iPhone..."
+          flutter build ios --release --no-codesign
+          
+          mkdir -p build/ios/outputs
+          
+          # 1. Copy Runner.app
+          cp -R build/ios/iphoneos/Runner.app build/ios/outputs/Acadyk-${{ github.ref_name }}.app
+          
+          # 2. Package .app.zip
+          cd build/ios/iphoneos
+          zip -r -q ../outputs/Acadyk-${{ github.ref_name }}.app.zip Runner.app
+          cd ../../..
+          
+          # 3. Package .ipa
+          mkdir -p build/ios/ipa_payload/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/ipa_payload/Payload/
+          cd build/ios/ipa_payload
+          zip -r -q ../outputs/Acadyk-${{ github.ref_name }}-unsigned.ipa Payload
+          cd ../../..
+
+      - name: Upload Release iPhone .app Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: acadyk-ios-${{ github.ref_name }}-app
+          path: apps/mobile/build/ios/outputs/Acadyk-${{ github.ref_name }}.app
+
+      - name: Upload Release iPhone .app.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: acadyk-ios-${{ github.ref_name }}-app-zip
+          path: apps/mobile/build/ios/outputs/Acadyk-${{ github.ref_name }}.app.zip
+
+      - name: Upload Release IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: acadyk-ios-${{ github.ref_name }}-ipa
+          path: apps/mobile/build/ios/outputs/Acadyk-${{ github.ref_name }}-unsigned.ipa
