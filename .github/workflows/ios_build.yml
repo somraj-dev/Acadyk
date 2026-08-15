@@ -1,11 +1,20 @@
-name: Manual iOS Build
+name: Manual iOS Build (.app & .ipa)
 
 on:
   workflow_dispatch:
+    inputs:
+      build_simulator:
+        description: 'Also build iOS Simulator .app bundle'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
   build:
-    name: Build Flutter iOS IPA
+    name: Build Flutter iOS (.app & .ipa)
     runs-on: macos-latest
     defaults:
       run:
@@ -38,28 +47,75 @@ jobs:
           pod install
           cd ..
 
-      - name: Build iOS IPA & Archive
-        run: flutter build ipa --release --no-codesign
-
-      - name: Package Unsigned IPA
+      - name: Build iPhone Release (.app & .ipa)
         run: |
+          echo "Building iOS Release .app for iPhone..."
+          flutter build ios --release --no-codesign
+          
+          mkdir -p build/ios/outputs
+          
+          # 1. Copy Runner.app
+          cp -R build/ios/iphoneos/Runner.app build/ios/outputs/Acadyk.app
+          
+          # 2. Package .app.zip
+          cd build/ios/iphoneos
+          zip -r -q ../outputs/Acadyk-iphone-release.app.zip Runner.app
+          cd ../../..
+          
+          # 3. Package .ipa
           mkdir -p build/ios/ipa_payload/Payload
-          cp -r build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app build/ios/ipa_payload/Payload/
+          cp -r build/ios/iphoneos/Runner.app build/ios/ipa_payload/Payload/
           cd build/ios/ipa_payload
-          zip -r -q ../Acadyk-manual-unsigned.ipa Payload
-          cd ../../..
-          cd build/ios/archive
-          zip -r -q ../Runner-manual.xcarchive.zip Runner.xcarchive
+          zip -r -q ../outputs/Acadyk-manual-unsigned.ipa Payload
           cd ../../..
 
-      - name: Upload iOS IPA Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: acadyk-manual-ios-ipa
-          path: apps/mobile/build/ios/Acadyk-manual-unsigned.ipa
+      - name: Build iOS Simulator (.app)
+        if: ${{ inputs.build_simulator == 'true' }}
+        run: |
+          echo "Building iOS Simulator .app..."
+          flutter build ios --simulator --debug
+          
+          # Copy simulator Runner.app
+          cp -R build/ios/iphonesimulator/Runner.app build/ios/outputs/Acadyk-Simulator.app
+          
+          # Package into Simulator .app.zip
+          cd build/ios/iphonesimulator
+          zip -r -q ../outputs/Acadyk-simulator.app.zip Runner.app
+          cd ../../..
 
-      - name: Upload iOS XCArchive Artifact
+      - name: Upload iPhone .app Bundle
         uses: actions/upload-artifact@v4
         with:
-          name: acadyk-manual-ios-xcarchive
-          path: apps/mobile/build/ios/Runner-manual.xcarchive.zip
+          name: acadyk-manual-iphone-app
+          path: apps/mobile/build/ios/outputs/Acadyk.app
+          if-no-files-found: error
+
+      - name: Upload iPhone .app.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: acadyk-manual-iphone-app-zip
+          path: apps/mobile/build/ios/outputs/Acadyk-iphone-release.app.zip
+          if-no-files-found: error
+
+      - name: Upload iPhone .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: acadyk-manual-iphone-ipa
+          path: apps/mobile/build/ios/outputs/Acadyk-manual-unsigned.ipa
+          if-no-files-found: error
+
+      - name: Upload Simulator .app Bundle
+        if: ${{ inputs.build_simulator == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: acadyk-manual-simulator-app
+          path: apps/mobile/build/ios/outputs/Acadyk-Simulator.app
+          if-no-files-found: error
+
+      - name: Upload Simulator .app.zip
+        if: ${{ inputs.build_simulator == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: acadyk-manual-simulator-app-zip
+          path: apps/mobile/build/ios/outputs/Acadyk-simulator.app.zip
+          if-no-files-found: error
