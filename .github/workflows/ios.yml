@@ -1,4 +1,4 @@
-name: iOS Build Pipeline
+name: iOS Release Build Pipeline
 
 on:
   push:
@@ -7,21 +7,61 @@ on:
 
 jobs:
   build-ios:
+    name: Build iOS Release Package
     runs-on: macos-latest
     defaults:
       run:
         working-directory: apps/mobile
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: apps/mobile/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('apps/mobile/ios/Podfile.lock', 'apps/mobile/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
 
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build iOS No-Codesign
-        run: flutter build ios --release --no-codesign
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+          cd ..
+
+      - name: Build iOS IPA & Archive
+        run: flutter build ipa --release --no-codesign
+
+      - name: Package Unsigned IPA
+        run: |
+          mkdir -p build/ios/ipa_payload/Payload
+          cp -r build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app build/ios/ipa_payload/Payload/
+          cd build/ios/ipa_payload
+          zip -r -q ../Acadyk-${{ github.ref_name }}-unsigned.ipa Payload
+          cd ../../..
+          cd build/ios/archive
+          zip -r -q ../Runner-${{ github.ref_name }}.xcarchive.zip Runner.xcarchive
+          cd ../../..
+
+      - name: Upload Release IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: acadyk-ios-${{ github.ref_name }}-ipa
+          path: apps/mobile/build/ios/Acadyk-${{ github.ref_name }}-unsigned.ipa
+
+      - name: Upload Release XCArchive Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: acadyk-ios-${{ github.ref_name }}-xcarchive
+          path: apps/mobile/build/ios/Runner-${{ github.ref_name }}.xcarchive.zip

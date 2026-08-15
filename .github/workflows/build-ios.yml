@@ -1,6 +1,12 @@
-name: Manual iOS Build
+name: Build iOS App
 
 on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -46,20 +52,22 @@ jobs:
           mkdir -p build/ios/ipa_payload/Payload
           cp -r build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app build/ios/ipa_payload/Payload/
           cd build/ios/ipa_payload
-          zip -r -q ../Acadyk-manual-unsigned.ipa Payload
+          zip -r -q ../Acadyk-release-unsigned.ipa Payload
           cd ../../..
           cd build/ios/archive
-          zip -r -q ../Runner-manual.xcarchive.zip Runner.xcarchive
+          zip -r -q ../Runner.xcarchive.zip Runner.xcarchive
           cd ../../..
 
       - name: Upload iOS IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: acadyk-manual-ios-ipa
-          path: apps/mobile/build/ios/Acadyk-manual-unsigned.ipa
+          name: acadyk-release-ios-ipa
+          path: apps/mobile/build/ios/Acadyk-release-unsigned.ipa
+          if-no-files-found: error
 
       - name: Upload iOS XCArchive Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: acadyk-manual-ios-xcarchive
-          path: apps/mobile/build/ios/Runner-manual.xcarchive.zip
+          name: acadyk-release-ios-xcarchive
+          path: apps/mobile/build/ios/Runner.xcarchive.zip
+          if-no-files-found: warn
