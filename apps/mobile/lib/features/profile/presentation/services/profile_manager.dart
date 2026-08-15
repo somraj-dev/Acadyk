@@ -49,4 +49,19 @@ class ProfileManager {
       });
     }
   }
+
+  static void setAuthenticatedUser({
+    required String authenticatedName,
+    required String authenticatedUsername,
+    String? authenticatedAvatar,
+    String? authenticatedBio,
+    String? authenticatedLocation,
+  }) {
+    if (authenticatedName.isNotEmpty) name = authenticatedName;
+    if (authenticatedUsername.isNotEmpty) username = authenticatedUsername;
+    if (authenticatedAvatar != null && authenticatedAvatar.isNotEmpty) avatarUrl = authenticatedAvatar;
+    if (authenticatedBio != null && authenticatedBio.isNotEmpty) bio = authenticatedBio;
+    if (authenticatedLocation != null && authenticatedLocation.isNotEmpty) location = authenticatedLocation;
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
 }

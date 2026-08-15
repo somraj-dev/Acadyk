@@ -1,7 +1,11 @@
 package com.acadyk.security
 
+import com.acadyk.modules.auth.service.EnrollmentNumberService
 import com.acadyk.modules.profiles.entity.ProfileEntity
 import com.acadyk.modules.profiles.repository.ProfileRepository
+import com.acadyk.modules.users.entity.AccountStatus
+import com.acadyk.modules.users.entity.UserEntity
+import com.acadyk.modules.users.repository.UserRepository
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -14,7 +18,9 @@ import java.time.Instant
 @Component
 class FirebaseAuthFilter(
     private val tokenVerifier: FirebaseTokenVerifier,
-    private val profileRepository: ProfileRepository
+    private val userRepository: UserRepository,
+    private val profileRepository: ProfileRepository,
+    private val enrollmentNumberService: EnrollmentNumberService
 ) : OncePerRequestFilter() {
 
     override fun doFilterInternal(
@@ -28,15 +34,48 @@ class FirebaseAuthFilter(
             val verifiedUser = tokenVerifier.verifyToken(token)
 
             if (verifiedUser != null) {
+                val email = verifiedUser.email.trim().lowercase()
+
                 // Look up or provision verified user in DB - strictly using token verified identity
-                val profile = profileRepository.findById(verifiedUser.uid).orElseGet {
+                val user = userRepository.findByFirebaseUid(verifiedUser.uid)
+                    .or { userRepository.findByCollegeEmail(email) }
+                    .orElseGet {
+                        val parsed = enrollmentNumberService.parseCollegeEmail(email)
+                        userRepository.save(
+                            UserEntity(
+                                id = verifiedUser.uid,
+                                firebaseUid = verifiedUser.uid,
+                                email = email,
+                                collegeEmail = email,
+                                enrollmentNumber = parsed.enrollmentNumber,
+                                degree = parsed.degree,
+                                branch = parsed.branch,
+                                joiningYear = parsed.joiningYear,
+                                role = Role.STUDENT,
+                                accountStatus = if (parsed.isValid) AccountStatus.ACTIVE else AccountStatus.PENDING_VERIFICATION,
+                                isActive = true,
+                                isEmailVerified = verifiedUser.isEmailVerified,
+                                authProvider = "FIREBASE_GOOGLE",
+                                firstLoginAt = Instant.now(),
+                                lastLoginAt = Instant.now(),
+                                lastSignInAt = Instant.now(),
+                                createdAt = Instant.now(),
+                                updatedAt = Instant.now()
+                            )
+                        )
+                    }
+
+                val profile = profileRepository.findById(user.id).orElseGet {
                     profileRepository.save(
                         ProfileEntity(
-                            id = verifiedUser.uid,
-                            username = verifiedUser.email.substringBefore("@") + "_" + verifiedUser.uid.takeLast(4),
-                            fullName = verifiedUser.name ?: "Acadyk Member",
-                            email = verifiedUser.email,
+                            id = user.id,
+                            username = user.enrollmentNumber ?: email.substringBefore("@"),
+                            fullName = verifiedUser.name ?: "Somraj Lodhi",
+                            email = email,
                             profilePhotoUrl = verifiedUser.picture,
+                            collegeName = "Madhav Institute of Technology & Science, Gwalior",
+                            major = user.branch ?: "AI & ML",
+                            graduationYear = (user.joiningYear ?: 2025) + 4,
                             createdAt = Instant.now(),
                             updatedAt = Instant.now()
                         )
@@ -44,7 +83,7 @@ class FirebaseAuthFilter(
                 }
 
                 // Determine user roles securely from backend
-                val roles = mutableSetOf(Role.STUDENT)
+                val roles = mutableSetOf(user.role)
                 if (profile.email.endsWith("@acadyk.internal") || profile.email == "admin@acadyk.com") {
                     roles.add(Role.SUPER_ADMIN)
                 }

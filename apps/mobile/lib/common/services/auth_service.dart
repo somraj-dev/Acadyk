@@ -1,12 +1,19 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/auth/firebase_auth_service.dart';
+import '../../features/profile/presentation/services/profile_manager.dart';
 
 class AuthUser {
   final String id;
   final String email;
   final String? fullName;
   final String? username;
+  final String? enrollmentNumber;
+  final String? collegeEmail;
+  final String? degree;
+  final String? branch;
+  final int? joiningYear;
+  final bool isFirstLogin;
   final List<String> roles;
 
   AuthUser({
@@ -14,6 +21,12 @@ class AuthUser {
     required this.email,
     this.fullName,
     this.username,
+    this.enrollmentNumber,
+    this.collegeEmail,
+    this.degree,
+    this.branch,
+    this.joiningYear,
+    this.isFirstLogin = false,
     this.roles = const ['STUDENT'],
   });
 
@@ -21,11 +34,18 @@ class AuthUser {
     final rolesList = json['roles'] is List
         ? (json['roles'] as List).map((e) => e.toString()).toList()
         : ['STUDENT'];
+    final enrollment = json['enrollmentNumber'] ?? json['enrollment_number'] ?? json['username'];
     return AuthUser(
-      id: json['id']?.toString() ?? '',
-      email: json['email']?.toString() ?? '',
+      id: json['id']?.toString() ?? json['userId']?.toString() ?? '',
+      email: json['email']?.toString() ?? json['collegeEmail']?.toString() ?? '',
       fullName: json['fullName'] ?? json['full_name'],
-      username: json['username']?.toString(),
+      username: enrollment?.toString() ?? json['username']?.toString(),
+      enrollmentNumber: enrollment?.toString(),
+      collegeEmail: json['collegeEmail']?.toString() ?? json['college_email']?.toString(),
+      degree: json['degree']?.toString() ?? 'B.Tech',
+      branch: json['branch']?.toString() ?? json['major']?.toString(),
+      joiningYear: json['joiningYear'] is int ? json['joiningYear'] : int.tryParse(json['joiningYear']?.toString() ?? ''),
+      isFirstLogin: json['isFirstLogin'] == true,
       roles: rolesList,
     );
   }
@@ -36,6 +56,12 @@ class AuthUser {
       'email': email,
       'fullName': fullName,
       'username': username,
+      'enrollmentNumber': enrollmentNumber,
+      'collegeEmail': collegeEmail,
+      'degree': degree,
+      'branch': branch,
+      'joiningYear': joiningYear,
+      'isFirstLogin': isFirstLogin,
       'roles': roles,
     };
   }
@@ -54,14 +80,33 @@ class AuthService {
     if (userJson != null) {
       try {
         _currentUser = AuthUser.fromJson(jsonDecode(userJson));
+        if (_currentUser != null) {
+          _syncProfileManager(_currentUser!);
+        }
       } catch (_) {}
     }
+  }
+
+  static void _syncProfileManager(AuthUser user) {
+    ProfileManager.setAuthenticatedUser(
+      authenticatedName: user.fullName ?? 'Somraj Lodhi',
+      authenticatedUsername: user.enrollmentNumber ?? user.username ?? 'BTAM25O1080',
+      authenticatedBio: user.branch != null ? '${user.degree ?? "B.Tech"} in ${user.branch}' : null,
+    );
   }
 
   static Future<AuthUser?> signInWithEmail(String email, String password) async {
     final data = await FirebaseAuthService.signInWithEmail(email, password);
     final userMap = data['user'] is Map<String, dynamic> ? data['user'] as Map<String, dynamic> : data;
-    _currentUser = AuthUser.fromJson(userMap);
+    _currentUser = AuthUser.fromJson({
+      ...userMap,
+      if (data['enrollmentNumber'] != null) 'enrollmentNumber': data['enrollmentNumber'],
+      if (data['isFirstLogin'] != null) 'isFirstLogin': data['isFirstLogin'],
+      if (data['degree'] != null) 'degree': data['degree'],
+      if (data['branch'] != null) 'branch': data['branch'],
+      if (data['joiningYear'] != null) 'joiningYear': data['joiningYear'],
+    });
+    _syncProfileManager(_currentUser!);
     await _storage.write(key: 'user_profile', value: jsonEncode(_currentUser!.toJson()));
     return _currentUser;
   }
@@ -69,7 +114,15 @@ class AuthService {
   static Future<AuthUser?> signUpWithEmail(String email, String password, {String? fullName}) async {
     final data = await FirebaseAuthService.signUpWithEmail(email, password, fullName: fullName);
     final userMap = data['user'] is Map<String, dynamic> ? data['user'] as Map<String, dynamic> : data;
-    _currentUser = AuthUser.fromJson(userMap);
+    _currentUser = AuthUser.fromJson({
+      ...userMap,
+      if (data['enrollmentNumber'] != null) 'enrollmentNumber': data['enrollmentNumber'],
+      if (data['isFirstLogin'] != null) 'isFirstLogin': data['isFirstLogin'],
+      if (data['degree'] != null) 'degree': data['degree'],
+      if (data['branch'] != null) 'branch': data['branch'],
+      if (data['joiningYear'] != null) 'joiningYear': data['joiningYear'],
+    });
+    _syncProfileManager(_currentUser!);
     await _storage.write(key: 'user_profile', value: jsonEncode(_currentUser!.toJson()));
     return _currentUser;
   }
@@ -78,7 +131,15 @@ class AuthService {
     final data = await FirebaseAuthService.signInWithGoogle();
     if (data == null) return null;
     final userMap = data['user'] is Map<String, dynamic> ? data['user'] as Map<String, dynamic> : data;
-    _currentUser = AuthUser.fromJson(userMap);
+    _currentUser = AuthUser.fromJson({
+      ...userMap,
+      if (data['enrollmentNumber'] != null) 'enrollmentNumber': data['enrollmentNumber'],
+      if (data['isFirstLogin'] != null) 'isFirstLogin': data['isFirstLogin'],
+      if (data['degree'] != null) 'degree': data['degree'],
+      if (data['branch'] != null) 'branch': data['branch'],
+      if (data['joiningYear'] != null) 'joiningYear': data['joiningYear'],
+    });
+    _syncProfileManager(_currentUser!);
     await _storage.write(key: 'user_profile', value: jsonEncode(_currentUser!.toJson()));
     return _currentUser;
   }

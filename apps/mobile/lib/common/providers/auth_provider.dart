@@ -53,7 +53,7 @@ class AuthProvider extends ChangeNotifier {
         'id': userId,
         'email': _currentUser?.email ?? 'developer@acadyk.com',
         'full_name': _currentUser?.fullName ?? 'Somraj Lodhi',
-        'username': 'BTAM25O1080',
+        'username': _currentUser?.enrollmentNumber ?? _currentUser?.username ?? 'BTAM25O1080',
       });
       _currentProfile = mockProfile;
     }

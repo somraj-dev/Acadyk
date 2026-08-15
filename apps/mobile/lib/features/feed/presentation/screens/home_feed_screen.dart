@@ -2500,21 +2500,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         ? min(320.0, screenWidth * 0.85)
         : 300.0;
 
-    final currentName = ProfileManager.name.isNotEmpty
-        ? ProfileManager.name
-        : (AuthService.currentUser?.fullName ?? 'Somraj Lodhi');
-    final usernameRaw = ProfileManager.username.isNotEmpty
-        ? ProfileManager.username
-        : (AuthService.currentUser?.username ?? 'BTAM25O1080');
-    final handleText = usernameRaw;
-    final avatarUrl = ProfileManager.avatarUrl.isNotEmpty
-        ? ProfileManager.avatarUrl
-        : 'assets/images/somraj_avatar.jpg';
-
-    final ImageProvider drawerAvatarProvider = avatarUrl.startsWith('http')
-        ? NetworkImage(avatarUrl)
-        : AssetImage(avatarUrl) as ImageProvider;
-
     return Drawer(
       width: drawerWidth,
       backgroundColor: drawerBg,
@@ -2528,57 +2513,77 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Top Profile Header with Avatar & Name
-            InkWell(
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            // Top Profile Header with Avatar, Name & Dynamic Unique Enrollment Number
+            ValueListenableBuilder<bool>(
+              valueListenable: ProfileManager.profileUpdateNotifier,
+              builder: (context, _, __) {
+                final currentName = (AuthService.currentUser?.fullName != null && AuthService.currentUser!.fullName!.isNotEmpty)
+                    ? AuthService.currentUser!.fullName!
+                    : (ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Somraj Lodhi');
+                final usernameRaw = (AuthService.currentUser?.enrollmentNumber != null && AuthService.currentUser!.enrollmentNumber!.isNotEmpty)
+                    ? AuthService.currentUser!.enrollmentNumber!
+                    : (AuthService.currentUser?.username != null && AuthService.currentUser!.username!.isNotEmpty
+                        ? AuthService.currentUser!.username!
+                        : (ProfileManager.username.isNotEmpty ? ProfileManager.username : 'BTAM25O1080'));
+                final avatarUrl = ProfileManager.avatarUrl.isNotEmpty
+                    ? ProfileManager.avatarUrl
+                    : 'assets/images/somraj_avatar.jpg';
+                final ImageProvider drawerAvatarProvider = avatarUrl.startsWith('http')
+                    ? NetworkImage(avatarUrl)
+                    : AssetImage(avatarUrl) as ImageProvider;
+
+                return InkWell(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 14.0),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: const Color(0xFF0F4C81),
+                          backgroundImage: drawerAvatarProvider,
+                          onBackgroundImageError: (_, __) {},
+                        ),
+                        const SizedBox(width: 14.0),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                currentName,
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.w700,
+                                  color: headerTextColor,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2.0),
+                              Text(
+                                usernameRaw,
+                                style: TextStyle(
+                                  fontSize: 13.0,
+                                  color: subTextColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 14.0),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: const Color(0xFF0F4C81),
-                      backgroundImage: drawerAvatarProvider,
-                      onBackgroundImageError: (_, __) {},
-                    ),
-                    const SizedBox(width: 14.0),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            currentName,
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.w700,
-                              color: headerTextColor,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2.0),
-                          Text(
-                            handleText,
-                            style: TextStyle(
-                              fontSize: 13.0,
-                              color: subTextColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
             Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB)),
 

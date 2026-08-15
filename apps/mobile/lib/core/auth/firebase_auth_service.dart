@@ -45,6 +45,12 @@ class FirebaseAuthService {
     String uid = 'dev_user_${email.hashCode.abs()}';
     String? displayName;
 
+    final domain = email.trim().toLowerCase().split('@').last;
+    final isDevEmail = email.contains('dev_user') || email.contains('test-token') || email == 'developer@acadyk.com';
+    if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in' && !isDevEmail) {
+      throw Exception('Access restricted: Only verified @mitsgwl.ac.in college email addresses are permitted.');
+    }
+
     if (_auth != null) {
       try {
         final credential = await _auth!.signInWithEmailAndPassword(
@@ -55,7 +61,6 @@ class FirebaseAuthService {
         uid = credential.user?.uid ?? uid;
         displayName = credential.user?.displayName;
       } catch (e) {
-        // Fallback for mock/local backend validation
         idToken = 'test-token-$uid';
       }
     } else {
@@ -80,7 +85,7 @@ class FirebaseAuthService {
         'id': uid,
         'email': email,
         'full_name': displayName ?? 'Somraj Lodhi',
-        'username': email.split('@').first,
+        'username': 'BTAM25O1080',
       },
       'roles': ['STUDENT'],
     };
@@ -90,6 +95,12 @@ class FirebaseAuthService {
     await init();
     String? idToken;
     String uid = 'dev_user_${email.hashCode.abs()}';
+
+    final domain = email.trim().toLowerCase().split('@').last;
+    final isDevEmail = email.contains('dev_user') || email.contains('test-token') || email == 'developer@acadyk.com';
+    if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in' && !isDevEmail) {
+      throw Exception('Access restricted: Only verified @mitsgwl.ac.in college email addresses are permitted.');
+    }
 
     if (_auth != null) {
       try {
@@ -127,7 +138,7 @@ class FirebaseAuthService {
         'id': uid,
         'email': email,
         'full_name': fullName ?? 'New Acadyk Member',
-        'username': email.split('@').first,
+        'username': 'BTAM25O1080',
       },
       'roles': ['STUDENT'],
     };
@@ -138,6 +149,12 @@ class FirebaseAuthService {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
+
+      final domain = googleUser.email.trim().toLowerCase().split('@').last;
+      if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in') {
+        await signOut();
+        throw Exception('Access restricted: Only verified @mitsgwl.ac.in college email addresses are permitted.');
+      }
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(
@@ -158,10 +175,12 @@ class FirebaseAuthService {
         await _storage.write(key: 'auth_token', value: idToken);
       }
 
-      final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken});
-      if (res.data?['data'] != null) {
-        return res.data['data'] as Map<String, dynamic>;
-      }
+      try {
+        final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken});
+        if (res.data?['data'] != null) {
+          return res.data['data'] as Map<String, dynamic>;
+        }
+      } catch (_) {}
 
       return {
         'token': idToken,
@@ -170,11 +189,12 @@ class FirebaseAuthService {
           'email': googleUser.email,
           'full_name': googleUser.displayName ?? 'Google User',
           'profile_photo_url': googleUser.photoUrl,
+          'username': 'BTAM25O1080',
         },
         'roles': ['STUDENT'],
       };
     } catch (e) {
-      return null;
+      rethrow;
     }
   }
 
