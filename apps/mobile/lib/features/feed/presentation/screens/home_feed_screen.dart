@@ -252,15 +252,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                           child: Stack(
                                             clipBehavior: Clip.none,
                                             children: [
-                                              Icon(CupertinoIcons.heart, color: iconColor, size: 24),
+                                              Icon(CupertinoIcons.tray, color: iconColor, size: 24),
                                               Positioned(
                                                 top: -1,
                                                 right: -2,
                                                 child: Container(
-                                                  width: 9,
-                                                  height: 9,
+                                                  width: 8.5,
+                                                  height: 8.5,
                                                   decoration: const BoxDecoration(
-                                                    color: Colors.redAccent,
+                                                    color: Color(0xFF3897F0), // Vibrant blue notification indicator
                                                     shape: BoxShape.circle,
                                                   ),
                                                 ),

@@ -175,12 +175,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         onTap: _markAllAsRead,
                         child: Row(
                           children: const [
-                            Icon(Icons.done_all, color: Color(0xFF4F46E5), size: 18),
+                            Icon(Icons.done_all, color: Color(0xFF0284C7), size: 18),
                             SizedBox(width: 4),
                             Text(
                               'Mark all as read',
                               style: TextStyle(
-                                color: Color(0xFF4F46E5),
+                                color: Color(0xFF0284C7),
                                 fontWeight: FontWeight.w600,
                                 fontSize: 13,
                               ),
@@ -266,7 +266,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   isUnread: isUnread,
                                   contentWidget: contentWidget,
                                   badgeIcon: item['type'] == 'like' ? Icons.favorite : null,
-                                  badgeColor: item['type'] == 'like' ? const Color(0xFF4F46E5) : null,
+                                  badgeColor: item['type'] == 'like' ? const Color(0xFF0284C7) : null,
                                 );
                               },
                             ),
@@ -301,7 +301,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFF4F46E5) : const Color(0xFF6B7280),
+              color: isActive ? const Color(0xFF0284C7) : const Color(0xFF6B7280),
               fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               fontSize: 13,
             ),
@@ -310,13 +310,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: isActive ? const Color(0xFFEEF2FF) : const Color(0xFFF3F4F6),
+              color: isActive ? const Color(0xFFE0F2FE) : const Color(0xFFF3F4F6),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               count,
               style: TextStyle(
-                color: isActive ? const Color(0xFF4F46E5) : const Color(0xFF6B7280),
+                color: isActive ? const Color(0xFF0284C7) : const Color(0xFF6B7280),
                 fontWeight: FontWeight.w600,
                 fontSize: 11,
               ),
@@ -427,7 +427,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         height: 8,
                         margin: const EdgeInsets.only(top: 4),
                         decoration: const BoxDecoration(
-                          color: Color(0xFF4F46E5),
+                          color: Color(0xFF0284C7),
                           shape: BoxShape.circle,
                         ),
                       ),
