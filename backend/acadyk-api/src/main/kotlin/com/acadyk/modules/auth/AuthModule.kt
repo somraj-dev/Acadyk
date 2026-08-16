@@ -412,15 +412,15 @@ class AuthController(
     fun resetPassword(
         @RequestBody request: ResetPasswordRequest,
         httpRequest: HttpServletRequest
-    ): ResponseEntity<ApiResponse<Nothing>> {
+    ): ResponseEntity<ApiResponse<Unit>> {
         authService.resetPassword(request, httpRequest.remoteAddr)
-        return ResponseEntity.ok(ApiResponse.success(null, "Password reset instructions sent"))
+        return ResponseEntity.ok(ApiResponse.success(Unit, "Password reset instructions sent"))
     }
 
     @DeleteMapping("/delete-account")
-    fun deleteAccount(httpRequest: HttpServletRequest): ResponseEntity<ApiResponse<Nothing>> {
+    fun deleteAccount(httpRequest: HttpServletRequest): ResponseEntity<ApiResponse<Unit>> {
         authService.deleteAccount(httpRequest.remoteAddr)
-        return ResponseEntity.ok(ApiResponse.success(null, "Account marked for deletion"))
+        return ResponseEntity.ok(ApiResponse.success(Unit, "Account marked for deletion"))
     }
 
     @GetMapping("/session")

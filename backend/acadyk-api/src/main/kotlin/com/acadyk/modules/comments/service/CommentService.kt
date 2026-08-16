@@ -2,7 +2,8 @@ package com.acadyk.modules.comments.service
 
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
-import com.acadyk.infrastructure.KafkaEventProducer
+import com.acadyk.infrastructure.kafka.CommentCreatedEvent
+import com.acadyk.infrastructure.kafka.DomainEventPublisher
 import com.acadyk.modules.comments.dto.AddCommentRequest
 import com.acadyk.modules.comments.dto.CommentResponse
 import com.acadyk.modules.comments.entity.CommentEntity
@@ -23,7 +24,7 @@ class CommentService(
     private val profileRepository: ProfileRepository,
     private val commentMapper: CommentMapper,
     private val currentUserProvider: CurrentUserProvider,
-    private val kafkaEventProducer: KafkaEventProducer
+    private val domainEventPublisher: DomainEventPublisher
 ) {
 
     @Transactional(readOnly = true)
@@ -52,7 +53,16 @@ class CommentService(
         post.commentsCount += 1
         postRepository.save(post)
 
-        kafkaEventProducer.publishEvent("acadyk.comments.created", savedComment.id, """{"postId":"$postId","commentId":"${savedComment.id}"}""")
+        domainEventPublisher.publishCommentCreated(
+            CommentCreatedEvent(
+                commentId = savedComment.id,
+                postId = postId,
+                postAuthorId = post.author.id,
+                commenterId = author.id,
+                commenterName = author.fullName,
+                contentSnippet = savedComment.content.take(100)
+            )
+        )
 
         return commentMapper.toResponse(savedComment)
     }

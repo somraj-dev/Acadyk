@@ -51,8 +51,8 @@ class ChatController(private val chatService: ChatService) {
     }
 
     @PostMapping("/messages/{id}/read")
-    fun markRead(@PathVariable id: String): ResponseEntity<ApiResponse<Nothing>> {
+    fun markRead(@PathVariable id: String): ResponseEntity<ApiResponse<Unit>> {
         chatService.markMessageRead(id)
-        return ResponseEntity.ok(ApiResponse.success(null, "Message marked as read"))
+        return ResponseEntity.ok(ApiResponse.success(Unit, "Message marked as read"))
     }
 }

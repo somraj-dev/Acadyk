@@ -6,7 +6,6 @@ import com.acadyk.modules.files.dto.PresignedUrlResponse
 import com.acadyk.modules.files.dto.UploadFileResponse
 import com.acadyk.modules.files.entity.FileEntity
 import com.acadyk.modules.files.repository.FileRepository
-import com.acadyk.modules.profiles.repository.ProfileRepository
 import com.acadyk.security.CurrentUserProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -18,14 +17,13 @@ import java.util.UUID
 @Transactional
 class FileService(
     private val fileRepository: FileRepository,
-    private val profileRepository: ProfileRepository,
     private val s3StorageService: S3StorageService,
     private val currentUserProvider: CurrentUserProvider,
     @Value("\${aws.s3.bucket:acadyk-media-production}") private val bucketName: String
 ) {
 
     fun generatePresignedUploadUrl(request: PresignedUrlRequest): PresignedUrlResponse {
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_) { "anonymous" }
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { "anonymous" }
         val ext = request.fileName.substringAfterLast('.', "bin")
         val fileKey = "uploads/$currentUserId/${UUID.randomUUID()}.$ext"
         val fileUrl = "https://$bucketName.s3.amazonaws.com/$fileKey"
@@ -35,8 +33,7 @@ class FileService(
     }
 
     fun uploadMultipartFile(file: MultipartFile, bucket: String?): UploadFileResponse {
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_) { "anonymous" }
-        val uploader = profileRepository.findById(currentUserId).orElse(null)
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { "anonymous" }
 
         val targetBucket = bucket ?: bucketName
         val originalFilename = file.originalFilename ?: "upload.bin"
@@ -53,22 +50,21 @@ class FileService(
 
         val entity = fileRepository.save(
             FileEntity(
-                uploader = uploader,
+                uploaderId = currentUserId,
                 fileKey = fileKey,
                 fileName = originalFilename,
-                fileUrl = fileUrl,
-                fileSize = file.size,
-                contentType = file.contentType,
+                contentType = file.contentType ?: "application/octet-stream",
+                fileSizeBytes = file.size,
                 bucketName = targetBucket
             )
         )
 
         return UploadFileResponse(
             id = entity.id,
-            fileUrl = entity.fileUrl,
+            fileUrl = fileUrl,
             fileKey = entity.fileKey,
             fileName = entity.fileName,
-            fileSize = entity.fileSize
+            fileSize = entity.fileSizeBytes
         )
     }
 }

@@ -35,7 +35,7 @@ class EventService(
     @Transactional(readOnly = true)
     fun getEvents(eventType: String?, page: Int, size: Int): PageResponse<EventResponse> {
         val pageable = PageRequest.of(page, size)
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_) { null }
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
 
         val pageResult = if (!eventType.isNullOrBlank()) {
             eventRepository.findAllByEventTypeAndDeletedAtIsNullOrderByStartTimeDesc(eventType, pageable)
@@ -53,7 +53,7 @@ class EventService(
     fun getEventById(id: String): EventResponse {
         val event = eventRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Event with id $id not found") }
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_) { null }
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
         val isRegistered = currentUserId?.let { eventRegistrationRepository.existsByEventIdAndProfileId(event.id, it) } ?: false
         return eventMapper.toResponse(event, isRegistered)
     }

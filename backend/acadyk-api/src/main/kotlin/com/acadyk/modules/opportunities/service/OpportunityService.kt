@@ -37,7 +37,7 @@ class OpportunityService(
     @Transactional(readOnly = true)
     fun getOpportunities(type: String?, page: Int, size: Int): PageResponse<OpportunityResponse> {
         val pageable = PageRequest.of(page, size)
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_) { null }
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
 
         val pageResult = if (!type.isNullOrBlank()) {
             opportunityRepository.findAllByOpportunityTypeAndDeletedAtIsNullOrderByCreatedAtDesc(type, pageable)
@@ -55,7 +55,7 @@ class OpportunityService(
     fun getOpportunityById(id: String): OpportunityResponse {
         val opp = opportunityRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Opportunity with id $id not found") }
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_) { null }
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
         val isApplied = currentUserId?.let { opportunityApplicationRepository.existsByOpportunityIdAndProfileId(opp.id, it) } ?: false
         return opportunityMapper.toResponse(opp, isApplied)
     }
