@@ -1,7 +1,8 @@
 package com.acadyk.unit
 
+import com.acadyk.infrastructure.kafka.DomainEventPublisher
+import com.acadyk.infrastructure.redis.RedisCacheService
 import com.acadyk.modules.posts.dto.CreatePostRequest
-import com.acadyk.modules.posts.dto.PostResponse
 import com.acadyk.modules.posts.entity.PostEntity
 import com.acadyk.modules.posts.mapper.PostMapper
 import com.acadyk.modules.posts.repository.PostMediaRepository
@@ -9,12 +10,11 @@ import com.acadyk.modules.posts.repository.PostRepository
 import com.acadyk.modules.posts.service.PostService
 import com.acadyk.modules.profiles.entity.ProfileEntity
 import com.acadyk.modules.profiles.repository.ProfileRepository
-import com.acadyk.infrastructure.kafka.DomainEventPublisher
-import com.acadyk.infrastructure.redis.RedisCacheService
 import com.acadyk.security.CurrentUserProvider
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 import org.mockito.Mockito.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -34,12 +34,18 @@ class PostServiceTest {
 
     private val testUserId = UUID.randomUUID().toString()
 
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> anyNonNull(): T {
+        Mockito.any<T>()
+        return null as T
+    }
+
     @BeforeEach
     fun setUp() {
         postRepository = mock(PostRepository::class.java)
         postMediaRepository = mock(PostMediaRepository::class.java)
         profileRepository = mock(ProfileRepository::class.java)
-        postMapper = mock(PostMapper::class.java)
+        postMapper = PostMapper()
         currentUserProvider = mock(CurrentUserProvider::class.java)
         domainEventPublisher = mock(DomainEventPublisher::class.java)
         redisCacheService = mock(RedisCacheService::class.java)
@@ -66,8 +72,9 @@ class PostServiceTest {
 
         val authorProfile = ProfileEntity(
             id = testUserId,
-            email = "somraj@acadyk.com",
-            fullName = "Somraj Lodhi"
+            username = "somraj",
+            fullName = "Somraj Lodhi",
+            email = "somraj@acadyk.com"
         )
 
         val savedPost = PostEntity(
@@ -77,32 +84,23 @@ class PostServiceTest {
             postType = "text"
         )
 
-        val responseDto = PostResponse(
-            id = savedPost.id,
-            authorId = authorProfile.id,
-            authorName = authorProfile.fullName,
-            content = savedPost.content,
-            postType = savedPost.postType
-        )
-
         `when`(profileRepository.findById(testUserId)).thenReturn(Optional.of(authorProfile))
-        `when`(postRepository.save(any(PostEntity::class.java))).thenReturn(savedPost)
-        `when`(postMapper.toResponse(eq(savedPost), anyList())).thenReturn(responseDto)
+        `when`(postRepository.save(anyNonNull())).thenReturn(savedPost)
 
         val result = postService.createPost(request)
 
         assertNotNull(result)
         assertEquals(request.content, result.content)
-        assertEquals(testUserId, result.authorId)
-        verify(postRepository, times(1)).save(any())
+        assertEquals(testUserId, result.author.id)
+        verify(postRepository, times(1)).save(anyNonNull())
         verify(redisCacheService, times(1)).evictPattern("feed:")
-        verify(domainEventPublisher, times(1)).publishPostCreated(any())
+        verify(domainEventPublisher, times(1)).publishPostCreated(anyNonNull())
     }
 
     @Test
     fun `getPosts returns paginated posts`() {
         val pageable = PageRequest.of(0, 10)
-        val author = ProfileEntity(id = testUserId, email = "somraj@acadyk.com", fullName = "Somraj")
+        val author = ProfileEntity(id = testUserId, username = "somraj", email = "somraj@acadyk.com", fullName = "Somraj")
         val post = PostEntity(id = "p1", author = author, content = "Feed Item")
 
         `when`(postRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc(pageable))

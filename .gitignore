@@ -10,6 +10,8 @@
 .history
 .svn/
 .swiftpm/
+.gradle/
+**/build/
 
 # Environment secrets
 .env

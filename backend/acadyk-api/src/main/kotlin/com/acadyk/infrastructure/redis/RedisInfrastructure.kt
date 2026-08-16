@@ -15,28 +15,6 @@ import java.time.Duration
 import java.util.Collections
 import java.util.UUID
 
-@Configuration
-class RedisConfig {
-
-    @Bean
-    fun redisTemplate(
-        connectionFactory: RedisConnectionFactory,
-        objectMapper: ObjectMapper
-    ): RedisTemplate<String, Any> {
-        val template = RedisTemplate<String, Any>()
-        template.connectionFactory = connectionFactory
-
-        val stringSerializer = StringRedisSerializer()
-        val jsonSerializer = GenericJackson2JsonRedisSerializer(objectMapper)
-
-        template.keySerializer = stringSerializer
-        template.valueSerializer = jsonSerializer
-        template.hashKeySerializer = stringSerializer
-        template.hashValueSerializer = jsonSerializer
-        template.afterPropertiesSet()
-        return template
-    }
-}
 
 /**
  * Enterprise Redis Distributed Lock for atomic operations.
