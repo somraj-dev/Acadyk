@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/state/async_state.dart';
 import '../../../../core/usecase/usecase.dart';
-import '../../profile/domain/entities/profile_entity.dart';
-import '../../profile/data/models/profile_dto.dart';
+import '../../../profile/domain/entities/profile_entity.dart';
+import '../../../profile/data/repositories/profile_repository_impl.dart';
 
 abstract class ConnectionRepository {
   Future<List<ProfileEntity>> getFollowers(String userId);

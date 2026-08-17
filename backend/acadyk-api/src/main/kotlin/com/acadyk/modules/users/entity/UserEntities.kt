@@ -1,5 +1,8 @@
 package com.acadyk.modules.users.entity
 
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
+
 import com.acadyk.security.Role
 import jakarta.persistence.*
 import java.time.Instant
@@ -22,8 +25,10 @@ data class UserEntity(
     var firebaseUid: String,
 
     @Column(nullable = false, unique = true)
+    @JdbcTypeCode(SqlTypes.OTHER)
     var email: String,
 
+    @JdbcTypeCode(SqlTypes.OTHER)
     @Column(name = "college_email", unique = true)
     var collegeEmail: String? = null,
 
@@ -37,6 +42,7 @@ data class UserEntity(
     @Column(name = "joining_year")
     var joiningYear: Int? = null,
 
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     var role: Role = Role.STUDENT,

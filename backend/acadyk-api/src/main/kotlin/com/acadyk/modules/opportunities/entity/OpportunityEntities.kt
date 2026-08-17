@@ -1,5 +1,8 @@
 package com.acadyk.modules.opportunities.entity
 
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
+
 import com.acadyk.modules.profiles.entity.ProfileEntity
 import com.acadyk.modules.profiles.entity.ResumeEntity
 import jakarta.persistence.*
@@ -23,6 +26,7 @@ data class OpportunityEntity(
     var title: String,
 
     @Column(nullable = false, unique = true)
+    @JdbcTypeCode(SqlTypes.OTHER)
     var slug: String,
 
     var opportunityType: String = "INTERNSHIP",

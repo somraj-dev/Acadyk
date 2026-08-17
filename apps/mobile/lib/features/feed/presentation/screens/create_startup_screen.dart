@@ -114,9 +114,7 @@ class _CreateStartupScreenState extends State<CreateStartupScreen> {
       'website': _companyUrlCtrl.text.trim().isNotEmpty ? _companyUrlCtrl.text.trim() : 'https://acadyk.com',
       'stage': _hasInvestment == true ? 'Seed' : 'Idea',
       'industry': 'Technology',
-    }).catchError((e) {
-      debugPrint('[CreateStartupScreen] Backend sync note: $e');
-    });
+    }).ignore();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

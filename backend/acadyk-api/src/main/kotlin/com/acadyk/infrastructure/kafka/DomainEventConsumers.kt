@@ -83,7 +83,7 @@ class DomainEventConsumers(
 
                         // 2. Check user notification preferences before sending FCM push
                         val prefs = notificationPreferenceRepository.findByProfileId(recipient.id).orElse(null)
-                        val canSendPush = prefs == null || (prefs.pushEnabled && prefs.messagesEnabled)
+                        val canSendPush = prefs == null || (prefs.pushEnabled && prefs.chatNotifications)
 
                         if (canSendPush) {
                             fcmService.sendPushNotification(
@@ -129,7 +129,7 @@ class DomainEventConsumers(
 
                 // 2. Check preferences & dispatch FCM push
                 val prefs = notificationPreferenceRepository.findByProfileId(userB.id).orElse(null)
-                val canSendPush = prefs == null || (prefs.pushEnabled && prefs.connectionsEnabled)
+                val canSendPush = prefs == null || (prefs.pushEnabled && prefs.connectionRequests)
 
                 if (canSendPush) {
                     fcmService.sendPushNotification(
@@ -167,7 +167,7 @@ class DomainEventConsumers(
                     )
 
                     val prefs = notificationPreferenceRepository.findByProfileId(author.id).orElse(null)
-                    val canSendPush = prefs == null || (prefs.pushEnabled && prefs.likesEnabled)
+                    val canSendPush = prefs == null || prefs.pushEnabled
 
                     if (canSendPush) {
                         fcmService.sendPushNotification(
@@ -226,7 +226,7 @@ class DomainEventConsumers(
                     )
 
                     val prefs = notificationPreferenceRepository.findByProfileId(poster.id).orElse(null)
-                    val canSendPush = prefs == null || (prefs.pushEnabled && prefs.opportunitiesEnabled)
+                    val canSendPush = prefs == null || (prefs.pushEnabled && prefs.eventReminders)
 
                     if (canSendPush) {
                         fcmService.sendPushNotification(

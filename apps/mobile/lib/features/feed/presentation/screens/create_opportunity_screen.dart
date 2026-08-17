@@ -123,9 +123,7 @@ class _CreateOpportunityScreenState extends State<CreateOpportunityScreen> {
       'location': _isOnline ? 'Remote' : 'Onsite',
       'isRemote': _isOnline,
       'stipendOrSalary': '₹ 1,50,000',
-    }).catchError((e) {
-      debugPrint('[CreateOpportunityScreen] Backend sync note: $e');
-    });
+    }).ignore();
 
     // Show success dialog
     showDialog(

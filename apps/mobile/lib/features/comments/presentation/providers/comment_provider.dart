@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/state/async_state.dart';
-import '../domain/usecases/comment_usecases.dart';
+import '../../domain/usecases/comment_usecases.dart';
 
 class CommentDto extends CommentEntity {
   const CommentDto({

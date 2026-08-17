@@ -6,7 +6,7 @@ import org.springframework.data.elasticsearch.annotations.Field
 import org.springframework.data.elasticsearch.annotations.FieldType
 import java.time.Instant
 
-@Document(indexName = "acadyk_profiles")
+@Document(indexName = "acadyk_profiles", createIndex = false)
 data class ProfileSearchDocument(
     @Id
     val id: String,
@@ -42,7 +42,7 @@ data class ProfileSearchDocument(
     val profilePhotoUrl: String? = null
 )
 
-@Document(indexName = "acadyk_posts")
+@Document(indexName = "acadyk_posts", createIndex = false)
 data class PostSearchDocument(
     @Id
     val id: String,
@@ -66,7 +66,7 @@ data class PostSearchDocument(
     val createdAt: Instant = Instant.now()
 )
 
-@Document(indexName = "acadyk_opportunities")
+@Document(indexName = "acadyk_opportunities", createIndex = false)
 data class OpportunitySearchDocument(
     @Id
     val id: String,
@@ -102,7 +102,7 @@ data class OpportunitySearchDocument(
     val createdAt: Instant = Instant.now()
 )
 
-@Document(indexName = "acadyk_events")
+@Document(indexName = "acadyk_events", createIndex = false)
 data class EventSearchDocument(
     @Id
     val id: String,
@@ -129,7 +129,7 @@ data class EventSearchDocument(
     val startTime: Instant = Instant.now()
 )
 
-@Document(indexName = "acadyk_communities")
+@Document(indexName = "acadyk_communities", createIndex = false)
 data class CommunitySearchDocument(
     @Id
     val id: String,
@@ -150,7 +150,7 @@ data class CommunitySearchDocument(
     val membersCount: Int = 1
 )
 
-@Document(indexName = "acadyk_startups")
+@Document(indexName = "acadyk_startups", createIndex = false)
 data class StartupSearchDocument(
     @Id
     val id: String,
@@ -174,7 +174,7 @@ data class StartupSearchDocument(
     val industry: String = "Technology"
 )
 
-@Document(indexName = "acadyk_companies")
+@Document(indexName = "acadyk_companies", createIndex = false)
 data class CompanySearchDocument(
     @Id
     val id: String,

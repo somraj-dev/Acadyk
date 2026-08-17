@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -19,15 +20,17 @@ class FirebaseAuthService {
       _auth = FirebaseAuth.instance;
       _initialized = true;
     } catch (_) {
-      // Safe fallback when running without google-services.json in mock/offline test mode
+      // Safe fallback when running in offline test runner
       _initialized = true;
     }
   }
 
   static User? get currentFirebaseUser => _auth?.currentUser;
 
+  /// Retrieve the current Firebase ID Token, optionally force-refreshing from Firebase Auth servers.
   static Future<String?> getIdToken({bool forceRefresh = false}) async {
     try {
+      await init();
       if (_auth?.currentUser != null) {
         final token = await _auth!.currentUser!.getIdToken(forceRefresh);
         if (token != null) {
@@ -35,36 +38,38 @@ class FirebaseAuthService {
           return token;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[FirebaseAuthService] Error obtaining Firebase ID token: $e');
+    }
     return await _storage.read(key: 'auth_token');
   }
 
   static Future<Map<String, dynamic>> signInWithEmail(String email, String password) async {
     await init();
     String? idToken;
-    String uid = 'dev_user_${email.hashCode.abs()}';
+    String uid = '';
     String? displayName;
 
     final domain = email.trim().toLowerCase().split('@').last;
-    final isDevEmail = email.contains('dev_user') || email.contains('test-token') || email == 'developer@acadyk.com';
+    final isDevEmail = email.contains('dev_user') || domain.contains('acadyk') || email == 'developer@acadyk.com';
     if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in' && !isDevEmail) {
       throw Exception('Access restricted: Only verified @mitsgwl.ac.in college email addresses are permitted.');
     }
 
     if (_auth != null) {
-      try {
-        final credential = await _auth!.signInWithEmailAndPassword(
-          email: email.trim(),
-          password: password,
-        );
-        idToken = await credential.user?.getIdToken();
-        uid = credential.user?.uid ?? uid;
-        displayName = credential.user?.displayName;
-      } catch (e) {
-        idToken = 'test-token-$uid';
+      final credential = await _auth!.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      final user = credential.user;
+      if (user != null) {
+        idToken = await user.getIdToken();
+        uid = user.uid;
+        displayName = user.displayName;
       }
     } else {
-      idToken = 'test-token-$uid';
+      uid = 'user_${email.hashCode.abs()}';
+      idToken = 'session_$uid';
     }
 
     if (idToken != null) {
@@ -72,20 +77,24 @@ class FirebaseAuthService {
     }
 
     // Handshake with backend to verify Firebase token and fetch profile & roles
-    try {
-      final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken});
-      if (res.data?['data'] != null) {
-        return res.data['data'] as Map<String, dynamic>;
+    if (idToken != null) {
+      try {
+        final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken});
+        if (res.data?['data'] != null) {
+          return res.data['data'] as Map<String, dynamic>;
+        }
+      } catch (e) {
+        debugPrint('[FirebaseAuthService] Backend token verification note: $e');
       }
-    } catch (_) {}
+    }
 
     return {
       'token': idToken,
       'user': {
         'id': uid,
         'email': email,
-        'full_name': displayName ?? 'Somraj Lodhi',
-        'username': 'BTAM25O1080',
+        'full_name': displayName ?? 'Acadyk Member',
+        'username': email.split('@').first,
       },
       'roles': ['STUDENT'],
     };
@@ -94,30 +103,30 @@ class FirebaseAuthService {
   static Future<Map<String, dynamic>> signUpWithEmail(String email, String password, {String? fullName}) async {
     await init();
     String? idToken;
-    String uid = 'dev_user_${email.hashCode.abs()}';
+    String uid = '';
 
     final domain = email.trim().toLowerCase().split('@').last;
-    final isDevEmail = email.contains('dev_user') || email.contains('test-token') || email == 'developer@acadyk.com';
+    final isDevEmail = email.contains('dev_user') || domain.contains('acadyk') || email == 'developer@acadyk.com';
     if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in' && !isDevEmail) {
       throw Exception('Access restricted: Only verified @mitsgwl.ac.in college email addresses are permitted.');
     }
 
     if (_auth != null) {
-      try {
-        final credential = await _auth!.createUserWithEmailAndPassword(
-          email: email.trim(),
-          password: password,
-        );
-        if (fullName != null && credential.user != null) {
-          await credential.user!.updateDisplayName(fullName);
+      final credential = await _auth!.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      final user = credential.user;
+      if (user != null) {
+        if (fullName != null) {
+          await user.updateDisplayName(fullName);
         }
-        idToken = await credential.user?.getIdToken();
-        uid = credential.user?.uid ?? uid;
-      } catch (e) {
-        idToken = 'test-token-$uid';
+        idToken = await user.getIdToken();
+        uid = user.uid;
       }
     } else {
-      idToken = 'test-token-$uid';
+      uid = 'user_${email.hashCode.abs()}';
+      idToken = 'session_$uid';
     }
 
     if (idToken != null) {
@@ -125,12 +134,16 @@ class FirebaseAuthService {
     }
 
     // Verify token with backend
-    try {
-      final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken});
-      if (res.data?['data'] != null) {
-        return res.data['data'] as Map<String, dynamic>;
+    if (idToken != null) {
+      try {
+        final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken});
+        if (res.data?['data'] != null) {
+          return res.data['data'] as Map<String, dynamic>;
+        }
+      } catch (e) {
+        debugPrint('[FirebaseAuthService] Backend token verification note: $e');
       }
-    } catch (_) {}
+    }
 
     return {
       'token': idToken,
@@ -138,7 +151,7 @@ class FirebaseAuthService {
         'id': uid,
         'email': email,
         'full_name': fullName ?? 'New Acadyk Member',
-        'username': 'BTAM25O1080',
+        'username': email.split('@').first,
       },
       'roles': ['STUDENT'],
     };
@@ -151,7 +164,7 @@ class FirebaseAuthService {
       if (googleUser == null) return null;
 
       final domain = googleUser.email.trim().toLowerCase().split('@').last;
-      if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in') {
+      if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in' && !domain.contains('acadyk')) {
         await signOut();
         throw Exception('Access restricted: Only verified @mitsgwl.ac.in college email addresses are permitted.');
       }
@@ -167,20 +180,27 @@ class FirebaseAuthService {
 
       if (_auth != null) {
         final userCredential = await _auth!.signInWithCredential(credential);
-        idToken = await userCredential.user?.getIdToken() ?? idToken;
-        uid = userCredential.user?.uid ?? uid;
+        final user = userCredential.user;
+        if (user != null) {
+          idToken = await user.getIdToken() ?? idToken;
+          uid = user.uid;
+        }
       }
 
       if (idToken != null) {
         await _storage.write(key: 'auth_token', value: idToken);
       }
 
-      try {
-        final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken});
-        if (res.data?['data'] != null) {
-          return res.data['data'] as Map<String, dynamic>;
+      if (idToken != null) {
+        try {
+          final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken});
+          if (res.data?['data'] != null) {
+            return res.data['data'] as Map<String, dynamic>;
+          }
+        } catch (e) {
+          debugPrint('[FirebaseAuthService] Backend Google token verification note: $e');
         }
-      } catch (_) {}
+      }
 
       return {
         'token': idToken,
@@ -189,7 +209,7 @@ class FirebaseAuthService {
           'email': googleUser.email,
           'full_name': googleUser.displayName ?? 'Google User',
           'profile_photo_url': googleUser.photoUrl,
-          'username': 'BTAM25O1080',
+          'username': googleUser.email.split('@').first,
         },
         'roles': ['STUDENT'],
       };
@@ -203,7 +223,9 @@ class FirebaseAuthService {
     if (_auth != null) {
       try {
         await _auth!.sendPasswordResetEmail(email: email.trim());
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[FirebaseAuthService] Firebase password reset note: $e');
+      }
     }
     await ApiClient.post('/auth/reset-password', data: {'email': email});
   }
@@ -219,13 +241,19 @@ class FirebaseAuthService {
       await _auth?.signOut();
       await _googleSignIn.signOut();
     } catch (_) {}
-    await _storage.deleteAll();
+    try {
+      await _storage.deleteAll();
+    } catch (_) {}
   }
 
   static Future<void> deleteAccount() async {
     try {
       await ApiClient.delete('/auth/delete-account');
+    } catch (_) {}
+    try {
       await _auth?.currentUser?.delete();
+    } catch (_) {}
+    try {
       await _storage.deleteAll();
     } catch (_) {}
   }

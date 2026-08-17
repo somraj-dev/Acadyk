@@ -61,13 +61,11 @@ class MessageService {
         final resData = response.data;
         final data = (resData is Map && resData.containsKey('data'))
             ? resData['data'] as Map<String, dynamic>?
-            : response.data as Map<String, dynamic>?;
-
+            : (response.data is Map<String, dynamic> ? response.data as Map<String, dynamic> : null);
         WebSocketService.send({
-          'action': 'message',
-          'conversationId': conversationId,
           'content': content,
-        });
+          'messageType': 'TEXT',
+        }, destination: '/app/chat.send/$conversationId');
         return data;
       }
     } catch (e) {

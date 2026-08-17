@@ -1,5 +1,8 @@
 package com.acadyk.modules.events.entity
 
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
+
 import com.acadyk.modules.profiles.entity.ProfileEntity
 import jakarta.persistence.*
 import java.time.Instant
@@ -19,6 +22,7 @@ data class EventEntity(
     var title: String,
 
     @Column(nullable = false, unique = true)
+    @JdbcTypeCode(SqlTypes.OTHER)
     var slug: String,
 
     @Column(columnDefinition = "TEXT")

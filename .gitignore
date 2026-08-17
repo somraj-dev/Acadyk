@@ -10,7 +10,7 @@
 .history
 .svn/
 .swiftpm/
-.gradle/
+**/.gradle/
 **/build/
 
 # Environment secrets

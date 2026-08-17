@@ -4,9 +4,10 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../auth/firebase_auth_service.dart';
+import '../../app/config/app_config.dart';
 
 class WebSocketService {
-  static const String _defaultWsUrl = 'ws://localhost:8080/ws';
+  static String get _defaultWsUrl => AppConfig.wsBaseUrl;
   static WebSocketChannel? _channel;
   static bool _isConnected = false;
   static bool _isConnecting = false;
@@ -20,6 +21,7 @@ class WebSocketService {
 
   static bool get isConnected => _isConnected;
   static Stream<dynamic> get stream => _globalController.stream;
+  static Stream<dynamic> get messagesStream => _globalController.stream;
 
   /// Connect to Spring Boot WebSocket STOMP endpoint
   static Future<void> connect([String? token]) async {
@@ -62,13 +64,14 @@ class WebSocketService {
   static void _onMessageReceived(dynamic rawData) {
     final messageStr = rawData.toString();
 
-    // Check for STOMP frame
+    // Check for STOMP CONNECTED frame
     if (messageStr.startsWith('CONNECTED')) {
       _isConnected = true;
-      debugPrint('[WebSocket] STOMP session connected.');
+      debugPrint('[WebSocket] STOMP session established at $_defaultWsUrl');
       return;
     }
 
+    // Check for STOMP MESSAGE frame
     if (messageStr.startsWith('MESSAGE')) {
       try {
         final bodyIndex = messageStr.indexOf('\n\n');
@@ -115,7 +118,7 @@ class WebSocketService {
     headers.writeln('CONNECT');
     headers.writeln('accept-version:1.2,1.1,1.0');
     headers.writeln('heart-beat:10000,10000');
-    if (authToken != null) {
+    if (authToken != null && authToken.isNotEmpty) {
       headers.writeln('Authorization:Bearer $authToken');
     }
     headers.writeln();
@@ -138,8 +141,10 @@ class WebSocketService {
   }
 
   /// Subscribe to a specific conversation or notification topic
-  static void subscribe(String destination, Function(dynamic) onData) {
-    _topicSubscriptions.putIfAbsent(destination, () => []).add(onData);
+  static void subscribe(String destination, [Function(dynamic)? onData]) {
+    if (onData != null) {
+      _topicSubscriptions.putIfAbsent(destination, () => []).add(onData);
+    }
     if (_isConnected) {
       _sendStompSubscribe(destination);
     }
@@ -151,15 +156,19 @@ class WebSocketService {
   }
 
   /// Send message over WebSocket / STOMP
-  static void send(Map<String, dynamic> payload, {String destination = '/app/chat.send'}) {
+  static void send(Map<String, dynamic> payload, {String? destination}) {
+    final dest = destination ?? (payload['conversationId'] != null
+        ? '/app/chat.send/${payload['conversationId']}'
+        : '/app/chat.send');
+
     if (!_isConnected) {
-      _offlineMessageQueue.add(payload);
+      _offlineMessageQueue.add({...payload, '_destination': dest});
       return;
     }
 
     final frame = StringBuffer();
     frame.writeln('SEND');
-    frame.writeln('destination:$destination');
+    frame.writeln('destination:$dest');
     frame.writeln('content-type:application/json');
     frame.writeln();
     frame.write(jsonEncode(payload));
@@ -168,14 +177,15 @@ class WebSocketService {
     try {
       _channel?.sink.add(frame.toString());
     } catch (_) {
-      _offlineMessageQueue.add(payload);
+      _offlineMessageQueue.add({...payload, '_destination': dest});
     }
   }
 
   static void _flushOfflineQueue() {
     while (_offlineMessageQueue.isNotEmpty && _isConnected) {
       final msg = _offlineMessageQueue.removeAt(0);
-      send(msg);
+      final dest = msg.remove('_destination') as String?;
+      send(msg, destination: dest);
     }
   }
 
