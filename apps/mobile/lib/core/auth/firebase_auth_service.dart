@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../firebase_options.dart';
 import '../network/api_client.dart';
 
 class FirebaseAuthService {
@@ -15,7 +16,9 @@ class FirebaseAuthService {
     if (_initialized) return;
     try {
       if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp();
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
       }
       _auth = FirebaseAuth.instance;
       _initialized = true;
@@ -49,12 +52,6 @@ class FirebaseAuthService {
     String? idToken;
     String uid = '';
     String? displayName;
-
-    final domain = email.trim().toLowerCase().split('@').last;
-    final isDevEmail = email.contains('dev_user') || domain.contains('acadyk') || email == 'developer@acadyk.com';
-    if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in' && !isDevEmail) {
-      throw Exception('Access restricted: Only verified @mitsgwl.ac.in college email addresses are permitted.');
-    }
 
     if (_auth != null) {
       final credential = await _auth!.signInWithEmailAndPassword(
@@ -105,12 +102,6 @@ class FirebaseAuthService {
     String? idToken;
     String uid = '';
 
-    final domain = email.trim().toLowerCase().split('@').last;
-    final isDevEmail = email.contains('dev_user') || domain.contains('acadyk') || email == 'developer@acadyk.com';
-    if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in' && !isDevEmail) {
-      throw Exception('Access restricted: Only verified @mitsgwl.ac.in college email addresses are permitted.');
-    }
-
     if (_auth != null) {
       final credential = await _auth!.createUserWithEmailAndPassword(
         email: email.trim(),
@@ -158,15 +149,19 @@ class FirebaseAuthService {
   }
 
   static Future<Map<String, dynamic>?> signInWithGoogle() async {
+    if (kIsWeb) {
+      throw Exception('Google Sign-In is not yet supported on web. Please use an Android or iOS device.');
+    }
     await init();
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
 
+      // Only allow MITS-DU college email accounts
       final domain = googleUser.email.trim().toLowerCase().split('@').last;
-      if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in' && !domain.contains('acadyk')) {
-        await signOut();
-        throw Exception('Access restricted: Only verified @mitsgwl.ac.in college email addresses are permitted.');
+      if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in') {
+        await _googleSignIn.signOut();
+        throw Exception('Please select your MITS-DU college email (@mitsgwl.ac.in) to sign in.');
       }
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;

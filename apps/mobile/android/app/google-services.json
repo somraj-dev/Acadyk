@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "205477692906",
+    "project_id": "acadyk-54e1b",
+    "storage_bucket": "acadyk-54e1b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205477692906:android:ce5be2a07a23fe4d4fde93",
+        "android_client_info": {
+          "package_name": "com.acadyk.acadyk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "205477692906-0s12t7crl6fubk1d6ot7s9nfa39cfbu4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCEOKCZW1tYgendnKOGwpUj1uYqDP9Om_8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "205477692906-0s12t7crl6fubk1d6ot7s9nfa39cfbu4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:acadyk/common/providers/auth_provider.dart';
@@ -222,11 +223,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                     }
                   } else {
-                    // OTP or Direct bypass for instant seamless sign in
-                    authProvider.bypassSignIn();
-                    try {
-                      Provider.of<ThemeProvider>(context, listen: false).setThemeMode(ThemeMode.light);
-                    } catch (_) {}
+                    // OTP login not yet implemented
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('OTP login coming soon. Please use password or Google sign-in.'),
+                        ),
+                      );
+                    }
                   }
                 } catch (e) {
                   if (mounted) {
@@ -318,11 +322,32 @@ class _LoginScreenState extends State<LoginScreen> {
                   _buildSocialButton(
                     logo: const MitsDuLogo(size: 22.0),
                     text: 'Continue with MITS-DU',
-                    onTap: () {
-                      Provider.of<AuthProvider>(context, listen: false).bypassSignIn();
+                    onTap: () async {
+                      setState(() { _isLoading = true; });
                       try {
-                        Provider.of<ThemeProvider>(context, listen: false).setThemeMode(ThemeMode.light);
-                      } catch (_) {}
+                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                        final success = await authProvider.signInWithGoogle();
+                        if (mounted && success) {
+                          try {
+                            Provider.of<ThemeProvider>(context, listen: false).setThemeMode(ThemeMode.light);
+                          } catch (_) {}
+                        } else if (mounted && !success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Google Sign-In was cancelled or failed.')),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: ${e.toString()}'),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() { _isLoading = false; });
+                      }
                     },
                   ),
                   const SizedBox(height: 20.0),
@@ -575,6 +600,30 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24.0),
                   _buildFooter(),
+                  if (kDebugMode) ...[
+                    const SizedBox(height: 16.0),
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          Provider.of<AuthProvider>(context, listen: false).bypassSignIn();
+                          try {
+                            Provider.of<ThemeProvider>(context, listen: false).setThemeMode(ThemeMode.light);
+                          } catch (_) {}
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                        ),
+                        child: const Text(
+                          '[DEV] Bypass Login',
+                          style: TextStyle(
+                            color: Color(0xFF9CA3AF),
+                            fontSize: 11.0,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12.0),
                 ],
               ),
