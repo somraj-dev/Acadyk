@@ -29,28 +29,31 @@ class WebSocketService {
     try {
       final authToken = token ?? await FirebaseAuthService.getIdToken();
       final uri = Uri.parse(_defaultWsUrl);
-      _channel = WebSocketChannel.connect(uri);
+      final channel = WebSocketChannel.connect(uri);
+      _channel = channel;
 
-      // Send STOMP CONNECT frame
-      _sendStompConnect(authToken);
+      // Handle channel readiness and connection failures gracefully
+      channel.ready.then((_) {
+        _isConnected = true;
+        _isConnecting = false;
+        _reconnectAttempts = 0;
+        _sendStompConnect(authToken);
+        _startHeartbeat();
+        _flushOfflineQueue();
 
-      _channel?.stream.listen(
+        for (final topic in _topicSubscriptions.keys) {
+          _sendStompSubscribe(topic);
+        }
+      }).catchError((err) {
+        _handleError(err);
+      });
+
+      channel.stream.listen(
         _onMessageReceived,
-        onError: _handleError,
-        onDone: _handleDone,
-        cancelOnError: false,
+        onError: (err) => _handleError(err),
+        onDone: () => _handleDone(),
+        cancelOnError: true,
       );
-
-      _isConnected = true;
-      _isConnecting = false;
-      _reconnectAttempts = 0;
-      _startHeartbeat();
-      _flushOfflineQueue();
-
-      // Re-establish active subscriptions
-      for (final topic in _topicSubscriptions.keys) {
-        _sendStompSubscribe(topic);
-      }
     } catch (e) {
       _handleError(e);
     }
@@ -117,7 +120,9 @@ class WebSocketService {
     }
     headers.writeln();
     headers.write('\x00');
-    _channel?.sink.add(headers.toString());
+    try {
+      _channel?.sink.add(headers.toString());
+    } catch (_) {}
   }
 
   static void _sendStompSubscribe(String destination) {
@@ -127,7 +132,9 @@ class WebSocketService {
     subFrame.writeln('destination:$destination');
     subFrame.writeln();
     subFrame.write('\x00');
-    _channel?.sink.add(subFrame.toString());
+    try {
+      _channel?.sink.add(subFrame.toString());
+    } catch (_) {}
   }
 
   /// Subscribe to a specific conversation or notification topic
@@ -174,20 +181,20 @@ class WebSocketService {
 
   static void _startHeartbeat() {
     _heartbeatTimer?.cancel();
-    _heartbeatTimer = Timer.periodic(Duration(seconds: 15), (_) {
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       if (_isConnected) {
-        _channel?.sink.add('\n');
+        try {
+          _channel?.sink.add('\n');
+        } catch (_) {}
       }
     });
   }
 
   static void _handleError(dynamic error) {
-    debugPrint('[WebSocket Error] $error');
     _scheduleReconnect();
   }
 
   static void _handleDone() {
-    debugPrint('[WebSocket Done] Connection closed.');
     _scheduleReconnect();
   }
 
@@ -198,10 +205,14 @@ class WebSocketService {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
 
+    if (_reconnectAttempts >= 3) {
+      // Backend is offline; stop fast retry loop to avoid spamming console
+      return;
+    }
+
     _reconnectAttempts++;
     final delaySeconds = min(pow(2, _reconnectAttempts).toInt(), 30);
     final safeDelay = (delaySeconds > 0 && !delaySeconds.isNaN) ? delaySeconds : 5;
-    debugPrint('[WebSocket] Scheduling reconnection in $safeDelay seconds (attempt $_reconnectAttempts)');
 
     _reconnectTimer = Timer(Duration(seconds: safeDelay), () {
       connect();
@@ -213,6 +224,8 @@ class WebSocketService {
     _reconnectTimer?.cancel();
     _isConnected = false;
     _isConnecting = false;
-    _channel?.sink.close();
+    try {
+      _channel?.sink.close();
+    } catch (_) {}
   }
 }

@@ -92,6 +92,10 @@ class ConnectionService(
 
     fun toggleFollow(targetUserId: String): FollowStatusResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
+        if (currentUserId == targetUserId) {
+            throw BadRequestException("Users cannot follow themselves")
+        }
+
         val existing = followRepository.findByFollowerIdAndFollowingId(currentUserId, targetUserId)
 
         val targetUser = profileRepository.findById(targetUserId)

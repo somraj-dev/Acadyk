@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'create_quiz_poll_screen.dart';
 import 'create_opportunity_screen.dart';
+import 'create_team_screen.dart';
 
 class SelectOpportunityScreen extends StatelessWidget {
   const SelectOpportunityScreen({super.key});
@@ -26,6 +27,13 @@ class SelectOpportunityScreen extends StatelessWidget {
         'icon': Icons.code, // displays as a code terminal bracket style
         'iconColor': const Color(0xFF10B981),
         'bgColor': const Color(0xFFECFDF5),
+      },
+      {
+        'title': 'Create Team',
+        'subtitle': 'Build and invite members for hackathons & competitions',
+        'icon': Icons.groups_outlined,
+        'iconColor': const Color(0xFF0284C7),
+        'bgColor': const Color(0xFFE0F2FE),
       },
       {
         'title': 'Webinars, Conferences & Workshops',
@@ -83,7 +91,7 @@ class SelectOpportunityScreen extends StatelessWidget {
                 border: Border.all(color: borderCol, width: 1),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -93,18 +101,25 @@ class SelectOpportunityScreen extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    if (index == 0) {
+                    if (item['title'] == 'Quizzes') {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const CreateQuizPollScreen(),
                         ),
                       );
-                    } else if (index == 1) {
+                    } else if (item['title'] == 'Hackathons & Coding Challenges') {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const CreateOpportunityScreen(),
+                        ),
+                      );
+                    } else if (item['title'] == 'Create Team') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateTeamScreen(),
                         ),
                       );
                     } else {

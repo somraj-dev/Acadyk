@@ -4,7 +4,7 @@ import 'dart:math';
 import '../services/profile_manager.dart';
 import 'about_account_screen.dart';
 import 'your_account_screen.dart';
-import '../../../chat/presentation/screens/direct_message_screen.dart';
+import 'settings_edit_profile_screen.dart';
 import 'edit_status_screen.dart';
 import 'connections_list_screen.dart';
 import '../../../feed/presentation/screens/post_detail_screen.dart';
@@ -277,15 +277,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =============================================================
   Widget _buildProfileHeaderCard() {
     final String name = _profileName ?? widget.userData?['name'] ?? widget.userData?['full_name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'MITS Gwalior');
+    final String currentAuthUser = AuthService.currentUser?.username ?? '';
+    final String baseUsername = currentAuthUser.isNotEmpty ? currentAuthUser : ProfileManager.username;
     final String username = widget.userData != null
-        ? '@${(widget.userData!['username'] ?? widget.userData!['handle'] ?? name.replaceAll(' ', '').replaceAll('-', '').replaceAll('.', '')).toString().toLowerCase().replaceAll('@', '')}'
-        : (widget.isOwnProfile ? '@${ProfileManager.name.replaceAll(' ', '').toLowerCase()}' : '@mitsgwalior');
+        ? '@${(widget.userData!['username'] ?? widget.userData!['handle'] ?? 'somrajlodhi').toString().toLowerCase().replaceAll('@', '')}'
+        : (widget.isOwnProfile ? '@${baseUsername.replaceAll(' ', '').toLowerCase()}' : '@mitsgwalior');
 
     final String bio = _profileBio ?? widget.userData?['headline'] ?? widget.userData?['bio'] ?? (widget.isOwnProfile
         ? ProfileManager.bio
         : 'Madhav Institute of Technology & Science, Gwalior (M.P.) • Premier Technical Institution Est. 1957');
 
-    final String location = _profileLocation ?? widget.userData?['location'] ?? (widget.isOwnProfile ? ProfileManager.location : 'Gwalior, India');
     final String avatar = widget.userData != null
         ? (widget.userData!['avatar'] ?? widget.userData!['avatarUrl'] ?? '')
         : (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/mits_logo.png');
@@ -473,63 +474,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-          // Action Buttons Row (Right Aligned: Options + Mail + Follow / Edit Profile)
+          // Action Buttons Row (Right Aligned: Follow / Edit Profile)
           Padding(
             padding: const EdgeInsets.only(right: 20.0, top: 10.0, bottom: 4.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (!widget.isOwnProfile) ...[
-                  GestureDetector(
-                    onTap: () => _showProfileOptionsBottomSheet(context),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
-                      ),
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.more_horiz, size: 20, color: Color(0xFF0F172A)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                ],
-
-                // Mail button
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DirectMessageScreen(
-                          name: name,
-                          handle: username,
-                          avatarColor: const Color(0xFF6366F1),
-                          avatarIcon: Icons.person,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(CupertinoIcons.mail, size: 20, color: Color(0xFF0F172A)),
-                  ),
-                ),
-                const SizedBox(width: 10),
-
                 // Edit Profile / Follow button
                 if (widget.isOwnProfile)
                   GestureDetector(
-                    onTap: () => _showEditProfileDialog(context, name, bio, location),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SettingsEditProfileScreen(),
+                        ),
+                      );
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
@@ -2360,81 +2321,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           fontSize: 32,
         ),
       ),
-    );
-  }
-
-  void _showEditProfileDialog(BuildContext context, String currentName, String currentBio, String currentLocation) {
-    final nameCtrl = TextEditingController(text: currentName);
-    final bioCtrl = TextEditingController(text: currentBio);
-    final locCtrl = TextEditingController(text: currentLocation);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Profile'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Full Name'),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: bioCtrl,
-                  decoration: const InputDecoration(labelText: 'Bio'),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: locCtrl,
-                  decoration: const InputDecoration(labelText: 'Location'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final newName = nameCtrl.text.trim();
-                final newBio = bioCtrl.text.trim();
-                final newLoc = locCtrl.text.trim();
-
-                setState(() {
-                  _profileName = newName;
-                  _profileBio = newBio;
-                  _profileLocation = newLoc;
-                });
-
-                Navigator.pop(context);
-
-                try {
-                  final currentUser = AuthService.currentUser;
-                  if (currentUser != null) {
-                    await ProfileService.updateProfile(currentUser.id, {
-                      'full_name': newName,
-                      'bio': newBio,
-                      'location': newLoc,
-                    });
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Profile updated successfully!')),
-                      );
-                    }
-                  }
-                } catch (_) {}
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
     );
   }
 

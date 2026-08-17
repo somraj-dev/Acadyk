@@ -4,7 +4,8 @@ import '../../../../common/services/auth_service.dart';
 
 class ProfileManager {
   static String name = 'Somraj Lodhi';
-  static String username = 'BTAM25O1080';
+  static String username = 'somrajlodhi';
+  static String enrollmentNumber = 'BTAM25O1080';
   static String bio = 'Founder | Thinker | Quant Engineer. Covering worldwide action. DM for collabs.';
   static String location = 'India';
   static String website = 'http://www.quantaforze.com';

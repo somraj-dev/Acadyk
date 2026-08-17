@@ -1520,6 +1520,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       _likesCountOverride[postId] = likesCount + 1;
                     }
                   });
+                  PostService.toggleLike(postId, isLiked);
                 },
                 child: Icon(
                   isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
@@ -1566,6 +1567,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               setState(() {
                 _bookmarkedPosts[postId] = !isBookmarked;
               });
+              PostService.toggleBookmark(postId, isBookmarked);
             },
             child: Icon(
               isBookmarked ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
@@ -1991,6 +1993,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           }
                           _commentInputCtrl.clear();
                         });
+                        PostService.addComment(postId, text);
                       }
                     },
                   ),
@@ -2040,6 +2043,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       }
                       _commentInputCtrl.clear();
                     });
+                    PostService.addComment(postId, text);
                   }
                 },
                 child: const Icon(Icons.send, color: Color(0xFF0A66C2), size: 22),
@@ -2747,7 +2751,29 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     );
   }
 
-  Widget _buildFollowButton(String accountId) {
+  Widget _buildFollowButton(String accountId, {String? authorName, String? authorId}) {
+    final currentUserName = ProfileManager.name.isNotEmpty
+        ? ProfileManager.name
+        : (AuthService.currentUser?.fullName ?? 'Somraj Lodhi');
+    final currentUserId = AuthService.currentUser?.id;
+    final currentUsername = ProfileManager.username.isNotEmpty
+        ? ProfileManager.username
+        : (AuthService.currentUser?.username ?? 'BTAM25O1080');
+
+    // Prevent users from following themselves on any of their posts
+    final bool isSelf = (authorName != null && authorName.trim().toLowerCase() == currentUserName.trim().toLowerCase()) ||
+        (authorName != null && authorName.trim().toLowerCase() == currentUsername.trim().toLowerCase()) ||
+        (authorId != null && currentUserId != null && authorId == currentUserId) ||
+        (accountId == currentUserId) ||
+        (accountId == currentUserName) ||
+        (accountId == currentUsername) ||
+        (accountId == 'self') ||
+        (authorName == 'Somraj Lodhi' && (currentUserName == 'Somraj Lodhi' || AuthService.currentUser?.fullName == 'Somraj Lodhi'));
+
+    if (isSelf) {
+      return const SizedBox.shrink();
+    }
+
     final isFollowed = _followedAccounts[accountId] ?? false;
     final isNewlyFollowed = _newlyFollowedInSession[accountId] ?? false;
 
@@ -2766,6 +2792,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             _newlyFollowedInSession[accountId] = true;
           }
         });
+        FollowService.toggleFollow(accountId, isFollowed);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -3052,7 +3079,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     ),
                   ),
                 ),
-                _buildFollowButton(postId),
+                _buildFollowButton(
+                  post['author']?['id']?.toString() ?? post['authorId']?.toString() ?? authorName,
+                  authorName: authorName,
+                  authorId: post['author']?['id']?.toString() ?? post['authorId']?.toString(),
+                ),
                 const SizedBox(width: 4),
                 GestureDetector(
                   onTap: () => _showPostOptionsBottomSheet(

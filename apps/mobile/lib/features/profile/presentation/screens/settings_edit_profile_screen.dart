@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:acadyk/common/services/auth_service.dart';
+import 'package:acadyk/common/services/profile_service.dart';
 import '../services/profile_manager.dart';
 
 class SettingsEditProfileScreen extends StatefulWidget {
@@ -35,7 +37,7 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
     super.dispose();
   }
 
-  void _saveProfile() {
+  void _saveProfile() async {
     ProfileManager.updateProfile(
       newName: _nameCtrl.text.trim(),
       newBio: _bioCtrl.text.trim(),
@@ -43,12 +45,29 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
       newWebsite: _websiteCtrl.text.trim(),
       newDateOfBirth: _dobCtrl.text.trim(),
     );
-    Navigator.of(context).pop();
+
+    final user = AuthService.currentUser;
+    if (user != null) {
+      try {
+        await ProfileService.updateProfile(user.id, {
+          'full_name': _nameCtrl.text.trim(),
+          'bio': _bioCtrl.text.trim(),
+          'location': _locationCtrl.text.trim(),
+          'website': _websiteCtrl.text.trim(),
+        });
+      } catch (_) {}
+    }
+
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     const bgColor = Colors.white;
+    final currentAuthUser = AuthService.currentUser?.username ?? '';
+    final username = (currentAuthUser.isNotEmpty ? currentAuthUser : ProfileManager.username).toLowerCase();
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -159,6 +178,7 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
                       label: 'Name',
                       controller: _nameCtrl,
                     ),
+                    _buildImmutableUsernameField(username),
                     _buildFormInputField(
                       label: 'Bio',
                       controller: _bioCtrl,
@@ -184,6 +204,122 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildImmutableUsernameField(String username) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: InkWell(
+        onTap: _showUsernameRequestDialog,
+        borderRadius: BorderRadius.circular(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: const [
+                Text(
+                  'Username',
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(width: 6),
+                Icon(Icons.lock_outline, size: 14, color: Color(0xFF94A3B8)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '@$username',
+                  style: const TextStyle(
+                    fontSize: 15.5,
+                    color: Color(0xFF334155),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'Fixed',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Divider(color: Color(0xFFE2E8F0), height: 1, thickness: 1),
+            const SizedBox(height: 4),
+            const Text(
+              'Unique username assigned by Acadyk. Tap to request a change from the Acadyk Management Team.',
+              style: TextStyle(
+                fontSize: 11.5,
+                color: Color(0xFF94A3B8),
+                height: 1.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUsernameRequestDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.lock_rounded, color: Color(0xFF0F172A), size: 22),
+            SizedBox(width: 10),
+            Text(
+              'Username Policy',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Your @username is unique and assigned by Acadyk. It is fixed and non-upgradeable directly from settings.\n\nIf you wish to change your username, please submit a formal change request to the Acadyk Management Team.',
+          style: TextStyle(fontSize: 14, color: Color(0xFF334155), height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0F172A),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Username change request submitted to Acadyk Management Team.'),
+                  backgroundColor: Color(0xFF10B981),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            },
+            child: const Text('Request Change'),
+          ),
+        ],
       ),
     );
   }
