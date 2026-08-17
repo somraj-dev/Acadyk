@@ -23,6 +23,7 @@ import '../../../community/presentation/screens/discover_communities_screen.dart
 import '../../../profile/presentation/screens/space_screen.dart';
 import '../../../profile/presentation/screens/settings_activity_screen.dart';
 import '../../../profile/presentation/screens/feedback_form_screen.dart';
+import '../../../profile/presentation/screens/student_id_card_screen.dart';
 import '../../../profile/presentation/services/profile_manager.dart';
 import '../../../../common/services/auth_service.dart';
 import '../../../../common/services/follow_service.dart';
@@ -2686,6 +2687,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     'Accessibility',
                     onTap: () {
                       Navigator.of(context).pop();
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const StudentIdCardScreen(),
+                      ));
                     },
                   ),
                 ],
