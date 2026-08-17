@@ -8,7 +8,10 @@ import '../network/api_client.dart';
 
 class FirebaseAuthService {
   static FirebaseAuth? _auth;
-  static final GoogleSignIn _googleSignIn = GoogleSignIn();
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    serverClientId: '205477692906-0s12t7crl6fubk1d6ot7s9nfa39cfbu4.apps.googleusercontent.com',
+  );
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static bool _initialized = false;
 

@@ -175,33 +175,44 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             Expanded(
                               child: Container(
                                 color: const Color(0xFFF3F2EF),
-                                child: ListView(
-                                  physics: const AlwaysScrollableScrollPhysics(),
-                                  children: [
-                                    if (_isLoading)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 40),
-                                        alignment: Alignment.center,
-                                        child: Column(
-                                          children: [
-                                            const CircularProgressIndicator(),
-                                            const SizedBox(height: 16),
-                                            Text(
-                                              'Loading feed...',
-                                              style: TextStyle(color: textSub),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    else ...[
-                                      if (_feedPosts.isNotEmpty)
-                                        ..._feedPosts.map((post) => _buildMockPostCard(post)),
-                                      // Mock posts from MITS Gwalior
-                                      ...MockFeedData.mockPosts.map((post) => _buildMockPostCard(post)),
-                                    ],
+                                child: RefreshIndicator(
+                                  onRefresh: () async {
+                                    final posts = await _fetchPostsFromBackend();
+                                    if (mounted) {
+                                      setState(() {
+                                        _feedPosts = posts;
+                                        _isLoading = false;
+                                      });
+                                    }
+                                  },
+                                  child: ListView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      if (_isLoading)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 40),
+                                          alignment: Alignment.center,
+                                          child: Column(
+                                            children: [
+                                              const CircularProgressIndicator(),
+                                              const SizedBox(height: 16),
+                                              Text(
+                                                'Loading feed...',
+                                                style: TextStyle(color: textSub),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      else ...[
+                                        if (_feedPosts.isNotEmpty)
+                                          ..._feedPosts.map((post) => _buildMockPostCard(post)),
+                                        // Mock posts from MITS Gwalior
+                                        ...MockFeedData.mockPosts.map((post) => _buildMockPostCard(post)),
+                                      ],
 
-                                    const SizedBox(height: 16.0),
-                                  ],
+                                      const SizedBox(height: 16.0),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
