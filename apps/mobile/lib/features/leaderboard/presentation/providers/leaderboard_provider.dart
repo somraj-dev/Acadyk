@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
-import '../../profile/domain/entities/profile_entity.dart';
-import '../../profile/data/models/profile_dto.dart';
+import '../../../profile/domain/entities/profile_entity.dart';
+import '../../../profile/data/repositories/profile_repository_impl.dart';
 
 class LeaderboardItem {
   final int rank;

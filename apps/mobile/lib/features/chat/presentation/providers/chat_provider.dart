@@ -74,29 +74,44 @@ abstract class ChatRepository {
 class ChatRepositoryImpl implements ChatRepository {
   @override
   Future<List<ConversationEntity>> getConversations() async {
-    final response = await ApiClient.get('/chat/conversations');
-    if (response.data is List) {
-      return (response.data as List).map((e) => ConversationEntity.fromJson(e)).toList();
+    final response = await ApiClient.get('/conversations');
+    final resData = response.data;
+    final list = (resData is Map && resData.containsKey('data'))
+        ? resData['data']
+        : resData;
+    if (list is List) {
+      return list.map((e) => ConversationEntity.fromJson(e as Map<String, dynamic>)).toList();
     }
     return [];
   }
 
   @override
   Future<List<ChatMessageEntity>> getMessages(String conversationId) async {
-    final response = await ApiClient.get('/chat/conversations/$conversationId/messages');
-    if (response.data is List) {
-      return (response.data as List).map((e) => ChatMessageEntity.fromJson(e)).toList();
+    final response = await ApiClient.get('/conversations/$conversationId/messages');
+    final resData = response.data;
+    dynamic list = (resData is Map && resData.containsKey('data'))
+        ? resData['data']
+        : resData;
+    if (list is Map && list.containsKey('content')) {
+      list = list['content'];
+    }
+    if (list is List) {
+      return list.map((e) => ChatMessageEntity.fromJson(e as Map<String, dynamic>)).toList();
     }
     return [];
   }
 
   @override
   Future<ChatMessageEntity> sendMessage(String conversationId, String content, {String? messageType}) async {
-    final response = await ApiClient.post('/chat/conversations/$conversationId/messages', data: {
+    final response = await ApiClient.post('/conversations/$conversationId/messages', data: {
       'content': content,
-      'messageType': messageType ?? 'text',
+      'messageType': messageType ?? 'TEXT',
     });
-    return ChatMessageEntity.fromJson(response.data as Map<String, dynamic>);
+    final resData = response.data;
+    final map = (resData is Map && resData.containsKey('data'))
+        ? resData['data'] as Map<String, dynamic>
+        : (response.data is Map<String, dynamic> ? response.data as Map<String, dynamic> : <String, dynamic>{});
+    return ChatMessageEntity.fromJson(map);
   }
 }
 
@@ -151,8 +166,14 @@ class MessagesNotifier extends StateNotifier<AsyncState<List<ChatMessageEntity>>
   Future<bool> sendMessage(String content, {String? messageType}) async {
     try {
       final msg = await chatRepository.sendMessage(conversationId, content, messageType: messageType);
+      WebSocketService.send({
+        'content': content,
+        'messageType': messageType ?? 'TEXT',
+      }, destination: '/app/chat.send/$conversationId');
       final current = state.data ?? [];
-      state = state.copyWith(data: [...current, msg]);
+      if (!current.any((m) => m.id == msg.id)) {
+        state = state.copyWith(data: [...current, msg]);
+      }
       return true;
     } catch (_) {
       return false;

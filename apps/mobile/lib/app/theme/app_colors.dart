@@ -4,8 +4,16 @@ class AppColors {
   // Brand Primary Accent Colors
   static const Color primary = Color(0xFF0A66C2);
   static const Color primaryDark = Color(0xFF004182);
+  static const Color secondary = Color(0xFF1D9BF0);
   static const Color xBlue = Color(0xFF1D9BF0);
   
+  // Default Light Theme Tokens
+  static const Color background = lightBackground;
+  static const Color surface = lightSurface;
+  static const Color textPrimary = lightTextPrimary;
+  static const Color textSecondary = lightTextSecondary;
+  static const Color divider = lightDivider;
+
   // Light Mode Tokens
   static const Color lightBackground = Color(0xFFFFFFFF);
   static const Color lightSurface = Color(0xFFFFFFFF);

@@ -154,11 +154,17 @@ class AuthService {
 
   static Future<void> signOut() async {
     await FirebaseAuthService.signOut();
+    try {
+      await _storage.deleteAll();
+    } catch (_) {}
     _currentUser = null;
   }
 
   static Future<void> deleteAccount() async {
     await FirebaseAuthService.deleteAccount();
+    try {
+      await _storage.deleteAll();
+    } catch (_) {}
     _currentUser = null;
   }
 }
