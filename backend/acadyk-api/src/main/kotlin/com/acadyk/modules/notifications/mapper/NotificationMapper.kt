@@ -29,13 +29,13 @@ class NotificationMapper {
         return NotificationPreferencesDto(
             pushEnabled = entity.pushEnabled,
             emailEnabled = entity.emailEnabled,
-            likesEnabled = entity.likesEnabled,
-            commentsEnabled = entity.commentsEnabled,
-            connectionsEnabled = entity.connectionsEnabled,
-            opportunitiesEnabled = entity.opportunitiesEnabled,
-            eventsEnabled = entity.eventsEnabled,
-            messagesEnabled = entity.messagesEnabled,
-            communitiesEnabled = entity.communitiesEnabled,
+            likesEnabled = entity.chatNotifications,
+            commentsEnabled = entity.chatNotifications,
+            connectionsEnabled = entity.connectionRequests,
+            opportunitiesEnabled = entity.eventReminders,
+            eventsEnabled = entity.eventReminders,
+            messagesEnabled = entity.chatNotifications,
+            communitiesEnabled = entity.connectionRequests,
             marketingEmails = entity.marketingEmails
         )
     }

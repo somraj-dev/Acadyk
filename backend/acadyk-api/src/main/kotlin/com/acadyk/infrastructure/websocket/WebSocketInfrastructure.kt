@@ -70,7 +70,8 @@ class WebSocketConfig(
 @Component
 class WebSocketAuthInterceptor(
     private val tokenVerifier: FirebaseTokenVerifier,
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
+    private val userRepository: com.acadyk.modules.users.repository.UserRepository
 ) : ChannelInterceptor {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -88,7 +89,7 @@ class WebSocketAuthInterceptor(
 
                 if (verifiedUser != null) {
                     val profile = verifiedUser.uid.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
-                        ?: profileRepository.findByEmail(verifiedUser.email).orElse(null)
+                        ?: userRepository.findByEmail(verifiedUser.email).flatMap { profileRepository.findById(it.id) }.orElse(null)
                     val principal = UserPrincipal(
                         id = profile?.id ?: UUID.nameUUIDFromBytes(verifiedUser.uid.toByteArray()),
                         email = verifiedUser.email,

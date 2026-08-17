@@ -48,13 +48,9 @@ data class NotificationPreferenceEntity(
 
     var pushEnabled: Boolean = true,
     var emailEnabled: Boolean = true,
-    var likesEnabled: Boolean = true,
-    var commentsEnabled: Boolean = true,
-    var connectionsEnabled: Boolean = true,
-    var opportunitiesEnabled: Boolean = true,
-    var eventsEnabled: Boolean = true,
-    var messagesEnabled: Boolean = true,
-    var communitiesEnabled: Boolean = true,
+    var chatNotifications: Boolean = true,
+    var eventReminders: Boolean = true,
+    var connectionRequests: Boolean = true,
     var marketingEmails: Boolean = false,
 
     @Column(nullable = false)

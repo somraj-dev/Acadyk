@@ -27,6 +27,8 @@ class SecurityConfig(
         http
             .cors { it.configurationSource(corsConfigurationSource()) }
             .csrf { it.disable() }
+            .httpBasic { it.disable() }
+            .formLogin { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
@@ -34,8 +36,7 @@ class SecurityConfig(
                         "/api/v1/auth/**",
                         "/api/v1/media/public/**",
                         "/ws/**",
-                        "/actuator/health",
-                        "/actuator/info"
+                        "/actuator/**"
                     ).permitAll()
                     .anyRequest().authenticated()
             }
@@ -53,6 +54,7 @@ class SecurityConfig(
                 allowedOrigins = envOrigins
             } else {
                 allowedOriginPatterns = listOf("*")
+                allowedOrigins = null
             }
             allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
             allowedHeaders = listOf(

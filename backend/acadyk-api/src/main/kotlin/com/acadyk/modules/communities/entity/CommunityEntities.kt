@@ -2,6 +2,8 @@ package com.acadyk.modules.communities.entity
 
 import com.acadyk.modules.profiles.entity.ProfileEntity
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Instant
 import java.util.UUID
 
@@ -18,6 +20,7 @@ data class CommunityEntity(
     @Column(nullable = false, unique = true)
     var name: String,
 
+    @JdbcTypeCode(SqlTypes.OTHER)
     @Column(nullable = false, unique = true)
     var slug: String,
 

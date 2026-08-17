@@ -3,6 +3,8 @@ package com.acadyk.modules.opportunities.entity
 import com.acadyk.modules.profiles.entity.ProfileEntity
 import com.acadyk.modules.profiles.entity.ResumeEntity
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Instant
 import java.util.UUID
 
@@ -22,6 +24,7 @@ data class OpportunityEntity(
     @Column(nullable = false)
     var title: String,
 
+    @JdbcTypeCode(SqlTypes.OTHER)
     @Column(nullable = false, unique = true)
     var slug: String,
 

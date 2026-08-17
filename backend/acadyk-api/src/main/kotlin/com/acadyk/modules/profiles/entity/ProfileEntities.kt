@@ -1,6 +1,8 @@
 package com.acadyk.modules.profiles.entity
 
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -11,14 +13,15 @@ data class ProfileEntity(
     @Id
     val id: UUID = UUID.randomUUID(),
 
+    @JdbcTypeCode(SqlTypes.OTHER)
     @Column(nullable = false, unique = true)
     var username: String,
 
     @Column(nullable = false)
     var fullName: String,
 
-    @Column(nullable = false, unique = true)
-    var email: String,
+    @Transient
+    var email: String = "",
 
     var headline: String? = null,
     var bio: String? = null,
