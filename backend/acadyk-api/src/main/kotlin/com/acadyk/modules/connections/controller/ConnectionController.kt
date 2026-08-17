@@ -24,15 +24,15 @@ class ConnectionController(private val connectionService: ConnectionService) {
     }
 
     @PostMapping("/connections/{id}/accept")
-    fun acceptRequest(@PathVariable id: String): ResponseEntity<ApiResponse<Nothing>> {
+    fun acceptRequest(@PathVariable id: String): ResponseEntity<ApiResponse<Unit>> {
         connectionService.acceptConnectionRequest(id)
-        return ResponseEntity.ok(ApiResponse.success(null, "Connection accepted"))
+        return ResponseEntity.ok(ApiResponse.success(Unit, "Connection accepted"))
     }
 
     @DeleteMapping("/connections/{id}")
-    fun removeConnection(@PathVariable id: String): ResponseEntity<ApiResponse<Nothing>> {
+    fun removeConnection(@PathVariable id: String): ResponseEntity<ApiResponse<Unit>> {
         connectionService.removeConnection(id)
-        return ResponseEntity.ok(ApiResponse.success(null, "Connection removed"))
+        return ResponseEntity.ok(ApiResponse.success(Unit, "Connection removed"))
     }
 
     @PostMapping("/profiles/{userId}/follow")

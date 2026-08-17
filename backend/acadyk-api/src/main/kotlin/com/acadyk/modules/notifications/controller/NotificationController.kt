@@ -31,15 +31,15 @@ class NotificationController(private val notificationService: NotificationServic
     }
 
     @PostMapping("/{id}/read")
-    fun markAsRead(@PathVariable id: String): ResponseEntity<ApiResponse<Nothing>> {
+    fun markAsRead(@PathVariable id: String): ResponseEntity<ApiResponse<Unit>> {
         notificationService.markAsRead(id)
-        return ResponseEntity.ok(ApiResponse.success(null, "Notification marked as read"))
+        return ResponseEntity.ok(ApiResponse.success(Unit, "Notification marked as read"))
     }
 
     @PostMapping("/read-all")
-    fun markAllAsRead(): ResponseEntity<ApiResponse<Nothing>> {
+    fun markAllAsRead(): ResponseEntity<ApiResponse<Unit>> {
         notificationService.markAllAsRead()
-        return ResponseEntity.ok(ApiResponse.success(null, "All notifications marked as read"))
+        return ResponseEntity.ok(ApiResponse.success(Unit, "All notifications marked as read"))
     }
 
     @GetMapping("/preferences")
@@ -54,8 +54,8 @@ class NotificationController(private val notificationService: NotificationServic
     }
 
     @PostMapping("/fcm-token")
-    fun registerFcmToken(@Valid @RequestBody request: RegisterFcmTokenRequest): ResponseEntity<ApiResponse<Nothing>> {
+    fun registerFcmToken(@Valid @RequestBody request: RegisterFcmTokenRequest): ResponseEntity<ApiResponse<Unit>> {
         notificationService.registerFcmToken(request.fcmToken)
-        return ResponseEntity.ok(ApiResponse.success(null, "FCM token registered successfully"))
+        return ResponseEntity.ok(ApiResponse.success(Unit, "FCM token registered successfully"))
     }
 }

@@ -38,8 +38,8 @@ class PostController(private val postService: PostService) {
     }
 
     @DeleteMapping("/{id}")
-    fun deletePost(@PathVariable id: String): ResponseEntity<ApiResponse<Nothing>> {
+    fun deletePost(@PathVariable id: String): ResponseEntity<ApiResponse<Unit>> {
         postService.deletePost(id)
-        return ResponseEntity.ok(ApiResponse.success(null, "Post deleted successfully"))
+        return ResponseEntity.ok(ApiResponse.success(Unit, "Post deleted successfully"))
     }
 }

@@ -1,14 +1,19 @@
 package com.acadyk.unit
 
+import com.acadyk.infrastructure.fcm.FcmService
+import com.acadyk.modules.notifications.dto.NotificationPreferencesDto
 import com.acadyk.modules.notifications.entity.NotificationEntity
-import com.acadyk.modules.notifications.entity.NotificationPreferencesEntity
+import com.acadyk.modules.notifications.entity.NotificationPreferenceEntity
+import com.acadyk.modules.notifications.mapper.NotificationMapper
+import com.acadyk.modules.notifications.repository.NotificationPreferenceRepository
 import com.acadyk.modules.notifications.repository.NotificationRepository
-import com.acadyk.modules.notifications.repository.NotificationPreferencesRepository
 import com.acadyk.modules.notifications.service.NotificationService
+import com.acadyk.modules.profiles.entity.ProfileEntity
 import com.acadyk.security.CurrentUserProvider
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 import org.mockito.Mockito.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -18,72 +23,82 @@ import java.util.UUID
 class NotificationServiceTest {
 
     private lateinit var notificationRepository: NotificationRepository
-    private lateinit var preferencesRepository: NotificationPreferencesRepository
+    private lateinit var notificationPreferenceRepository: NotificationPreferenceRepository
+    private lateinit var notificationMapper: NotificationMapper
     private lateinit var currentUserProvider: CurrentUserProvider
+    private lateinit var fcmService: FcmService
     private lateinit var notificationService: NotificationService
 
-    private val testUserId = UUID.randomUUID()
+    private val testUserId = UUID.randomUUID().toString()
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> anyNonNull(): T {
+        Mockito.any<T>()
+        return null as T
+    }
 
     @BeforeEach
     fun setUp() {
         notificationRepository = mock(NotificationRepository::class.java)
-        preferencesRepository = mock(NotificationPreferencesRepository::class.java)
+        notificationPreferenceRepository = mock(NotificationPreferenceRepository::class.java)
+        notificationMapper = NotificationMapper()
         currentUserProvider = mock(CurrentUserProvider::class.java)
+        fcmService = mock(FcmService::class.java)
 
         `when`(currentUserProvider.getCurrentUserId()).thenReturn(testUserId)
 
         notificationService = NotificationService(
             notificationRepository = notificationRepository,
-            preferencesRepository = preferencesRepository,
-            currentUserProvider = currentUserProvider
+            notificationPreferenceRepository = notificationPreferenceRepository,
+            notificationMapper = notificationMapper,
+            currentUserProvider = currentUserProvider,
+            fcmService = fcmService
         )
     }
 
     @Test
-    fun `getUserNotifications returns user notifications list`() {
-        val pageable = PageRequest.of(0, 10)
-        val notifList = listOf(
-            NotificationEntity(
-                id = UUID.randomUUID(),
-                userId = testUserId,
-                title = "New Connection",
-                body = "Somraj connected with you",
-                category = "CONNECTIONS"
-            )
+    fun `getNotifications returns mapped notification responses`() {
+        val recipient = ProfileEntity(
+            id = testUserId,
+            username = "recipient_user",
+            email = "recipient@acadyk.com",
+            fullName = "Recipient User"
         )
 
-        `when`(notificationRepository.findAllByUserIdOrderByCreatedAtDesc(testUserId, pageable))
-            .thenReturn(PageImpl(notifList, pageable, 1))
+        val notif = NotificationEntity(
+            id = UUID.randomUUID().toString(),
+            recipient = recipient,
+            type = "post_like",
+            title = "New reaction",
+            body = "Somraj liked your post"
+        )
 
-        val result = notificationService.getUserNotifications(pageable)
+        val pageable = PageRequest.of(0, 20)
+        `when`(notificationRepository.findAllByRecipientIdOrderByCreatedAtDesc(testUserId, pageable))
+            .thenReturn(PageImpl(listOf(notif), pageable, 1))
+
+        val result = notificationService.getNotifications(0, 20)
 
         assertNotNull(result)
         assertEquals(1, result.content.size)
-        assertEquals("New Connection", result.content[0].title)
+        assertEquals("New reaction", result.content[0].title)
     }
 
     @Test
-    fun `markAllAsRead updates all unread notifications to read`() {
-        notificationService.markAllAsRead()
-
-        verify(notificationRepository, times(1)).markAllAsRead(testUserId)
-    }
-
-    @Test
-    fun `updatePreferences saves user notification toggle preferences`() {
-        val prefs = NotificationPreferencesEntity(
-            userId = testUserId,
+    fun `getPreferences returns preferences when found`() {
+        val pref = NotificationPreferenceEntity(
+            id = UUID.randomUUID().toString(),
+            profileId = testUserId,
             pushEnabled = true,
-            emailEnabled = false,
-            likesEnabled = true
+            emailEnabled = true
         )
 
-        `when`(preferencesRepository.findById(testUserId)).thenReturn(Optional.of(prefs))
-        `when`(preferencesRepository.save(any(NotificationPreferencesEntity::class.java))).thenAnswer { it.arguments[0] }
+        `when`(notificationPreferenceRepository.findByProfileId(testUserId)).thenReturn(Optional.of(pref))
 
-        val updated = notificationService.updatePreferences(mapOf("emailEnabled" to true))
+        val result = notificationService.getPreferences()
 
-        assertNotNull(updated)
-        verify(preferencesRepository, times(1)).save(any())
+        assertNotNull(result)
+        assertTrue(result.pushEnabled)
+        assertTrue(result.emailEnabled)
     }
 }

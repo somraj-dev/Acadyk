@@ -1,6 +1,9 @@
 package com.acadyk.kafka
 
 import com.acadyk.infrastructure.kafka.*
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
@@ -12,18 +15,20 @@ class KafkaDomainEventsTest {
     @Test
     fun `DomainEventPublisher routes events to correct topic`() {
         @Suppress("UNCHECKED_CAST")
-        val kafkaTemplate = mock(KafkaTemplate::class.java) as KafkaTemplate<String, Any>
-        val publisher = DomainEventPublisher(kafkaTemplate)
+        val kafkaTemplate = mock(KafkaTemplate::class.java) as KafkaTemplate<String, String>
+        val objectMapper = ObjectMapper().registerKotlinModule().registerModule(JavaTimeModule())
+        val publisher = DomainEventPublisher(kafkaTemplate, objectMapper)
 
         val postEvent = PostCreatedEvent(
             postId = UUID.randomUUID().toString(),
             authorId = UUID.randomUUID().toString(),
-            content = "Event test content"
+            contentSnippet = "Event test content",
+            postType = "text"
         )
 
-        publisher.publish(postEvent)
+        publisher.publishPostCreated(postEvent)
 
-        verify(kafkaTemplate, times(1)).send(eq(KafkaTopics.POST_EVENTS), eq(postEvent.postId), eq(postEvent))
+        verify(kafkaTemplate, times(1)).send(eq("acadyk.posts"), eq(postEvent.postId), anyString())
     }
 
     @Test
@@ -31,10 +36,11 @@ class KafkaDomainEventsTest {
         val userEvent = UserCreatedEvent(
             userId = UUID.randomUUID().toString(),
             email = "somraj@acadyk.com",
-            fullName = "Somraj Lodhi"
+            role = "STUDENT"
         )
 
-        assertEquals("USER_CREATED", userEvent.eventType)
+        assertEquals("UserCreated", userEvent.eventType)
         assertEquals("somraj@acadyk.com", userEvent.email)
+        assertEquals("STUDENT", userEvent.role)
     }
 }

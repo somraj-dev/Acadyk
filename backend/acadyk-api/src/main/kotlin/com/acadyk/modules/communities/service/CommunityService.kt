@@ -28,7 +28,7 @@ class CommunityService(
     @Transactional(readOnly = true)
     fun getCommunities(category: String?, page: Int, size: Int): PageResponse<CommunityResponse> {
         val pageable = PageRequest.of(page, size)
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_) { null }
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
 
         val pageResult = if (!category.isNullOrBlank()) {
             communityRepository.findAllByCategoryAndDeletedAtIsNull(category, pageable)
@@ -46,7 +46,7 @@ class CommunityService(
     fun getCommunityById(id: String): CommunityResponse {
         val community = communityRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Community with id $id not found") }
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_) { null }
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
         val isMember = currentUserId?.let { communityMemberRepository.existsByCommunityIdAndProfileId(community.id, it) } ?: false
         return communityMapper.toResponse(community, isMember)
     }

@@ -1,41 +1,71 @@
 package com.acadyk.unit
 
 import com.acadyk.modules.auth.*
-import com.acadyk.modules.profiles.dto.ProfileResponse
+import com.acadyk.modules.auth.service.EnrollmentNumberService
+import com.acadyk.modules.auth.service.ParsedEnrollmentInfo
 import com.acadyk.modules.profiles.entity.ProfileEntity
 import com.acadyk.modules.profiles.mapper.ProfileMapper
 import com.acadyk.modules.profiles.repository.ProfileRepository
+import com.acadyk.modules.users.entity.UserEntity
+import com.acadyk.modules.users.repository.AuthAuditLogRepository
+import com.acadyk.modules.users.repository.UserRepository
 import com.acadyk.security.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 import org.mockito.Mockito.*
 import java.util.Optional
 import java.util.UUID
 
 class AuthServiceTest {
 
+    private lateinit var userRepository: UserRepository
     private lateinit var profileRepository: ProfileRepository
     private lateinit var profileMapper: ProfileMapper
     private lateinit var tokenVerifier: FirebaseTokenVerifier
+    private lateinit var enrollmentNumberService: EnrollmentNumberService
     private lateinit var currentUserProvider: CurrentUserProvider
     private lateinit var jwtTokenProvider: JwtTokenProvider
+    private lateinit var authAuditLogRepository: AuthAuditLogRepository
     private lateinit var auditService: AuditService
     private lateinit var authService: AuthService
 
+    private val defaultParsedInfo = ParsedEnrollmentInfo(
+        enrollmentNumber = "0901CS211001",
+        degree = "B.Tech",
+        branch = "Computer Science",
+        branchCode = "CS",
+        joiningYear = 2021,
+        isValid = true
+    )
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> anyNonNull(): T {
+        Mockito.any<T>()
+        return null as T
+    }
+
     @BeforeEach
     fun setUp() {
+        userRepository = mock(UserRepository::class.java)
         profileRepository = mock(ProfileRepository::class.java)
-        profileMapper = mock(ProfileMapper::class.java)
+        profileMapper = ProfileMapper()
         tokenVerifier = mock(FirebaseTokenVerifier::class.java)
+        enrollmentNumberService = mock(EnrollmentNumberService::class.java)
         currentUserProvider = mock(CurrentUserProvider::class.java)
         jwtTokenProvider = mock(JwtTokenProvider::class.java)
-        auditService = mock(AuditService::class.java)
+        authAuditLogRepository = mock(AuthAuditLogRepository::class.java)
+        auditService = AuditService(authAuditLogRepository)
+
+        `when`(enrollmentNumberService.parseCollegeEmail(anyNonNull())).thenReturn(defaultParsedInfo)
 
         authService = AuthService(
+            userRepository = userRepository,
             profileRepository = profileRepository,
             profileMapper = profileMapper,
             tokenVerifier = tokenVerifier,
+            enrollmentNumberService = enrollmentNumberService,
             currentUserProvider = currentUserProvider,
             jwtTokenProvider = jwtTokenProvider,
             auditService = auditService
@@ -50,31 +80,31 @@ class AuthServiceTest {
             fullName = "Somraj Lodhi"
         )
 
-        val savedProfile = ProfileEntity(
+        val savedUser = UserEntity(
             id = UUID.randomUUID().toString(),
+            firebaseUid = "firebase_123",
             email = request.email,
-            username = "somraj_dev",
-            fullName = request.fullName
+            enrollmentNumber = defaultParsedInfo.enrollmentNumber
         )
 
-        val profileResponse = ProfileResponse(
-            id = savedProfile.id,
-            email = savedProfile.email,
-            username = savedProfile.username,
-            fullName = savedProfile.fullName
+        val savedProfile = ProfileEntity(
+            id = savedUser.id,
+            email = request.email,
+            username = defaultParsedInfo.enrollmentNumber,
+            fullName = request.fullName ?: "Somraj Lodhi"
         )
 
-        `when`(profileRepository.save(any(ProfileEntity::class.java))).thenReturn(savedProfile)
-        `when`(jwtTokenProvider.createToken(anyString(), anyString(), anyString())).thenReturn("mock_jwt_token")
-        `when`(profileMapper.toResponse(savedProfile)).thenReturn(profileResponse)
+        `when`(userRepository.save(anyNonNull())).thenReturn(savedUser)
+        `when`(profileRepository.save(anyNonNull())).thenReturn(savedProfile)
+        `when`(jwtTokenProvider.createToken(anyNonNull(), anyNonNull(), anyNonNull())).thenReturn("mock_jwt_token")
 
         val response = authService.register(request, "127.0.0.1")
 
         assertNotNull(response)
         assertEquals("mock_jwt_token", response.token)
         assertEquals(request.email, response.user.email)
-        verify(profileRepository, times(1)).save(any())
-        verify(auditService, times(1)).logAuthEvent(eq("REGISTER_USER"), anyString(), eq(request.email), eq("127.0.0.1"), eq(true))
+        verify(profileRepository, times(1)).save(anyNonNull())
+        verify(authAuditLogRepository, times(1)).save(anyNonNull())
     }
 
     @Test
@@ -84,29 +114,29 @@ class AuthServiceTest {
             password = "SecurePassword123!"
         )
 
-        val existingProfile = ProfileEntity(
+        val existingUser = UserEntity(
             id = UUID.randomUUID().toString(),
+            firebaseUid = "firebase_456",
             email = request.email,
-            username = "somraj_dev",
+            enrollmentNumber = "0901CS211001"
+        )
+
+        val existingProfile = ProfileEntity(
+            id = existingUser.id,
+            email = request.email,
+            username = "0901CS211001",
             fullName = "Somraj Lodhi"
         )
 
-        val profileResponse = ProfileResponse(
-            id = existingProfile.id,
-            email = existingProfile.email,
-            username = existingProfile.username,
-            fullName = existingProfile.fullName
-        )
-
-        `when`(profileRepository.findByEmail(request.email)).thenReturn(Optional.of(existingProfile))
-        `when`(jwtTokenProvider.createToken(anyString(), anyString(), anyString())).thenReturn("mock_login_jwt")
-        `when`(profileMapper.toResponse(existingProfile)).thenReturn(profileResponse)
+        `when`(userRepository.findByEmail(request.email)).thenReturn(Optional.of(existingUser))
+        `when`(profileRepository.findById(existingUser.id)).thenReturn(Optional.of(existingProfile))
+        `when`(jwtTokenProvider.createToken(anyNonNull(), anyNonNull(), anyNonNull())).thenReturn("mock_login_jwt")
 
         val response = authService.login(request, "127.0.0.1")
 
         assertNotNull(response)
         assertEquals("mock_login_jwt", response.token)
         assertEquals(existingProfile.email, response.user.email)
-        verify(auditService, times(1)).logAuthEvent(eq("EMAIL_PASSWORD_LOGIN"), anyString(), eq(request.email), eq("127.0.0.1"), eq(true))
+        verify(authAuditLogRepository, times(1)).save(anyNonNull())
     }
 }

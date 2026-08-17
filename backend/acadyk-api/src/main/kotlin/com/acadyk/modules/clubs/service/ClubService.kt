@@ -28,7 +28,7 @@ class ClubService(
     @Transactional(readOnly = true)
     fun getClubs(college: String?, page: Int, size: Int): PageResponse<ClubResponse> {
         val pageable = PageRequest.of(page, size)
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_) { null }
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
 
         val pageResult = if (!college.isNullOrBlank()) {
             clubRepository.findAllByCollegeNameAndDeletedAtIsNull(college, pageable)
@@ -46,7 +46,7 @@ class ClubService(
     fun getClubById(id: String): ClubResponse {
         val club = clubRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Club with id $id not found") }
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_) { null }
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
         val isMember = currentUserId?.let { clubMemberRepository.existsByClubIdAndProfileId(club.id, it) } ?: false
         return clubMapper.toResponse(club, isMember)
     }
