@@ -1,5 +1,8 @@
 package com.acadyk.modules.clubs.entity
 
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
+
 import com.acadyk.modules.profiles.entity.ProfileEntity
 import jakarta.persistence.*
 import java.time.Instant
@@ -21,6 +24,7 @@ data class ClubEntity(
     var name: String,
 
     @Column(nullable = false, unique = true)
+    @JdbcTypeCode(SqlTypes.OTHER)
     var slug: String,
 
     @Column(columnDefinition = "TEXT")
