@@ -14,16 +14,15 @@ data class ProfileEntity(
     @Id
     val id: UUID = UUID.randomUUID(),
 
-    @Column(nullable = false, unique = true)
     @JdbcTypeCode(SqlTypes.OTHER)
+    @Column(nullable = false, unique = true)
     var username: String,
 
     @Column(nullable = false)
     var fullName: String,
 
-    @Column(nullable = false, unique = true)
-    @JdbcTypeCode(SqlTypes.OTHER)
-    var email: String,
+    @Transient
+    var email: String = "",
 
     var headline: String? = null,
     var bio: String? = null,

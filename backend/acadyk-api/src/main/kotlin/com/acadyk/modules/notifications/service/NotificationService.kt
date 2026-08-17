@@ -78,13 +78,9 @@ class NotificationService(
 
         entity.pushEnabled = dto.pushEnabled
         entity.emailEnabled = dto.emailEnabled
-        entity.likesEnabled = dto.likesEnabled
-        entity.commentsEnabled = dto.commentsEnabled
-        entity.connectionsEnabled = dto.connectionsEnabled
-        entity.opportunitiesEnabled = dto.opportunitiesEnabled
-        entity.eventsEnabled = dto.eventsEnabled
-        entity.messagesEnabled = dto.messagesEnabled
-        entity.communitiesEnabled = dto.communitiesEnabled
+        entity.chatNotifications = dto.messagesEnabled && dto.commentsEnabled && dto.likesEnabled
+        entity.eventReminders = dto.eventsEnabled && dto.opportunitiesEnabled
+        entity.connectionRequests = dto.connectionsEnabled && dto.communitiesEnabled
         entity.marketingEmails = dto.marketingEmails
         entity.updatedAt = Instant.now()
 

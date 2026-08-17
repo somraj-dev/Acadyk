@@ -42,6 +42,7 @@ data class UserEntity(
     @Column(name = "joining_year")
     var joiningYear: Int? = null,
 
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     var role: Role = Role.STUDENT,

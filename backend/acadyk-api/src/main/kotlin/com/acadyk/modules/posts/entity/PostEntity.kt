@@ -20,7 +20,10 @@ data class PostEntity(
 
     var postType: String = "text",
     var visibility: String = "public",
+
+    @Transient
     var imageUrl: String? = null,
+
     var likesCount: Int = 0,
     var commentsCount: Int = 0,
     var sharesCount: Int = 0,

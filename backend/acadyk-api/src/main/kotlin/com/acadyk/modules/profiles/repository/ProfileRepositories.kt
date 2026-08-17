@@ -10,7 +10,6 @@ import java.util.UUID
 
 @Repository
 interface ProfileRepository : JpaRepository<ProfileEntity, UUID> {
-    fun findByEmail(email: String): Optional<ProfileEntity>
     fun findByUsername(username: String): Optional<ProfileEntity>
     fun findByFullNameContainingIgnoreCaseAndDeletedAtIsNull(name: String, pageable: Pageable): Page<ProfileEntity>
     fun findByFullNameContainingIgnoreCaseAndDeletedAtIsNull(name: String): List<ProfileEntity>
