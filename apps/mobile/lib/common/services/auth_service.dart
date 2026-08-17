@@ -70,21 +70,63 @@ class AuthUser {
 class AuthService {
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static AuthUser? _currentUser;
+  static const int _sessionDurationDays = 15;
 
   static AuthUser? get currentUser => _currentUser;
   static bool get isAuthenticated => _currentUser != null;
 
   static Future<void> init() async {
     await FirebaseAuthService.init();
+
+    // 1. Verify 15-day login session duration
+    final loginTimestampStr = await _storage.read(key: 'login_timestamp');
+    if (loginTimestampStr != null) {
+      final loginTimestamp = int.tryParse(loginTimestampStr);
+      if (loginTimestamp != null) {
+        final loginDate = DateTime.fromMillisecondsSinceEpoch(loginTimestamp);
+        final daysPassed = DateTime.now().difference(loginDate).inDays;
+        if (daysPassed >= _sessionDurationDays) {
+          // Session expired after 15 days, require fresh login
+          await signOut();
+          return;
+        }
+      }
+    }
+
+    // 2. Restore cached user profile if present
     final userJson = await _storage.read(key: 'user_profile');
     if (userJson != null) {
       try {
         _currentUser = AuthUser.fromJson(jsonDecode(userJson));
         if (_currentUser != null) {
           _syncProfileManager(_currentUser!);
+          return;
         }
       } catch (_) {}
     }
+
+    // 3. Fallback to active Firebase Auth credentials if session is active
+    final fbUser = FirebaseAuthService.currentFirebaseUser;
+    if (fbUser != null) {
+      final email = fbUser.email ?? '';
+      _currentUser = AuthUser(
+        id: fbUser.uid,
+        email: email,
+        fullName: fbUser.displayName ?? 'Acadyk Member',
+        username: email.isNotEmpty ? email.split('@').first : 'user',
+        roles: const ['STUDENT'],
+      );
+      _syncProfileManager(_currentUser!);
+      await _storage.write(key: 'user_profile', value: jsonEncode(_currentUser!.toJson()));
+      await _storage.write(key: 'login_timestamp', value: DateTime.now().millisecondsSinceEpoch.toString());
+    }
+  }
+
+  static Future<void> saveSession(AuthUser user) async {
+    _currentUser = user;
+    _syncProfileManager(user);
+    await _storage.write(key: 'user_profile', value: jsonEncode(user.toJson()));
+    await _storage.write(key: 'login_timestamp', value: DateTime.now().millisecondsSinceEpoch.toString());
   }
 
   static void _syncProfileManager(AuthUser user) {
@@ -125,6 +167,7 @@ class AuthService {
     });
     _syncProfileManager(_currentUser!);
     await _storage.write(key: 'user_profile', value: jsonEncode(_currentUser!.toJson()));
+    await _storage.write(key: 'login_timestamp', value: DateTime.now().millisecondsSinceEpoch.toString());
     return _currentUser;
   }
 
@@ -141,6 +184,7 @@ class AuthService {
     });
     _syncProfileManager(_currentUser!);
     await _storage.write(key: 'user_profile', value: jsonEncode(_currentUser!.toJson()));
+    await _storage.write(key: 'login_timestamp', value: DateTime.now().millisecondsSinceEpoch.toString());
     return _currentUser;
   }
 
@@ -158,6 +202,7 @@ class AuthService {
     });
     _syncProfileManager(_currentUser!);
     await _storage.write(key: 'user_profile', value: jsonEncode(_currentUser!.toJson()));
+    await _storage.write(key: 'login_timestamp', value: DateTime.now().millisecondsSinceEpoch.toString());
     return _currentUser;
   }
 

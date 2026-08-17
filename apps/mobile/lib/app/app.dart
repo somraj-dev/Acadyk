@@ -52,7 +52,7 @@ class _AuthGateState extends State<_AuthGate> {
           });
         }
 
-        if (authProvider.isAuthenticated && authProvider.currentProfile != null) {
+        if (authProvider.isAuthenticated) {
           return const HomeFeedScreen();
         }
         return const LoginScreen();

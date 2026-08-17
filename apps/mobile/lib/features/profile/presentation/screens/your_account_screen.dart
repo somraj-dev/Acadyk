@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../common/providers/auth_provider.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
 import 'package:acadyk/common/services/auth_service.dart';
 import 'settings_account_management_screen.dart';
 import 'settings_profile_visibility_screen.dart';
@@ -247,10 +250,16 @@ class YourAccountScreen extends StatelessWidget {
             onPressed: () async {
               Navigator.pop(context);
               try {
+                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                await authProvider.signOut();
+              } catch (_) {
                 await AuthService.signOut();
-              } catch (_) {}
+              }
               if (context.mounted) {
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
               }
             },
             style: ElevatedButton.styleFrom(

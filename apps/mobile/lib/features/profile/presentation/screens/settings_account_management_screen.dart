@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../../../../common/providers/theme_provider.dart';
 import '../../../../common/providers/auth_provider.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
 import 'settings_edit_profile_screen.dart';
 import 'appearance_screen.dart';
 
@@ -175,10 +176,15 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                             onPressed: () async {
                               Navigator.pop(ctx);
                               try {
+                                await authProvider.deleteAccount();
+                              } catch (_) {
                                 await authProvider.signOut();
-                              } catch (_) {}
+                              }
                               if (context.mounted) {
-                                Navigator.of(context).popUntil((route) => route.isFirst);
+                                Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                  (route) => false,
+                                );
                               }
                             },
                             child: const Text('Delete Permanently'),

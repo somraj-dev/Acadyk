@@ -21,7 +21,6 @@ import 'create_post_screen.dart';
 import '../../../notifications/presentation/screens/notification_screen.dart';
 import '../../../community/presentation/screens/discover_communities_screen.dart';
 import '../../../profile/presentation/screens/space_screen.dart';
-import '../../../profile/presentation/screens/settings_activity_screen.dart';
 import '../../../profile/presentation/screens/feedback_form_screen.dart';
 import '../../../profile/presentation/screens/student_id_card_screen.dart';
 import '../../../profile/presentation/services/profile_manager.dart';
@@ -2570,15 +2569,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB)),
                   const SizedBox(height: 8),
 
-                  _buildDrawerNavItem(
-                    'Settings',
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => const SettingsActivityScreen(),
-                      ));
-                    },
-                  ),
+
                   _buildDrawerNavItem(
                     'Feedback Form',
                     onTap: () {

@@ -42,9 +42,9 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
       color: scaffoldBg,
       child: Column(
         children: [
-          // Main Acadyk Top Header Bar with dynamic Opportunities title & filter action
+          // Main Acadyk Top Header Bar with dynamic Events title & filter action
           AcadykTopHeaderBar(
-            title: 'Opportunities',
+            title: 'Events',
             actionWidget: GestureDetector(
               onTap: () async {
                 final result = await showModalBottomSheet<FilterSettings>(

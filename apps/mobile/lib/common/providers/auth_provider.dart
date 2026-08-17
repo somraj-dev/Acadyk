@@ -12,6 +12,14 @@ class AuthProvider extends ChangeNotifier {
     try {
       _currentUser = AuthService.currentUser;
       if (_currentUser != null) {
+        _currentProfile = ProfileModel.fromJson({
+          'id': _currentUser!.id,
+          'email': _currentUser!.email,
+          'full_name': _currentUser!.fullName ?? 'Somraj Lodhi',
+          'username': _currentUser!.enrollmentNumber ?? _currentUser!.username ?? 'BTAM25O1080',
+          'major': _currentUser!.branch ?? 'AIML',
+          'degree': _currentUser!.degree ?? 'B.Tech',
+        });
         _fetchProfile(_currentUser!.id);
       }
     } catch (e) {
@@ -37,27 +45,38 @@ class AuthProvider extends ChangeNotifier {
       'email': 'developer@acadyk.com',
       'full_name': 'Somraj Lodhi',
       'username': 'BTAM25O1080',
+      'major': 'AIML',
+      'degree': 'B.Tech',
     });
 
     _currentUser = mockUser;
     _currentProfile = mockProfile;
+    AuthService.saveSession(mockUser);
     notifyListeners();
   }
 
   Future<void> _fetchProfile(String userId) async {
-    final profileData = await ProfileService.getProfile(userId);
-    if (profileData != null) {
-      _currentProfile = ProfileModel.fromJson(profileData);
-    } else {
+    try {
+      final profileData = await ProfileService.getProfile(userId);
+      if (profileData != null) {
+        _currentProfile = ProfileModel.fromJson(profileData);
+        notifyListeners();
+        return;
+      }
+    } catch (_) {}
+
+    if (_currentProfile == null) {
       final mockProfile = ProfileModel.fromJson({
         'id': userId,
         'email': _currentUser?.email ?? 'developer@acadyk.com',
         'full_name': _currentUser?.fullName ?? 'Somraj Lodhi',
         'username': _currentUser?.enrollmentNumber ?? _currentUser?.username ?? 'BTAM25O1080',
+        'major': _currentUser?.branch ?? 'AIML',
+        'degree': _currentUser?.degree ?? 'B.Tech',
       });
       _currentProfile = mockProfile;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<void> refreshProfile() async {
