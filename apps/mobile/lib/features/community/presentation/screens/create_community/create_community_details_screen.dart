@@ -44,27 +44,33 @@ class _CreateCommunityDetailsScreenState extends State<CreateCommunityDetailsScr
 
   @override
   Widget build(BuildContext context) {
-    const bgColor = Color(0xFF0B141A);
-    const textColor = Colors.white;
-    const secondaryTextColor = Color(0xFF8696A0);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0B141A) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final secondaryTextColor = isDark ? const Color(0xFF8696A0) : const Color(0xFF64748B);
+    final badgeBg = isDark ? const Color(0xFF1E2931) : const Color(0xFFF1F5F9);
+    final badgeText = isDark ? Colors.white : const Color(0xFF0F172A);
+    final inputBg = isDark ? const Color(0xFF1E2931) : const Color(0xFFF8FAFC);
+    final inputBorderColor = isDark ? const Color(0xFF2A3942) : const Color(0xFFE2E8F0);
     final bool isNameValid = _nameLength > 0 && _nameLength <= 21;
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
         backgroundColor: bgColor,
-        iconTheme: const IconThemeData(color: textColor),
+        iconTheme: IconThemeData(color: textColor),
         elevation: 0,
+        scrolledUnderElevation: 0,
         titleSpacing: 0,
         title: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E2931), // Slightly darker
+            color: badgeBg,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Text(
+          child: Text(
             '3 of 3',
-            style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.bold),
+            style: TextStyle(color: badgeText, fontSize: 13, fontWeight: FontWeight.bold),
           ),
         ),
         actions: [
@@ -79,6 +85,7 @@ class _CreateCommunityDetailsScreenState extends State<CreateCommunityDetailsScr
                           builder: (context) => CreateCommunitySuccessScreen(
                             communityName: _nameController.text.trim(),
                             description: _descController.text.trim(),
+                            categoryTag: widget.selectedTopic,
                           ),
                         ),
                         (route) => route.isFirst,
@@ -86,10 +93,12 @@ class _CreateCommunityDetailsScreenState extends State<CreateCommunityDetailsScr
                     }
                   : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: isNameValid ? const Color(0xFF1955CC) : const Color(0xFF1E2931),
-                disabledBackgroundColor: const Color(0xFF1E2931),
-                foregroundColor: isNameValid ? Colors.white : const Color(0xFF3B4A54),
-                disabledForegroundColor: const Color(0xFF3B4A54),
+                backgroundColor: isNameValid
+                    ? const Color(0xFF09122C)
+                    : (isDark ? const Color(0xFF1E2931) : const Color(0xFFF1F5F9)),
+                disabledBackgroundColor: isDark ? const Color(0xFF1E2931) : const Color(0xFFF1F5F9),
+                foregroundColor: isNameValid ? Colors.white : (isDark ? const Color(0xFF3B4A54) : const Color(0xFF94A3B8)),
+                disabledForegroundColor: isDark ? const Color(0xFF3B4A54) : const Color(0xFF94A3B8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 elevation: 0,
@@ -105,49 +114,58 @@ class _CreateCommunityDetailsScreenState extends State<CreateCommunityDetailsScr
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Tell us about your community',
-                style: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.3,
+                ),
               ),
-              const SizedBox(height: 12),
-              const Text(
+              const SizedBox(height: 10),
+              Text(
                 'A name and description help people understand what your community is all about',
                 style: TextStyle(color: secondaryTextColor, fontSize: 15, height: 1.4),
               ),
               const SizedBox(height: 24),
-              
+
               // Community Name Field
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E2931), // Input background
-                  borderRadius: BorderRadius.circular(16),
+                  color: inputBg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: inputBorderColor, width: 1.2),
                 ),
                 child: TextField(
                   controller: _nameController,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(color: textColor, fontSize: 16),
                   maxLength: 21,
                   decoration: InputDecoration(
                     label: RichText(
-                      text: const TextSpan(
+                      text: TextSpan(
                         children: [
-                          TextSpan(text: 'Community Name ', style: TextStyle(color: Color(0xFF8696A0), fontSize: 16)),
-                          TextSpan(text: '*', style: TextStyle(color: Color(0xFFFF4500), fontSize: 16)),
+                          TextSpan(
+                            text: 'Community Name ',
+                            style: TextStyle(color: secondaryTextColor, fontSize: 15),
+                          ),
+                          const TextSpan(text: '*', style: TextStyle(color: Color(0xFFEA580C), fontSize: 15)),
                         ],
                       ),
                     ),
                     floatingLabelBehavior: FloatingLabelBehavior.never,
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    counterText: '', // We use custom counter below
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    counterText: '',
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Align(
                 alignment: Alignment.centerRight,
                 child: Text(
                   '$_nameLength/21',
-                  style: const TextStyle(color: secondaryTextColor, fontSize: 12),
+                  style: TextStyle(color: secondaryTextColor, fontSize: 12),
                 ),
               ),
               const SizedBox(height: 16),
@@ -156,21 +174,25 @@ class _CreateCommunityDetailsScreenState extends State<CreateCommunityDetailsScr
               Container(
                 height: 160,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E2931),
-                  borderRadius: BorderRadius.circular(16),
+                  color: inputBg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: inputBorderColor, width: 1.2),
                 ),
                 child: TextField(
                   controller: _descController,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(color: textColor, fontSize: 15),
                   maxLength: 500,
                   maxLines: null,
                   expands: true,
                   decoration: InputDecoration(
                     label: RichText(
-                      text: const TextSpan(
+                      text: TextSpan(
                         children: [
-                          TextSpan(text: 'Description ', style: TextStyle(color: Color(0xFF8696A0), fontSize: 16)),
-                          TextSpan(text: '*', style: TextStyle(color: Color(0xFFFF4500), fontSize: 16)),
+                          TextSpan(
+                            text: 'Description ',
+                            style: TextStyle(color: secondaryTextColor, fontSize: 15),
+                          ),
+                          const TextSpan(text: '*', style: TextStyle(color: Color(0xFFEA580C), fontSize: 15)),
                         ],
                       ),
                     ),
@@ -181,12 +203,12 @@ class _CreateCommunityDetailsScreenState extends State<CreateCommunityDetailsScr
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Align(
                 alignment: Alignment.centerRight,
                 child: Text(
                   '$_descLength/500',
-                  style: const TextStyle(color: secondaryTextColor, fontSize: 12),
+                  style: TextStyle(color: secondaryTextColor, fontSize: 12),
                 ),
               ),
             ],

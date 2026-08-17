@@ -163,10 +163,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: darkNavy),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
         title: const Text(
           'Team Showcase',
           style: TextStyle(color: darkNavy, fontWeight: FontWeight.bold, fontSize: 18),

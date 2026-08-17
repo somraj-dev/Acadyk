@@ -14,24 +14,25 @@ class CommunityProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const bgColor = Color(0xFF0B141A);
-    const textColor = Colors.white;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0B141A) : Colors.white;
+    final dividerColor = isDark ? const Color(0xFF1E2931) : const Color(0xFFE2E8F0);
 
     return Scaffold(
       backgroundColor: bgColor,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: _buildCommunityHeader(),
+            child: _buildCommunityHeader(context, isDark),
           ),
           SliverToBoxAdapter(
-            child: _buildInsightsAndSetupCards(),
-          ),
-          const SliverToBoxAdapter(
-            child: Divider(color: Color(0xFF1E2931), thickness: 8, height: 24),
+            child: _buildInsightsAndSetupCards(isDark),
           ),
           SliverToBoxAdapter(
-            child: _buildPostsHeader(),
+            child: Divider(color: dividerColor, thickness: 6, height: 24),
+          ),
+          SliverToBoxAdapter(
+            child: _buildPostsHeader(isDark),
           ),
           SliverList(
             delegate: SliverChildListDelegate([
@@ -39,16 +40,19 @@ class CommunityProfileScreen extends StatelessWidget {
                 'Help shape the vibe while we\'re small 🙌',
                 Icons.lightbulb,
                 Colors.pinkAccent,
+                isDark,
               ),
               _buildPromptCard(
                 'Introducing $communityName! Here\'s what we\'re all about 👉',
                 Icons.lightbulb,
                 Colors.tealAccent,
+                isDark,
               ),
               _buildPromptCard(
                 'This community is ours to build. What are your ideas?',
                 Icons.lightbulb,
                 Colors.orangeAccent,
+                isDark,
               ),
             ]),
           ),
@@ -57,96 +61,109 @@ class CommunityProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCommunityHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 32,
-                backgroundColor: Colors.white,
-                child: logoUrl != null 
-                  ? CircleAvatar(
-                      radius: 30,
-                      backgroundImage: NetworkImage(logoUrl!),
-                    )
-                  : CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.pinkAccent.shade100,
-                      child: const Icon(Icons.extension, color: Colors.pink, size: 36),
-                    ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        communityName, // No "r/" prefix
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+  Widget _buildCommunityHeader(BuildContext context, bool isDark) {
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final secondaryTextColor = isDark ? const Color(0xFF8696A0) : const Color(0xFF64748B);
+    final linkColor = isDark ? const Color(0xFF61DAFB) : const Color(0xFF0284C7);
+    final iconBorderColor = isDark ? const Color(0xFF333333) : const Color(0xFFE2E8F0);
+
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: const Color(0xFF0F172A),
+                  child: logoUrl != null && logoUrl!.startsWith('http')
+                      ? CircleAvatar(
+                          radius: 28,
+                          backgroundImage: NetworkImage(logoUrl!),
+                        )
+                      : const CircleAvatar(
+                          radius: 28,
+                          backgroundColor: Color(0xFF0F172A),
+                          child: Icon(Icons.account_balance_rounded, color: Colors.white, size: 26),
                         ),
-                        overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          communityName,
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 21,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.add_circle_outline, color: Colors.white, size: 20), // "Custom Feed" icon placeholder
-                  ],
+                      const SizedBox(width: 4),
+                      Icon(Icons.add_circle_outline, color: textColor, size: 20),
+                    ],
+                  ),
                 ),
-              ),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1955CC),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  elevation: 0,
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF09122C),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    elevation: 0,
+                  ),
+                  child: const Text('Mod Tools', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
                 ),
-                child: const Text('Mod Tools', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF333333)),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: iconBorderColor),
+                  ),
+                  child: Icon(Icons.notifications_none, color: textColor, size: 20),
                 ),
-                child: const Icon(Icons.notifications_none, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF333333)),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: iconBorderColor),
+                  ),
+                  child: Icon(Icons.menu_book, color: textColor, size: 20),
                 ),
-                child: const Icon(Icons.menu_book, color: Colors.white, size: 20),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            description.isEmpty ? 'Community description goes here...' : description,
-            style: const TextStyle(color: Color(0xFFD3D3D3), fontSize: 14),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'See more',
-            style: TextStyle(color: Color(0xFF61DAFB), fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-        ],
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              description.isEmpty ? 'A collaborative campus student community at MITS Gwalior.' : description,
+              style: TextStyle(color: secondaryTextColor, fontSize: 14, height: 1.4),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'See more',
+              style: TextStyle(color: linkColor, fontSize: 13.5, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildInsightsAndSetupCards() {
+  Widget _buildInsightsAndSetupCards(bool isDark) {
+    final cardBg = isDark ? const Color(0xFF1E2931) : const Color(0xFFF8FAFC);
+    final cardBorder = isDark ? const Color(0xFF2A3942) : const Color(0xFFE2E8F0);
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final secondaryTextColor = isDark ? const Color(0xFF8696A0) : const Color(0xFF64748B);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
@@ -155,57 +172,59 @@ class CommunityProfileScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E2931),
-              borderRadius: BorderRadius.circular(12),
+              color: cardBg,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: cardBorder, width: 1),
             ),
             child: Row(
               children: [
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Text('Insights', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                        SizedBox(width: 6),
-                        Text('Past week', style: TextStyle(color: Color(0xFF8696A0), fontSize: 14)),
+                        Text('Insights', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(width: 6),
+                        Text('Past week', style: TextStyle(color: secondaryTextColor, fontSize: 14)),
                       ],
                     ),
-                    SizedBox(height: 4),
-                    Text('0 visitors • 0 contributions', style: TextStyle(color: Color(0xFF8696A0), fontSize: 13)),
+                    const SizedBox(height: 4),
+                    Text('142 visitors • 48 contributions', style: TextStyle(color: secondaryTextColor, fontSize: 13)),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          
+          const SizedBox(height: 14),
+
           // Build your community Card
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFF1E2931))),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.transparent : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: cardBorder, width: 1),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Build your community', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                    Icon(Icons.keyboard_arrow_up, color: Colors.white),
+                    Text('Build your community', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                    Icon(Icons.keyboard_arrow_up, color: textColor),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 Row(
                   children: [
-                    // Simulated overlapping circles
                     SizedBox(
                       width: 64,
                       child: Stack(
                         children: [
-                          CircleAvatar(backgroundColor: Colors.grey.shade800, radius: 18),
-                          Positioned(left: 14, child: CircleAvatar(backgroundColor: Colors.grey.shade700, radius: 18)),
-                          Positioned(left: 28, child: CircleAvatar(backgroundColor: Colors.orange, radius: 18, child: Icon(Icons.backpack, color: Colors.red, size: 20))),
+                          CircleAvatar(backgroundColor: Colors.grey.shade400, radius: 18),
+                          Positioned(left: 14, child: CircleAvatar(backgroundColor: Colors.grey.shade500, radius: 18)),
+                          Positioned(left: 28, child: CircleAvatar(backgroundColor: const Color(0xFFEA580C), radius: 18, child: const Icon(Icons.star_rounded, color: Colors.white, size: 18))),
                         ],
                       ),
                     ),
@@ -214,35 +233,36 @@ class CommunityProfileScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Finish setting up', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          Text('Finish setting up', style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 6),
                           Row(
                             children: [
                               Expanded(
                                 flex: 1,
-                                child: Container(height: 4, color: Colors.redAccent),
+                                child: Container(height: 4, decoration: BoxDecoration(color: const Color(0xFFEA580C), borderRadius: BorderRadius.circular(2))),
                               ),
+                              const SizedBox(width: 4),
                               Expanded(
                                 flex: 2,
-                                child: Container(height: 4, color: const Color(0xFF333333)),
+                                child: Container(height: 4, decoration: BoxDecoration(color: cardBorder, borderRadius: BorderRadius.circular(2))),
                               ),
                             ],
                           ),
                           const SizedBox(height: 6),
-                          const Text('1/3 achievement unlocked', style: TextStyle(color: Color(0xFF8696A0), fontSize: 12)),
+                          Text('1/3 achievement unlocked', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
                         ],
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2A2A2C),
+                        backgroundColor: isDark ? const Color(0xFF2A2A2C) : const Color(0xFF09122C),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         elevation: 0,
                       ),
-                      child: const Text('Finish', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('Finish', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ],
                 ),
@@ -254,18 +274,20 @@ class CommunityProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPostsHeader() {
+  Widget _buildPostsHeader(bool isDark) {
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.rocket_launch, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('BEST POSTS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
-              Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
+              Icon(Icons.rocket_launch, color: isDark ? Colors.white : const Color(0xFFEA580C), size: 18),
+              const SizedBox(width: 8),
+              Text('BEST POSTS', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
+              Icon(Icons.keyboard_arrow_down, color: textColor, size: 18),
             ],
           ),
           Row(
@@ -274,12 +296,12 @@ class CommunityProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.white, width: 1.5),
+                  border: Border.all(color: textColor, width: 1.5),
                 ),
-                child: const Icon(Icons.crop_16_9, color: Colors.white, size: 16),
+                child: Icon(Icons.crop_16_9, color: textColor, size: 16),
               ),
               const SizedBox(width: 12),
-              const Icon(Icons.view_agenda_outlined, color: Colors.white, size: 20),
+              Icon(Icons.view_agenda_outlined, color: textColor, size: 20),
             ],
           ),
         ],
@@ -287,23 +309,27 @@ class CommunityProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPromptCard(String title, IconData icon, Color iconColor) {
+  Widget _buildPromptCard(String title, IconData icon, Color iconColor, bool isDark) {
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final secondaryTextColor = isDark ? const Color(0xFF8696A0) : const Color(0xFF64748B);
+    final dividerColor = isDark ? const Color(0xFF1E2931) : const Color(0xFFE2E8F0);
+
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0xFF1E2931), width: 1)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: dividerColor, width: 1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (title.contains('Help shape')) ...[
-            const Text('Kick things off with a few posts', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Kick things off with a few posts', style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            const Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Looking for inspiration? Explore these ideas.', style: TextStyle(color: Color(0xFF8696A0), fontSize: 14)),
-                Icon(Icons.keyboard_arrow_up, color: Colors.white),
+                Text('Looking for inspiration? Explore these ideas.', style: TextStyle(color: secondaryTextColor, fontSize: 14)),
+                Icon(Icons.keyboard_arrow_up, color: textColor),
               ],
             ),
             const SizedBox(height: 16),
@@ -321,19 +347,19 @@ class CommunityProfileScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: iconColor.withOpacity(0.2),
+                            color: iconColor.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Icon(icon, color: iconColor, size: 14),
                         ),
                         const SizedBox(width: 8),
-                        const Text('Prompt', style: TextStyle(color: Color(0xFF8696A0), fontSize: 12, fontWeight: FontWeight.bold)),
+                        Text('Prompt', style: TextStyle(color: secondaryTextColor, fontSize: 12, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Text(
                       title,
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: textColor, fontSize: 15.5, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -342,9 +368,9 @@ class CommunityProfileScreen extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white),
+                  border: Border.all(color: textColor),
                 ),
-                child: const Icon(Icons.add, color: Colors.white),
+                child: Icon(Icons.add, color: textColor),
               ),
             ],
           ),
@@ -352,5 +378,4 @@ class CommunityProfileScreen extends StatelessWidget {
       ),
     );
   }
-
 }

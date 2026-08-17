@@ -88,11 +88,28 @@ class AuthService {
   }
 
   static void _syncProfileManager(AuthUser user) {
+    final extractedBranch = user.branch ?? _extractBranch(user.enrollmentNumber);
     ProfileManager.setAuthenticatedUser(
       authenticatedName: user.fullName ?? 'Somraj Lodhi',
-      authenticatedUsername: user.enrollmentNumber ?? user.username ?? 'BTAM25O1080',
+      authenticatedUsername: user.enrollmentNumber ?? user.username ?? 'somrajlodhi',
       authenticatedBio: user.branch != null ? '${user.degree ?? "B.Tech"} in ${user.branch}' : null,
+      authenticatedBranch: extractedBranch,
+      authenticatedDegree: user.degree ?? 'B.Tech',
+      authenticatedEnrollment: user.enrollmentNumber ?? 'BTAM25O1080',
     );
+  }
+
+  static String _extractBranch(String? enrollment) {
+    if (enrollment == null || enrollment.isEmpty) return 'AIML';
+    final upper = enrollment.toUpperCase();
+    if (upper.contains('AM') || upper.contains('AIML')) return 'AIML';
+    if (upper.contains('CS') || upper.contains('CSE')) return 'CSE';
+    if (upper.contains('IT')) return 'IT';
+    if (upper.contains('EC') || upper.contains('ECE')) return 'ECE';
+    if (upper.contains('EE')) return 'EE';
+    if (upper.contains('ME')) return 'ME';
+    if (upper.contains('CE')) return 'Civil';
+    return 'AIML';
   }
 
   static Future<AuthUser?> signInWithEmail(String email, String password) async {

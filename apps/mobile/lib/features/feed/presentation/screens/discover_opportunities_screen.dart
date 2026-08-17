@@ -4,6 +4,7 @@ import 'event_detail_screen.dart';
 import 'filter_events_bottom_sheet.dart';
 import '../services/opportunities_manager.dart';
 import 'home_feed_screen.dart';
+import '../../../../common/widgets/acadyk_top_header_bar.dart';
 
 class DiscoverOpportunitiesScreen extends StatefulWidget {
   const DiscoverOpportunitiesScreen({super.key});
@@ -36,49 +37,40 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final scaffoldBg = theme.scaffoldBackgroundColor;
-    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final textColor = theme.colorScheme.onSurface;
 
     return Container(
       color: scaffoldBg,
       child: Column(
         children: [
-          // Screen Title / Search Header
-          Container(
-            color: cardBg,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-            child: Row(
-              children: [
-                const Text(
-                  'Discover Opportunities',
-                  style: TextStyle(
-                    color: Color(0xFF111827),
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+          // Main Acadyk Top Header Bar with dynamic Opportunities title & filter action
+          AcadykTopHeaderBar(
+            title: 'Opportunities',
+            actionWidget: GestureDetector(
+              onTap: () async {
+                final result = await showModalBottomSheet<FilterSettings>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => FilterEventsBottomSheet(initialSettings: _filterSettings),
+                );
+                if (result != null) {
+                  setState(() {
+                    _filterSettings = result;
+                    _isFilterApplied = true;
+                  });
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF262626) : const Color(0xFFF2F4F7),
+                  shape: BoxShape.circle,
                 ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () async {
-                    final result = await showModalBottomSheet<FilterSettings>(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => FilterEventsBottomSheet(initialSettings: _filterSettings),
-                    );
-                    if (result != null) {
-                      setState(() {
-                        _filterSettings = result;
-                        _isFilterApplied = true; // Set to true since filters were explicitly applied
-                      });
-                    }
-                  },
-                  child: const Icon(Icons.tune_outlined, color: Color(0xFF4B5563), size: 24),
-                ),
-              ],
+                child: Icon(Icons.tune_outlined, color: isDark ? Colors.white : const Color(0xFF1E293B), size: 16),
+              ),
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB)),
 
           // List of Opportunities
           Expanded(

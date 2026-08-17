@@ -29,7 +29,14 @@ import '../../../../common/services/auth_service.dart';
 import '../../../../common/services/follow_service.dart';
 import '../../../chat/presentation/screens/message_center_screen.dart';
 import '../data/mock_feed_data.dart';
+import '../../../../common/widgets/acadyk_top_header_bar.dart';
 class HomeFeedScreen extends StatefulWidget {
+  static final GlobalKey<ScaffoldState> mainScaffoldKey = GlobalKey<ScaffoldState>();
+
+  static void openMainDrawer() {
+    mainScaffoldKey.currentState?.openDrawer();
+  }
+
   const HomeFeedScreen({super.key});
 
   @override
@@ -46,7 +53,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   Color get borderDivider => _isDark ? Color(0xFF2F3336) : Color(0xFFEFF3F4);
 
   int _activeTab = 0;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final PageController _pageController;
 
   // Dynamic feedback and comment state
@@ -130,14 +136,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final scaffoldBg = theme.scaffoldBackgroundColor;
-    final textColor = theme.colorScheme.onSurface;
-    final iconColor = isDark ? Colors.white : Colors.black87;
-    final searchBgColor = isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6);
 
     final isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
-      key: _scaffoldKey,
+      key: HomeFeedScreen.mainScaffoldKey,
       backgroundColor: scaffoldBg,
       drawer: _buildProfileDrawer(),
       body: SafeArea(
@@ -164,117 +167,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         // Page 0: Home Feed Screen
                         Column(
                           children: [
-                            // 1. Top App Bar (Dynamic Light/Dark Theme)
-                            Container(
-                              color: scaffoldBg,
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  // Left: Avatar and Plus
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        GestureDetector(
-                                          onTap: () {
-                                            _scaffoldKey.currentState?.openDrawer();
-                                          },
-                                          child: Container(
-                                            width: 34,
-                                            height: 34,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              image: DecorationImage(
-                                                image: (ProfileManager.avatarUrl.startsWith('http')
-                                                    ? NetworkImage(ProfileManager.avatarUrl)
-                                                    : AssetImage(ProfileManager.avatarUrl.isNotEmpty
-                                                        ? ProfileManager.avatarUrl
-                                                        : 'assets/images/somraj_avatar.jpg')) as ImageProvider,
-                                                fit: BoxFit.cover,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  
-                                  // Center: Acadyk Text and Down Arrow
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'Acadyk',
-                                        style: TextStyle(
-                                          color: textColor,
-                                          fontSize: 26,
-                                          fontFamily: 'Billabong',
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 2), // Small gap between 'k' and arrow
-                                      Icon(Icons.keyboard_arrow_down, color: iconColor, size: 20),
-                                    ],
-                                  ),
-                                  
-                                  // Right: Search & Heart
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        GestureDetector(
-                                          onTap: () {
-                                            showSearch(
-                                              context: context,
-                                              delegate: AcadykSearchDelegate(),
-                                            );
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.all(7),
-                                            decoration: BoxDecoration(
-                                              color: searchBgColor,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(CupertinoIcons.search, color: iconColor, size: 16),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.of(context).push(MaterialPageRoute(
-                                              builder: (_) => const NotificationScreen(),
-                                            ));
-                                          },
-                                          behavior: HitTestBehavior.opaque,
-                                          child: Stack(
-                                            clipBehavior: Clip.none,
-                                            children: [
-                                              Icon(CupertinoIcons.tray, color: iconColor, size: 24),
-                                              Positioned(
-                                                top: -1,
-                                                right: -2,
-                                                child: Container(
-                                                  width: 8.5,
-                                                  height: 8.5,
-                                                  decoration: const BoxDecoration(
-                                                    color: Color(0xFF3897F0), // Vibrant blue notification indicator
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            // 1. Top App Bar (Acadyk)
+                            const AcadykTopHeaderBar(title: 'Acadyk'),
                             Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E0E0)),
 
                             // 2. Scrollable List of Posts (re-ordered and curated)

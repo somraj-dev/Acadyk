@@ -133,8 +133,11 @@ class CommunitiesNotifier extends StateNotifier<AsyncState<List<CommunityEntity>
   }
 
   Future<void> fetchCommunities({bool refresh = false}) async {
-    if (refresh) state = state.copyWith(isRefreshing: true);
-    else state = state.copyWith(status: Status.loading);
+    if (refresh) {
+      state = state.copyWith(isRefreshing: true);
+    } else {
+      state = state.copyWith(status: Status.loading);
+    }
 
     try {
       final list = await getCommunitiesUseCase(const NoParams());

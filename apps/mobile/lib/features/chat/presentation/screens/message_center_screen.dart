@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:acadyk/common/services/message_service.dart';
 import 'package:acadyk/common/services/auth_service.dart';
+import 'package:acadyk/common/widgets/acadyk_top_header_bar.dart';
 import 'direct_message_screen.dart';
 
 class MessageCenterScreen extends StatefulWidget {
@@ -138,9 +139,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final bgColor = theme.scaffoldBackgroundColor;
-    final textColor = theme.colorScheme.onSurface;
     final currentUserId = AuthService.currentUser?.id ?? '';
 
     return Scaffold(
@@ -148,32 +147,36 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0, right: 16.0, bottom: 12.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16.0),
-                    child: Text(
-                      'Messages',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
-                    ),
+            // Main Acadyk Top Header Bar with dynamic Messages title & compose action
+            AcadykTopHeaderBar(
+              title: 'Messages',
+              actionWidget: GestureDetector(
+                onTap: () {},
+                child: Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: theme.brightness == Brightness.dark
+                        ? const Color(0xFF262626)
+                        : const Color(0xFFF2F4F7),
+                    shape: BoxShape.circle,
                   ),
-                  IconButton(
-                    icon: Icon(Icons.edit_square, color: textColor, size: 26),
-                    onPressed: () {},
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                  child: Icon(
+                    Icons.edit_square,
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.white
+                        : const Color(0xFF1E293B),
+                    size: 16,
                   ),
-                ],
+                ),
               ),
             ),
+            Divider(
+              height: 1,
+              color: theme.brightness == Brightness.dark
+                  ? const Color(0xFF30363D)
+                  : const Color(0xFFE5E7EB),
+            ),
+            const SizedBox(height: 12),
             
             // Search Bar
             Padding(

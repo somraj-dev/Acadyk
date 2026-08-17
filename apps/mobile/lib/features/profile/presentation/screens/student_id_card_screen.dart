@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:acadyk/features/profile/presentation/services/profile_manager.dart';
+import 'face_verification_screen.dart';
 
 class StudentIdCardScreen extends StatefulWidget {
   const StudentIdCardScreen({super.key});
@@ -59,19 +60,10 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
 
     final studentId = ProfileManager.enrollmentNumber.isNotEmpty ? ProfileManager.enrollmentNumber : 'BTAM25O1080';
     final avatarPath = ProfileManager.avatarUrl.isNotEmpty ? ProfileManager.avatarUrl : 'assets/images/somraj_avatar.jpg';
+    final studentBranch = ProfileManager.branch.isNotEmpty ? ProfileManager.branch : 'AIML';
 
     return Scaffold(
       backgroundColor: const Color(0xFFC8CBD0),
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
       body: Stack(
         alignment: Alignment.topCenter,
         children: [
@@ -104,8 +96,8 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
             child: GestureDetector(
               onTap: _toggleCard,
               child: SizedBox(
-                width: 320,
-                height: 480,
+                width: 360,
+                height: 500,
                 child: AnimatedBuilder(
                   animation: _animation,
                   builder: (context, child) {
@@ -114,13 +106,13 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
                     // Front White Card transforms
                     // Swings out to the right, rotates slightly, and moves to the back layer
                     final whiteAngle = math.sin(t * math.pi) * 0.18 - (t * 0.38);
-                    final whiteOffsetX = math.sin(t * math.pi) * 90.0 - (t * 60.0);
+                    final whiteOffsetX = math.sin(t * math.pi) * 110.0 - (t * 70.0);
                     final whiteScale = 1.0 - (t * 0.08);
 
                     // Back Dark Card transforms
                     // Starts tilted left (-0.38 rad) and glides forward to center (0 rad)
                     final darkAngle = -0.38 + (t * 0.38) + (math.sin(t * math.pi) * -0.12);
-                    final darkOffsetX = -60.0 + (t * 60.0) + (math.sin(t * math.pi) * -50.0);
+                    final darkOffsetX = -70.0 + (t * 70.0) + (math.sin(t * math.pi) * -60.0);
                     final darkScale = 0.92 + (t * 0.08);
 
                     final showWhiteOnTop = t < 0.5;
@@ -132,7 +124,7 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
                         // Underneath Card
                         if (showWhiteOnTop)
                           _buildCardTransform(
-                            child: _buildDarkCard(fullName, studentId),
+                            child: _buildDarkCard(fullName, studentId, studentBranch),
                             angle: darkAngle,
                             offsetX: darkOffsetX,
                             scale: darkScale,
@@ -140,7 +132,7 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
                           )
                         else
                           _buildCardTransform(
-                            child: _buildWhiteCard(firstName, lastName, studentId, avatarPath),
+                            child: _buildWhiteCard(firstName, lastName, studentId, avatarPath, studentBranch),
                             angle: whiteAngle,
                             offsetX: whiteOffsetX,
                             scale: whiteScale,
@@ -150,7 +142,7 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
                         // Top Card
                         if (showWhiteOnTop)
                           _buildCardTransform(
-                            child: _buildWhiteCard(firstName, lastName, studentId, avatarPath),
+                            child: _buildWhiteCard(firstName, lastName, studentId, avatarPath, studentBranch),
                             angle: whiteAngle,
                             offsetX: whiteOffsetX,
                             scale: whiteScale,
@@ -158,7 +150,7 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
                           )
                         else
                           _buildCardTransform(
-                            child: _buildDarkCard(fullName, studentId),
+                            child: _buildDarkCard(fullName, studentId, studentBranch),
                             angle: darkAngle,
                             offsetX: darkOffsetX,
                             scale: darkScale,
@@ -172,22 +164,64 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
             ),
           ),
 
-          // Bottom Prompt
+          // Bottom Identity Verification Button
           Positioned(
             bottom: 24,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'Tap card to swap details',
-                style: TextStyle(
-                  color: Color(0xFF1E293B),
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () async {
+                  final result = await showDialog<bool>(
+                    context: context,
+                    barrierColor: Colors.black.withValues(alpha: 0.65),
+                    builder: (ctx) => FaceVerificationScreen(
+                      avatarUrl: avatarPath,
+                      studentName: fullName,
+                    ),
+                  );
+                  if (result == true && mounted) {
+                    setState(() {});
+                  }
+                },
+                borderRadius: BorderRadius.circular(24),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: ProfileManager.isVerified ? const Color(0xFF064E3B) : const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(24),
+                    border: ProfileManager.isVerified
+                        ? Border.all(color: const Color(0xFF10B981), width: 1)
+                        : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: ProfileManager.isVerified
+                            ? const Color(0xFF10B981).withValues(alpha: 0.25)
+                            : Colors.black.withValues(alpha: 0.18),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        ProfileManager.isVerified ? Icons.verified_rounded : Icons.verified_user_rounded,
+                        color: ProfileManager.isVerified ? const Color(0xFF34D399) : const Color(0xFF38BDF8),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        ProfileManager.isVerified ? 'Identity Verified' : 'Identity Verification',
+                        style: TextStyle(
+                          color: ProfileManager.isVerified ? const Color(0xFFECFDF5) : Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -317,19 +351,19 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
   // ===========================================================================
   // 1:1 REPLICA: WHITE FRONT CARD
   // ===========================================================================
-  Widget _buildWhiteCard(String firstName, String lastName, String studentId, String avatarPath) {
-    const cardWidth = 230.0;
-    const cardHeight = 360.0;
+  Widget _buildWhiteCard(String firstName, String lastName, String studentId, String avatarPath, String studentBranch) {
+    const cardWidth = 280.0;
+    const cardHeight = 440.0;
 
     return Container(
       width: cardWidth,
       height: cardHeight,
       decoration: BoxDecoration(
         color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: Stack(
           children: [
             // 1. Edge-to-Edge Portrait Photo
@@ -361,7 +395,7 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
                 clipper: _BadgeWaveClipper(),
                 child: Container(
                   color: Colors.white,
-                  padding: const EdgeInsets.fromLTRB(16, 26, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(20, 32, 20, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -373,7 +407,7 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
                           Text(
                             firstName,
                             style: const TextStyle(
-                              fontSize: 19,
+                              fontSize: 22,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF1E2024),
                               height: 1.15,
@@ -383,7 +417,7 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
                           Text(
                             lastName,
                             style: const TextStyle(
-                              fontSize: 19,
+                              fontSize: 22,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF1E2024),
                               height: 1.15,
@@ -398,19 +432,19 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Text(
-                            'Data Analyst',
-                            style: TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w500,
+                          Text(
+                            studentBranch,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
                               color: Color(0xFF6B7280),
-                              letterSpacing: -0.1,
+                              letterSpacing: 0.2,
                             ),
                           ),
                           Text(
                             'ID #$studentId',
                             style: const TextStyle(
-                              fontSize: 9.5,
+                              fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF374151),
                               letterSpacing: 0.1,
@@ -447,28 +481,28 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
   // ===========================================================================
   // 1:1 REPLICA: BLACK BACK CARD (Vertical Acadyk Branding & Credentials)
   // ===========================================================================
-  Widget _buildDarkCard(String fullName, String studentId) {
-    const cardWidth = 230.0;
-    const cardHeight = 360.0;
+  Widget _buildDarkCard(String fullName, String studentId, String studentBranch) {
+    const cardWidth = 280.0;
+    const cardHeight = 440.0;
 
     return Container(
       width: cardWidth,
       height: cardHeight,
       decoration: BoxDecoration(
         color: const Color(0xFF161618),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFF27272A), width: 1),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: Stack(
           children: [
             // Details Info Column on the Dark Card
             Positioned(
-              top: 36,
-              right: 20,
-              left: 20,
-              bottom: 20,
+              top: 40,
+              right: 24,
+              left: 24,
+              bottom: 24,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -476,89 +510,89 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
                     'INSTITUTION',
                     style: TextStyle(
                       color: Color(0xFF71717A),
-                      fontSize: 8.5,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.8,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   const Text(
                     'Madhav Institute of Technology & Science',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 10.5,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       height: 1.2,
                     ),
                   ),
                   const Text(
                     'Gwalior • Est. 1957',
-                    style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 9),
+                    style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 10),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 18),
 
                   const Text(
                     'STUDENT NAME',
                     style: TextStyle(
                       color: Color(0xFF71717A),
-                      fontSize: 8.5,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.8,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
                     fullName,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 18),
 
                   const Text(
                     'ENROLLMENT',
                     style: TextStyle(
                       color: Color(0xFF71717A),
-                      fontSize: 8.5,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.8,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
                     studentId,
                     style: const TextStyle(
                       color: Color(0xFF38BDF8),
-                      fontSize: 11.5,
+                      fontSize: 13.5,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.4,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 18),
 
                   const Text(
                     'PROGRAM',
                     style: TextStyle(
                       color: Color(0xFF71717A),
-                      fontSize: 8.5,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.8,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'B.Tech AIML (UG)',
-                    style: TextStyle(
+                  const SizedBox(height: 3),
+                  Text(
+                    '${ProfileManager.degree} $studentBranch (UG)',
+                    style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 10.5,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const Text(
                     'Batch 2025 - 2029',
-                    style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 9),
+                    style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 10),
                   ),
                 ],
               ),
