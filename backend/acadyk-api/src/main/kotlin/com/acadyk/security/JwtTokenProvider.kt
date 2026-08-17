@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.stereotype.Component
 import java.util.Date
+import java.util.UUID
 import javax.crypto.SecretKey
 
 @Component
@@ -26,6 +27,9 @@ class JwtTokenProvider {
             .signWith(secret)
             .compact()
     }
+
+    fun createToken(userId: UUID, email: String, username: String): String =
+        createToken(userId.toString(), email, username)
 
     fun getClaims(token: String): Claims {
         return Jwts.parser()

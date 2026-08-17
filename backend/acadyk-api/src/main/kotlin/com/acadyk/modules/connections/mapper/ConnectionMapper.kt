@@ -10,7 +10,7 @@ class ConnectionMapper(private val profileMapper: ProfileMapper) {
 
     fun toResponse(entity: ConnectionRequestEntity): ConnectionRequestResponse {
         return ConnectionRequestResponse(
-            id = entity.id,
+            id = entity.id.toString(),
             sender = profileMapper.toResponse(entity.sender),
             recipient = profileMapper.toResponse(entity.recipient),
             status = entity.status,

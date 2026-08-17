@@ -9,7 +9,7 @@ class EventMapper {
 
     fun toResponse(entity: EventEntity, isRegistered: Boolean = false): EventResponse {
         return EventResponse(
-            id = entity.id,
+            id = entity.id.toString(),
             title = entity.title,
             slug = entity.slug,
             description = entity.description,

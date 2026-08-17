@@ -9,7 +9,7 @@ class CommunityMapper {
 
     fun toResponse(entity: CommunityEntity, isMember: Boolean = false): CommunityResponse {
         return CommunityResponse(
-            id = entity.id,
+            id = entity.id.toString(),
             name = entity.name,
             slug = entity.slug,
             description = entity.description,

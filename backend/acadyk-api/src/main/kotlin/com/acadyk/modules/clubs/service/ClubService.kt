@@ -2,6 +2,7 @@ package com.acadyk.modules.clubs.service
 
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
+import com.acadyk.common.toUUID
 import com.acadyk.modules.clubs.dto.ClubResponse
 import com.acadyk.modules.clubs.dto.CreateClubRequest
 import com.acadyk.modules.clubs.entity.ClubEntity
@@ -14,6 +15,7 @@ import com.acadyk.security.CurrentUserProvider
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 @Transactional
@@ -43,13 +45,16 @@ class ClubService(
     }
 
     @Transactional(readOnly = true)
-    fun getClubById(id: String): ClubResponse {
+    fun getClubById(id: UUID): ClubResponse {
         val club = clubRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Club with id $id not found") }
         val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
         val isMember = currentUserId?.let { clubMemberRepository.existsByClubIdAndProfileId(club.id, it) } ?: false
         return clubMapper.toResponse(club, isMember)
     }
+
+    @Transactional(readOnly = true)
+    fun getClubById(id: String): ClubResponse = getClubById(id.toUUID())
 
     fun createClub(request: CreateClubRequest): ClubResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
@@ -76,7 +81,7 @@ class ClubService(
         return clubMapper.toResponse(saved, true)
     }
 
-    fun toggleJoin(clubId: String): Boolean {
+    fun toggleJoin(clubId: UUID): Boolean {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val club = clubRepository.findByIdAndDeletedAtIsNull(clubId)
             .orElseThrow { ResourceNotFoundException("Club not found") }
@@ -96,4 +101,6 @@ class ClubService(
             true
         }
     }
+
+    fun toggleJoin(clubId: String): Boolean = toggleJoin(clubId.toUUID())
 }

@@ -2,6 +2,7 @@ package com.acadyk.modules.communities.service
 
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
+import com.acadyk.common.toUUID
 import com.acadyk.modules.communities.dto.CommunityResponse
 import com.acadyk.modules.communities.dto.CreateCommunityRequest
 import com.acadyk.modules.communities.entity.CommunityEntity
@@ -14,6 +15,7 @@ import com.acadyk.security.CurrentUserProvider
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 @Transactional
@@ -43,13 +45,16 @@ class CommunityService(
     }
 
     @Transactional(readOnly = true)
-    fun getCommunityById(id: String): CommunityResponse {
+    fun getCommunityById(id: UUID): CommunityResponse {
         val community = communityRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Community with id $id not found") }
         val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
         val isMember = currentUserId?.let { communityMemberRepository.existsByCommunityIdAndProfileId(community.id, it) } ?: false
         return communityMapper.toResponse(community, isMember)
     }
+
+    @Transactional(readOnly = true)
+    fun getCommunityById(id: String): CommunityResponse = getCommunityById(id.toUUID())
 
     fun createCommunity(request: CreateCommunityRequest): CommunityResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
@@ -78,7 +83,7 @@ class CommunityService(
         return communityMapper.toResponse(saved, true)
     }
 
-    fun toggleMembership(communityId: String): Boolean {
+    fun toggleMembership(communityId: UUID): Boolean {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val community = communityRepository.findByIdAndDeletedAtIsNull(communityId)
             .orElseThrow { ResourceNotFoundException("Community not found") }
@@ -98,4 +103,6 @@ class CommunityService(
             true
         }
     }
+
+    fun toggleMembership(communityId: String): Boolean = toggleMembership(communityId.toUUID())
 }

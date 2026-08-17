@@ -13,8 +13,8 @@ class ChatMapper(private val profileMapper: ProfileMapper) {
 
     fun toDto(entity: MessageEntity): MessageDto {
         return MessageDto(
-            id = entity.id,
-            conversationId = entity.conversation.id,
+            id = entity.id.toString(),
+            conversationId = entity.conversation.id.toString(),
             sender = profileMapper.toResponse(entity.sender),
             content = entity.content,
             messageType = entity.messageType,
@@ -30,7 +30,7 @@ class ChatMapper(private val profileMapper: ProfileMapper) {
         unreadCount: Int = 0
     ): ConversationResponse {
         return ConversationResponse(
-            id = entity.id,
+            id = entity.id.toString(),
             isGroup = entity.isGroup,
             title = entity.title,
             avatarUrl = entity.avatarUrl,

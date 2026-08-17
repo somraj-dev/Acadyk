@@ -11,7 +11,7 @@ import java.util.UUID
 @Table(name = "post_reactions")
 data class PostReactionEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
@@ -31,7 +31,7 @@ data class PostReactionEntity(
 @Table(name = "comment_reactions")
 data class CommentReactionEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "comment_id", nullable = false)

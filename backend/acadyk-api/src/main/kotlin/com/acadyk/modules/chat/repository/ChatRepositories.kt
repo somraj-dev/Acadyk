@@ -9,27 +9,28 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.Optional
+import java.util.UUID
 
 @Repository
-interface ConversationRepository : JpaRepository<ConversationEntity, String> {
-    fun findByIdAndDeletedAtIsNull(id: String): Optional<ConversationEntity>
+interface ConversationRepository : JpaRepository<ConversationEntity, UUID> {
+    fun findByIdAndDeletedAtIsNull(id: UUID): Optional<ConversationEntity>
 }
 
 @Repository
-interface ConversationMemberRepository : JpaRepository<ConversationMemberEntity, String> {
-    fun findAllByProfileId(profileId: String): List<ConversationMemberEntity>
-    fun findAllByConversationId(conversationId: String): List<ConversationMemberEntity>
-    fun findByConversationIdAndProfileId(conversationId: String, profileId: String): Optional<ConversationMemberEntity>
-    fun existsByConversationIdAndProfileId(conversationId: String, profileId: String): Boolean
+interface ConversationMemberRepository : JpaRepository<ConversationMemberEntity, UUID> {
+    fun findAllByProfileId(profileId: UUID): List<ConversationMemberEntity>
+    fun findAllByConversationId(conversationId: UUID): List<ConversationMemberEntity>
+    fun findByConversationIdAndProfileId(conversationId: UUID, profileId: UUID): Optional<ConversationMemberEntity>
+    fun existsByConversationIdAndProfileId(conversationId: UUID, profileId: UUID): Boolean
 }
 
 @Repository
-interface MessageRepository : JpaRepository<MessageEntity, String> {
-    fun findAllByConversationIdAndDeletedAtIsNullOrderByCreatedAtDesc(conversationId: String, pageable: Pageable): Page<MessageEntity>
-    fun findAllByConversationIdAndDeletedAtIsNullOrderByCreatedAtAsc(conversationId: String): List<MessageEntity>
+interface MessageRepository : JpaRepository<MessageEntity, UUID> {
+    fun findAllByConversationIdAndDeletedAtIsNullOrderByCreatedAtDesc(conversationId: UUID, pageable: Pageable): Page<MessageEntity>
+    fun findAllByConversationIdAndDeletedAtIsNullOrderByCreatedAtAsc(conversationId: UUID): List<MessageEntity>
 }
 
 @Repository
-interface MessageReadRepository : JpaRepository<MessageReadEntity, String> {
-    fun existsByMessageIdAndProfileId(messageId: String, profileId: String): Boolean
+interface MessageReadRepository : JpaRepository<MessageReadEntity, UUID> {
+    fun existsByMessageIdAndProfileId(messageId: UUID, profileId: UUID): Boolean
 }

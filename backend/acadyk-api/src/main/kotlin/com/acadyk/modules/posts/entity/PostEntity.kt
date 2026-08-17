@@ -9,7 +9,7 @@ import java.util.UUID
 @Table(name = "posts")
 data class PostEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "author_id", nullable = false)
@@ -38,10 +38,10 @@ data class PostEntity(
 @Table(name = "post_media")
 data class PostMediaEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
-    val postId: String,
+    val postId: UUID,
 
     @Column(nullable = false)
     val mediaUrl: String,

@@ -43,7 +43,7 @@ class FirebaseAuthFilter(
                         val parsed = enrollmentNumberService.parseCollegeEmail(email)
                         userRepository.save(
                             UserEntity(
-                                id = verifiedUser.uid,
+                                id = java.util.UUID.randomUUID(),
                                 firebaseUid = verifiedUser.uid,
                                 email = email,
                                 collegeEmail = email,

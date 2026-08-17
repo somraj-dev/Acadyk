@@ -2,6 +2,7 @@ package com.acadyk.modules.profiles.service
 
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
+import com.acadyk.common.toUUID
 import com.acadyk.modules.profiles.dto.*
 import com.acadyk.modules.profiles.entity.*
 import com.acadyk.modules.profiles.mapper.ProfileMapper
@@ -11,6 +12,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.util.UUID
 
 @Service
 @Transactional
@@ -25,18 +27,21 @@ class ProfileService(
 ) {
 
     @Transactional(readOnly = true)
-    fun getProfileById(id: String): ProfileResponse {
+    fun getProfileById(id: UUID): ProfileResponse {
         val profile = profileRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Profile with id $id not found") }
         return profileMapper.toResponse(profile)
     }
+
+    @Transactional(readOnly = true)
+    fun getProfileById(id: String): ProfileResponse = getProfileById(id.toUUID())
 
     fun updateMyProfile(request: UpdateProfileRequest): ProfileResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val profile = profileRepository.findById(currentUserId).orElseGet {
             ProfileEntity(
                 id = currentUserId,
-                username = "user_$currentUserId",
+                username = "user_${currentUserId.toString().take(8)}",
                 fullName = request.fullName ?: "Acadyk User",
                 email = currentUserProvider.getCurrentUserEmail()
             )
@@ -67,8 +72,11 @@ class ProfileService(
     }
 
     @Transactional(readOnly = true)
-    fun getEducation(profileId: String): List<EducationDto> =
+    fun getEducation(profileId: UUID): List<EducationDto> =
         educationRepository.findAllByProfileIdOrderByStartDateDesc(profileId).map(profileMapper::toDto)
+
+    @Transactional(readOnly = true)
+    fun getEducation(profileId: String): List<EducationDto> = getEducation(profileId.toUUID())
 
     fun addEducation(dto: EducationDto): EducationDto {
         val currentUserId = currentUserProvider.getCurrentUserId()
@@ -86,8 +94,11 @@ class ProfileService(
     }
 
     @Transactional(readOnly = true)
-    fun getExperiences(profileId: String): List<ExperienceDto> =
+    fun getExperiences(profileId: UUID): List<ExperienceDto> =
         experienceRepository.findAllByProfileIdOrderByStartDateDesc(profileId).map(profileMapper::toDto)
+
+    @Transactional(readOnly = true)
+    fun getExperiences(profileId: String): List<ExperienceDto> = getExperiences(profileId.toUUID())
 
     fun addExperience(dto: ExperienceDto): ExperienceDto {
         val currentUserId = currentUserProvider.getCurrentUserId()
@@ -106,8 +117,11 @@ class ProfileService(
     }
 
     @Transactional(readOnly = true)
-    fun getCertificates(profileId: String): List<CertificateDto> =
+    fun getCertificates(profileId: UUID): List<CertificateDto> =
         certificateRepository.findAllByProfileIdOrderByIssueDateDesc(profileId).map(profileMapper::toDto)
+
+    @Transactional(readOnly = true)
+    fun getCertificates(profileId: String): List<CertificateDto> = getCertificates(profileId.toUUID())
 
     fun addCertificate(dto: CertificateDto): CertificateDto {
         val currentUserId = currentUserProvider.getCurrentUserId()
@@ -124,8 +138,11 @@ class ProfileService(
     }
 
     @Transactional(readOnly = true)
-    fun getResumes(profileId: String): List<ResumeDto> =
+    fun getResumes(profileId: UUID): List<ResumeDto> =
         resumeRepository.findAllByProfileId(profileId).map(profileMapper::toDto)
+
+    @Transactional(readOnly = true)
+    fun getResumes(profileId: String): List<ResumeDto> = getResumes(profileId.toUUID())
 
     fun addResume(dto: ResumeDto): ResumeDto {
         val currentUserId = currentUserProvider.getCurrentUserId()

@@ -3,6 +3,7 @@ package com.acadyk.modules.events.service
 import com.acadyk.common.BadRequestException
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
+import com.acadyk.common.toUUID
 import com.acadyk.infrastructure.kafka.DomainEventPublisher
 import com.acadyk.infrastructure.kafka.EventRegisteredEvent
 import com.acadyk.infrastructure.redis.RedisDistributedLock
@@ -19,6 +20,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.util.UUID
 
 @Service
 @Transactional
@@ -50,13 +52,16 @@ class EventService(
     }
 
     @Transactional(readOnly = true)
-    fun getEventById(id: String): EventResponse {
+    fun getEventById(id: UUID): EventResponse {
         val event = eventRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Event with id $id not found") }
         val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
         val isRegistered = currentUserId?.let { eventRegistrationRepository.existsByEventIdAndProfileId(event.id, it) } ?: false
         return eventMapper.toResponse(event, isRegistered)
     }
+
+    @Transactional(readOnly = true)
+    fun getEventById(id: String): EventResponse = getEventById(id.toUUID())
 
     fun createEvent(request: CreateEventRequest): EventResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
@@ -84,7 +89,7 @@ class EventService(
         return eventMapper.toResponse(saved, false)
     }
 
-    fun registerForEvent(eventId: String): Boolean {
+    fun registerForEvent(eventId: UUID): Boolean {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val event = eventRepository.findByIdAndDeletedAtIsNull(eventId)
             .orElseThrow { ResourceNotFoundException("Event with id $eventId not found") }
@@ -105,10 +110,10 @@ class EventService(
 
                 domainEventPublisher.publishEventRegistered(
                     EventRegisteredEvent(
-                        eventRegistrationId = reg.id,
-                        targetEventId = event.id,
+                        eventRegistrationId = reg.id.toString(),
+                        targetEventId = event.id.toString(),
                         eventTitle = event.title,
-                        attendeeId = profile.id,
+                        attendeeId = profile.id.toString(),
                         attendeeName = profile.fullName
                     )
                 )
@@ -117,4 +122,6 @@ class EventService(
 
         return true
     }
+
+    fun registerForEvent(eventId: String): Boolean = registerForEvent(eventId.toUUID())
 }

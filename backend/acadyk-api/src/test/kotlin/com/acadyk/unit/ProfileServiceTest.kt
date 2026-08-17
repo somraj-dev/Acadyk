@@ -29,7 +29,7 @@ class ProfileServiceTest {
     private lateinit var currentUserProvider: CurrentUserProvider
     private lateinit var profileService: ProfileService
 
-    private val testUserId = UUID.randomUUID().toString()
+    private val testUserId: UUID = UUID.randomUUID()
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> anyNonNull(): T {

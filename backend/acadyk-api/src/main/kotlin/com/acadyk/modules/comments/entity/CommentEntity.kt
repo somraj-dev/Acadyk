@@ -10,7 +10,7 @@ import java.util.UUID
 @Table(name = "comments")
 data class CommentEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
@@ -23,7 +23,7 @@ data class CommentEntity(
     @Column(columnDefinition = "TEXT", nullable = false)
     var content: String,
 
-    var parentId: String? = null,
+    var parentId: UUID? = null,
     var likesCount: Int = 0,
 
     @Column(nullable = false)

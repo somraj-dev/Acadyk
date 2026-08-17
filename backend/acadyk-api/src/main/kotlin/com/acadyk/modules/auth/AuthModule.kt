@@ -178,9 +178,10 @@ class AuthService(
             throw UnauthorizedException("Enrollment number conflict. Please contact institutional support.")
         }
 
+        val newUserId = UUID.randomUUID()
         val newUser = userRepository.save(
             UserEntity(
-                id = verified.uid,
+                id = newUserId,
                 firebaseUid = verified.uid,
                 email = email,
                 collegeEmail = email,
@@ -250,7 +251,7 @@ class AuthService(
         val user = userRepository.findByEmail(email).orElseGet {
             userRepository.save(
                 UserEntity(
-                    id = UUID.randomUUID().toString(),
+                    id = UUID.randomUUID(),
                     firebaseUid = "dev_" + email.hashCode().toString(),
                     email = email,
                     collegeEmail = email,
@@ -301,7 +302,7 @@ class AuthService(
 
         val user = userRepository.save(
             UserEntity(
-                id = UUID.randomUUID().toString(),
+                id = UUID.randomUUID(),
                 firebaseUid = "dev_" + System.currentTimeMillis().toString(),
                 email = email,
                 collegeEmail = email,
@@ -342,7 +343,7 @@ class AuthService(
     }
 
     fun resetPassword(request: ResetPasswordRequest, ip: String) {
-        auditService.logAuthEvent("PASSWORD_RESET_REQUEST", "unknown", request.email, ip, true)
+        auditService.logAuthEvent(action = "PASSWORD_RESET_REQUEST", userId = null, email = request.email, ipAddress = ip, success = true)
     }
 
     fun deleteAccount(ip: String) {

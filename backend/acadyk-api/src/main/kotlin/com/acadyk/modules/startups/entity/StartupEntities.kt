@@ -9,7 +9,7 @@ import java.util.UUID
 @Table(name = "startups")
 data class StartupEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "founder_id", nullable = false)
@@ -48,7 +48,7 @@ data class StartupEntity(
 @Table(name = "startup_members")
 data class StartupMemberEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "startup_id", nullable = false)
@@ -69,10 +69,10 @@ data class StartupMemberEntity(
 @Table(name = "startup_media")
 data class StartupMediaEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
-    val startupId: String,
+    val startupId: UUID,
 
     @Column(nullable = false)
     val mediaUrl: String,

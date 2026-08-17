@@ -9,7 +9,7 @@ import java.util.UUID
 @Table(name = "notifications")
 data class NotificationEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipient_id", nullable = false)
@@ -29,7 +29,7 @@ data class NotificationEntity(
 
     var actionUrl: String? = null,
     var entityType: String? = null,
-    var entityId: String? = null,
+    var entityId: UUID? = null,
     var isRead: Boolean = false,
     var readAt: Instant? = null,
 
@@ -41,10 +41,10 @@ data class NotificationEntity(
 @Table(name = "notification_preferences")
 data class NotificationPreferenceEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false, unique = true)
-    val profileId: String,
+    val profileId: UUID,
 
     var pushEnabled: Boolean = true,
     var emailEnabled: Boolean = true,

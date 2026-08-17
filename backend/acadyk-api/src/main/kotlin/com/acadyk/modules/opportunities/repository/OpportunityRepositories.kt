@@ -7,16 +7,17 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.Optional
+import java.util.UUID
 
 @Repository
-interface OpportunityRepository : JpaRepository<OpportunityEntity, String> {
+interface OpportunityRepository : JpaRepository<OpportunityEntity, UUID> {
     fun findAllByDeletedAtIsNullOrderByCreatedAtDesc(pageable: Pageable): Page<OpportunityEntity>
     fun findAllByOpportunityTypeAndDeletedAtIsNullOrderByCreatedAtDesc(opportunityType: String, pageable: Pageable): Page<OpportunityEntity>
-    fun findByIdAndDeletedAtIsNull(id: String): Optional<OpportunityEntity>
+    fun findByIdAndDeletedAtIsNull(id: UUID): Optional<OpportunityEntity>
 }
 
 @Repository
-interface OpportunityApplicationRepository : JpaRepository<OpportunityApplicationEntity, String> {
-    fun existsByOpportunityIdAndProfileId(opportunityId: String, profileId: String): Boolean
-    fun findAllByProfileId(profileId: String): List<OpportunityApplicationEntity>
+interface OpportunityApplicationRepository : JpaRepository<OpportunityApplicationEntity, UUID> {
+    fun existsByOpportunityIdAndProfileId(opportunityId: UUID, profileId: UUID): Boolean
+    fun findAllByProfileId(profileId: UUID): List<OpportunityApplicationEntity>
 }

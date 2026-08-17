@@ -23,7 +23,7 @@ class FileService(
 ) {
 
     fun generatePresignedUploadUrl(request: PresignedUrlRequest): PresignedUrlResponse {
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { "anonymous" }
+        val currentUserId = try { currentUserProvider.getCurrentUserId().toString() } catch (_: Exception) { "anonymous" }
         val ext = request.fileName.substringAfterLast('.', "bin")
         val fileKey = "uploads/$currentUserId/${UUID.randomUUID()}.$ext"
         val fileUrl = "https://$bucketName.s3.amazonaws.com/$fileKey"
@@ -33,12 +33,12 @@ class FileService(
     }
 
     fun uploadMultipartFile(file: MultipartFile, bucket: String?): UploadFileResponse {
-        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { "anonymous" }
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
 
         val targetBucket = bucket ?: bucketName
         val originalFilename = file.originalFilename ?: "upload.bin"
         val ext = originalFilename.substringAfterLast('.', "bin")
-        val fileKey = "uploads/$currentUserId/${UUID.randomUUID()}.$ext"
+        val fileKey = "uploads/${currentUserId ?: "anonymous"}/${UUID.randomUUID()}.$ext"
 
         val fileUrl = s3StorageService.uploadFile(
             key = fileKey,
@@ -60,7 +60,7 @@ class FileService(
         )
 
         return UploadFileResponse(
-            id = entity.id,
+            id = entity.id.toString(),
             fileUrl = fileUrl,
             fileKey = entity.fileKey,
             fileName = entity.fileName,

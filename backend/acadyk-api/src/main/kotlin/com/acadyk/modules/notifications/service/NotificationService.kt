@@ -1,6 +1,7 @@
 package com.acadyk.modules.notifications.service
 
 import com.acadyk.common.PageResponse
+import com.acadyk.common.toUUID
 import com.acadyk.infrastructure.fcm.FcmService
 import com.acadyk.modules.notifications.dto.NotificationPreferencesDto
 import com.acadyk.modules.notifications.dto.NotificationResponse
@@ -13,6 +14,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.util.UUID
 
 @Service
 @Transactional
@@ -38,7 +40,7 @@ class NotificationService(
         return notificationRepository.countByRecipientIdAndIsReadFalse(currentUserId)
     }
 
-    fun markAsRead(id: String) {
+    fun markAsRead(id: UUID) {
         val currentUserId = currentUserProvider.getCurrentUserId()
         notificationRepository.findByIdAndRecipientId(id, currentUserId).ifPresent {
             it.isRead = true
@@ -46,6 +48,8 @@ class NotificationService(
             notificationRepository.save(it)
         }
     }
+
+    fun markAsRead(id: String) = markAsRead(id.toUUID())
 
     fun markAllAsRead() {
         val currentUserId = currentUserProvider.getCurrentUserId()

@@ -9,7 +9,7 @@ class OpportunityMapper {
 
     fun toResponse(entity: OpportunityEntity, isApplied: Boolean = false): OpportunityResponse {
         return OpportunityResponse(
-            id = entity.id,
+            id = entity.id.toString(),
             companyName = entity.companyName,
             title = entity.title,
             slug = entity.slug,

@@ -32,7 +32,7 @@ class PostServiceTest {
     private lateinit var redisCacheService: RedisCacheService
     private lateinit var postService: PostService
 
-    private val testUserId = UUID.randomUUID().toString()
+    private val testUserId: UUID = UUID.randomUUID()
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> anyNonNull(): T {
@@ -78,7 +78,7 @@ class PostServiceTest {
         )
 
         val savedPost = PostEntity(
-            id = UUID.randomUUID().toString(),
+            id = UUID.randomUUID(),
             author = authorProfile,
             content = request.content,
             postType = "text"
@@ -91,7 +91,7 @@ class PostServiceTest {
 
         assertNotNull(result)
         assertEquals(request.content, result.content)
-        assertEquals(testUserId, result.author.id)
+        assertEquals(testUserId.toString(), result.author.id)
         verify(postRepository, times(1)).save(anyNonNull())
         verify(redisCacheService, times(1)).evictPattern("feed:")
         verify(domainEventPublisher, times(1)).publishPostCreated(anyNonNull())
@@ -101,7 +101,7 @@ class PostServiceTest {
     fun `getPosts returns paginated posts`() {
         val pageable = PageRequest.of(0, 10)
         val author = ProfileEntity(id = testUserId, username = "somraj", email = "somraj@acadyk.com", fullName = "Somraj")
-        val post = PostEntity(id = "p1", author = author, content = "Feed Item")
+        val post = PostEntity(id = UUID.randomUUID(), author = author, content = "Feed Item")
 
         `when`(postRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc(pageable))
             .thenReturn(PageImpl(listOf(post), pageable, 1))

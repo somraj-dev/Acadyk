@@ -5,6 +5,7 @@ import com.google.firebase.messaging.Message
 import com.google.firebase.messaging.Notification
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 @Service
@@ -19,13 +20,19 @@ class FcmService {
         logger.debug("FCM token registered for user: $userId")
     }
 
+    fun registerToken(userId: UUID, token: String) = registerToken(userId.toString(), token)
+
     fun removeToken(userId: String, token: String) {
         userTokens[userId]?.remove(token)
     }
 
+    fun removeToken(userId: UUID, token: String) = removeToken(userId.toString(), token)
+
     fun getUserTokens(userId: String): Set<String> {
         return userTokens[userId] ?: emptySet()
     }
+
+    fun getUserTokens(userId: UUID): Set<String> = getUserTokens(userId.toString())
 
     /**
      * Send FCM push notification safely.
@@ -64,4 +71,11 @@ class FcmService {
             }
         }
     }
+
+    fun sendPushNotification(
+        recipientId: UUID,
+        title: String,
+        body: String,
+        dataPayload: Map<String, String> = emptyMap()
+    ) = sendPushNotification(recipientId.toString(), title, body, dataPayload)
 }

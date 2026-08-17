@@ -5,9 +5,10 @@ import com.acadyk.modules.users.entity.UserEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.Optional
+import java.util.UUID
 
 @Repository
-interface UserRepository : JpaRepository<UserEntity, String> {
+interface UserRepository : JpaRepository<UserEntity, UUID> {
     fun findByFirebaseUid(firebaseUid: String): Optional<UserEntity>
     fun findByEmail(email: String): Optional<UserEntity>
     fun findByCollegeEmail(collegeEmail: String): Optional<UserEntity>
@@ -19,7 +20,7 @@ interface UserRepository : JpaRepository<UserEntity, String> {
 }
 
 @Repository
-interface AuthAuditLogRepository : JpaRepository<AuthAuditLogEntity, String> {
+interface AuthAuditLogRepository : JpaRepository<AuthAuditLogEntity, UUID> {
     fun findAllByFirebaseUidOrderByCreatedAtDesc(firebaseUid: String): List<AuthAuditLogEntity>
     fun findAllByEmailOrderByCreatedAtDesc(email: String): List<AuthAuditLogEntity>
 }

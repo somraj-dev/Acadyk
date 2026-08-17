@@ -1,5 +1,6 @@
 package com.acadyk.infrastructure.kafka
 
+import com.acadyk.common.toUUIDOrNull
 import com.acadyk.infrastructure.fcm.FcmService
 import com.acadyk.infrastructure.redis.RedisCacheService
 import com.acadyk.modules.notifications.entity.NotificationEntity
@@ -38,7 +39,7 @@ class DomainEventConsumers(
             redisCacheService.evict("posts:${event.postId}")
 
             // 2. Index in Elasticsearch asynchronously
-            val author = profileRepository.findById(event.authorId).orElse(null)
+            val author = event.authorId.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
             searchService.indexPost(
                 PostSearchDocument(
                     id = event.postId,
@@ -60,11 +61,11 @@ class DomainEventConsumers(
             val event = objectMapper.readValue(message, MessageSentEvent::class.java)
             logger.info("Kafka async consumer: Processing MessageSentEvent in conversation ${event.conversationId}")
 
-            val sender = profileRepository.findById(event.senderId).orElse(null)
+            val sender = event.senderId.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
 
-            event.recipientIds.forEach { recipientId ->
-                if (recipientId != event.senderId) {
-                    val recipient = profileRepository.findById(recipientId).orElse(null)
+            event.recipientIds.forEach { recipientIdStr ->
+                if (recipientIdStr != event.senderId) {
+                    val recipient = recipientIdStr.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
                     if (recipient != null) {
                         // 1. Persist in-app notification in PostgreSQL FIRST
                         val notif = notificationRepository.save(
@@ -76,21 +77,21 @@ class DomainEventConsumers(
                                 body = event.contentSnippet.take(100),
                                 actionUrl = "/chat/${event.conversationId}",
                                 entityType = "conversation",
-                                entityId = event.conversationId
+                                entityId = event.conversationId.toUUIDOrNull()
                             )
                         )
 
                         // 2. Check user notification preferences before sending FCM push
-                        val prefs = notificationPreferenceRepository.findByProfileId(recipientId).orElse(null)
+                        val prefs = notificationPreferenceRepository.findByProfileId(recipient.id).orElse(null)
                         val canSendPush = prefs == null || (prefs.pushEnabled && prefs.messagesEnabled)
 
                         if (canSendPush) {
                             fcmService.sendPushNotification(
-                                recipientId = recipientId,
+                                recipientId = recipient.id,
                                 title = notif.title,
                                 body = notif.body,
                                 dataPayload = mapOf(
-                                    "notificationId" to notif.id,
+                                    "notificationId" to notif.id.toString(),
                                     "conversationId" to event.conversationId,
                                     "type" to "chat_message"
                                 )
@@ -108,8 +109,8 @@ class DomainEventConsumers(
     fun handleConnectionCreated(message: String) {
         try {
             val event = objectMapper.readValue(message, ConnectionCreatedEvent::class.java)
-            val userA = profileRepository.findById(event.userAId).orElse(null)
-            val userB = profileRepository.findById(event.userBId).orElse(null)
+            val userA = event.userAId.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
+            val userB = event.userBId.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
 
             if (userA != null && userB != null) {
                 // 1. PostgreSQL in-app notification
@@ -135,7 +136,7 @@ class DomainEventConsumers(
                         recipientId = userB.id,
                         title = notif.title,
                         body = notif.body,
-                        dataPayload = mapOf("profileId" to userA.id, "type" to "connection_accepted")
+                        dataPayload = mapOf("profileId" to userA.id.toString(), "type" to "connection_accepted")
                     )
                 }
             }
@@ -149,8 +150,8 @@ class DomainEventConsumers(
         try {
             val event = objectMapper.readValue(message, PostLikedEvent::class.java)
             if (event.authorId != event.likerId) {
-                val author = profileRepository.findById(event.authorId).orElse(null)
-                val liker = profileRepository.findById(event.likerId).orElse(null)
+                val author = event.authorId.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
+                val liker = event.likerId.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
                 if (author != null) {
                     val notif = notificationRepository.save(
                         NotificationEntity(
@@ -161,7 +162,7 @@ class DomainEventConsumers(
                             body = "${event.likerName} liked your post",
                             actionUrl = "/posts/${event.postId}",
                             entityType = "post",
-                            entityId = event.postId
+                            entityId = event.postId.toUUIDOrNull()
                         )
                     )
 
@@ -208,8 +209,8 @@ class DomainEventConsumers(
         try {
             val event = objectMapper.readValue(message, ApplicationSubmittedEvent::class.java)
             if (event.posterId != null) {
-                val poster = profileRepository.findById(event.posterId).orElse(null)
-                val applicant = profileRepository.findById(event.applicantId).orElse(null)
+                val poster = event.posterId.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
+                val applicant = event.applicantId.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
                 if (poster != null) {
                     val notif = notificationRepository.save(
                         NotificationEntity(
@@ -220,7 +221,7 @@ class DomainEventConsumers(
                             body = "${event.applicantName} applied for your opportunity posting",
                             actionUrl = "/opportunities/${event.opportunityId}/applications",
                             entityType = "opportunity",
-                            entityId = event.opportunityId
+                            entityId = event.opportunityId.toUUIDOrNull()
                         )
                     )
 

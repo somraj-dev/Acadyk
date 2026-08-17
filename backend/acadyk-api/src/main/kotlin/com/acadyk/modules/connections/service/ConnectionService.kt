@@ -2,6 +2,7 @@ package com.acadyk.modules.connections.service
 
 import com.acadyk.common.BadRequestException
 import com.acadyk.common.ResourceNotFoundException
+import com.acadyk.common.toUUID
 import com.acadyk.infrastructure.kafka.ConnectionCreatedEvent
 import com.acadyk.infrastructure.kafka.DomainEventPublisher
 import com.acadyk.modules.connections.dto.ConnectionRequestResponse
@@ -21,6 +22,7 @@ import com.acadyk.security.CurrentUserProvider
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.util.UUID
 
 @Service
 @Transactional
@@ -37,13 +39,14 @@ class ConnectionService(
 
     fun sendConnectionRequest(request: SendConnectionRequest): ConnectionRequestResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
-        if (currentUserId == request.recipientId) {
+        val recipientUuid = request.recipientId.toUUID()
+        if (currentUserId == recipientUuid) {
             throw BadRequestException("Cannot connect with yourself")
         }
 
         val sender = profileRepository.findById(currentUserId)
             .orElseThrow { ResourceNotFoundException("Sender profile not found") }
-        val recipient = profileRepository.findById(request.recipientId)
+        val recipient = profileRepository.findById(recipientUuid)
             .orElseThrow { ResourceNotFoundException("Recipient profile not found") }
 
         val connRequest = connectionRequestRepository.save(
@@ -57,7 +60,7 @@ class ConnectionService(
         return connectionMapper.toResponse(connRequest)
     }
 
-    fun acceptConnectionRequest(requestId: String) {
+    fun acceptConnectionRequest(requestId: UUID) {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val request = connectionRequestRepository.findById(requestId)
             .orElseThrow { ResourceNotFoundException("Connection request not found") }
@@ -79,18 +82,22 @@ class ConnectionService(
 
         domainEventPublisher.publishConnectionCreated(
             ConnectionCreatedEvent(
-                userAId = request.sender.id,
-                userBId = request.recipient.id,
+                userAId = request.sender.id.toString(),
+                userBId = request.recipient.id.toString(),
                 userAName = request.sender.fullName
             )
         )
     }
 
-    fun removeConnection(connectionId: String) {
+    fun acceptConnectionRequest(requestId: String) = acceptConnectionRequest(requestId.toUUID())
+
+    fun removeConnection(connectionId: UUID) {
         connectionRepository.deleteById(connectionId)
     }
 
-    fun toggleFollow(targetUserId: String): FollowStatusResponse {
+    fun removeConnection(connectionId: String) = removeConnection(connectionId.toUUID())
+
+    fun toggleFollow(targetUserId: UUID): FollowStatusResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
         if (currentUserId == targetUserId) {
             throw BadRequestException("Users cannot follow themselves")
@@ -120,14 +127,22 @@ class ConnectionService(
         profileRepository.save(currentUser)
         profileRepository.save(targetUser)
 
-        return FollowStatusResponse(targetUserId, isFollowing)
+        return FollowStatusResponse(targetUserId.toString(), isFollowing)
     }
 
+    fun toggleFollow(targetUserId: String): FollowStatusResponse = toggleFollow(targetUserId.toUUID())
+
     @Transactional(readOnly = true)
-    fun getFollowers(userId: String): List<ProfileResponse> =
+    fun getFollowers(userId: UUID): List<ProfileResponse> =
         followRepository.findAllByFollowingId(userId).map { profileMapper.toResponse(it.follower) }
 
     @Transactional(readOnly = true)
-    fun getFollowing(userId: String): List<ProfileResponse> =
+    fun getFollowers(userId: String): List<ProfileResponse> = getFollowers(userId.toUUID())
+
+    @Transactional(readOnly = true)
+    fun getFollowing(userId: UUID): List<ProfileResponse> =
         followRepository.findAllByFollowerId(userId).map { profileMapper.toResponse(it.following) }
+
+    @Transactional(readOnly = true)
+    fun getFollowing(userId: String): List<ProfileResponse> = getFollowing(userId.toUUID())
 }

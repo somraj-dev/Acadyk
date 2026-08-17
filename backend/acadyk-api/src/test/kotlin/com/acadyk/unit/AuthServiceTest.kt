@@ -81,7 +81,7 @@ class AuthServiceTest {
         )
 
         val savedUser = UserEntity(
-            id = UUID.randomUUID().toString(),
+            id = UUID.randomUUID(),
             firebaseUid = "firebase_123",
             email = request.email,
             enrollmentNumber = defaultParsedInfo.enrollmentNumber
@@ -96,7 +96,7 @@ class AuthServiceTest {
 
         `when`(userRepository.save(anyNonNull())).thenReturn(savedUser)
         `when`(profileRepository.save(anyNonNull())).thenReturn(savedProfile)
-        `when`(jwtTokenProvider.createToken(anyNonNull(), anyNonNull(), anyNonNull())).thenReturn("mock_jwt_token")
+        `when`(jwtTokenProvider.createToken(anyNonNull<UUID>(), anyNonNull(), anyNonNull())).thenReturn("mock_jwt_token")
 
         val response = authService.register(request, "127.0.0.1")
 
@@ -115,7 +115,7 @@ class AuthServiceTest {
         )
 
         val existingUser = UserEntity(
-            id = UUID.randomUUID().toString(),
+            id = UUID.randomUUID(),
             firebaseUid = "firebase_456",
             email = request.email,
             enrollmentNumber = "0901CS211001"
@@ -130,7 +130,7 @@ class AuthServiceTest {
 
         `when`(userRepository.findByEmail(request.email)).thenReturn(Optional.of(existingUser))
         `when`(profileRepository.findById(existingUser.id)).thenReturn(Optional.of(existingProfile))
-        `when`(jwtTokenProvider.createToken(anyNonNull(), anyNonNull(), anyNonNull())).thenReturn("mock_login_jwt")
+        `when`(jwtTokenProvider.createToken(anyNonNull<UUID>(), anyNonNull(), anyNonNull())).thenReturn("mock_login_jwt")
 
         val response = authService.login(request, "127.0.0.1")
 

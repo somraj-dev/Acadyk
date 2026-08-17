@@ -3,6 +3,7 @@ package com.acadyk.modules.chat.service
 import com.acadyk.common.ForbiddenException
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
+import com.acadyk.common.toUUID
 import com.acadyk.infrastructure.kafka.DomainEventPublisher
 import com.acadyk.infrastructure.kafka.MessageSentEvent
 import com.acadyk.modules.chat.dto.ConversationResponse
@@ -25,7 +26,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
+import java.util.UUID
 
 @Service
 @Transactional
@@ -56,7 +57,7 @@ class ChatService(
     }
 
     @Transactional(readOnly = true)
-    fun getMessages(conversationId: String, page: Int, size: Int): PageResponse<MessageDto> {
+    fun getMessages(conversationId: UUID, page: Int, size: Int): PageResponse<MessageDto> {
         val currentUserId = currentUserProvider.getCurrentUserId()
         if (!conversationMemberRepository.existsByConversationIdAndProfileId(conversationId, currentUserId)) {
             throw ForbiddenException("You are not a participant in this conversation")
@@ -67,7 +68,11 @@ class ChatService(
         return PageResponse.from(messagesPage, chatMapper::toDto)
     }
 
-    fun sendMessage(conversationId: String, request: SendMessageRequest): MessageDto {
+    @Transactional(readOnly = true)
+    fun getMessages(conversationId: String, page: Int, size: Int): PageResponse<MessageDto> =
+        getMessages(conversationId.toUUID(), page, size)
+
+    fun sendMessage(conversationId: UUID, request: SendMessageRequest): MessageDto {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val conv = conversationRepository.findByIdAndDeletedAtIsNull(conversationId)
             .orElseThrow { ResourceNotFoundException("Conversation not found") }
@@ -101,12 +106,12 @@ class ChatService(
         } catch (_: Exception) {}
 
         // 3. Asynchronous Kafka event
-        val memberIds = conversationMemberRepository.findAllByConversationId(conversationId).map { it.profile.id }
+        val memberIds = conversationMemberRepository.findAllByConversationId(conversationId).map { it.profile.id.toString() }
         domainEventPublisher.publishMessageSent(
             MessageSentEvent(
-                messageId = saved.id,
-                conversationId = conversationId,
-                senderId = sender.id,
+                messageId = saved.id.toString(),
+                conversationId = conversationId.toString(),
+                senderId = sender.id.toString(),
                 senderName = sender.fullName,
                 contentSnippet = payloadToSnippet(request.content),
                 recipientIds = memberIds
@@ -116,13 +121,17 @@ class ChatService(
         return dto
     }
 
+    fun sendMessage(conversationId: String, request: SendMessageRequest): MessageDto =
+        sendMessage(conversationId.toUUID(), request)
+
     private fun payloadToSnippet(content: String): String = if (content.length > 100) content.take(97) + "..." else content
 
     fun startDirectMessage(request: StartDirectMessageRequest): ConversationResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
+        val recipientUuid = request.recipientId.toUUID()
         val currentUser = profileRepository.findById(currentUserId)
             .orElseThrow { ResourceNotFoundException("Current user profile not found") }
-        val recipient = profileRepository.findById(request.recipientId)
+        val recipient = profileRepository.findById(recipientUuid)
             .orElseThrow { ResourceNotFoundException("Recipient profile not found") }
 
         val conv = conversationRepository.save(
@@ -144,7 +153,7 @@ class ChatService(
         return chatMapper.toResponse(conv, members, 0)
     }
 
-    fun markMessageRead(messageId: String) {
+    fun markMessageRead(messageId: UUID) {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val message = messageRepository.findById(messageId).orElse(null) ?: return
         val profile = profileRepository.findById(currentUserId).orElse(null) ?: return
@@ -153,4 +162,6 @@ class ChatService(
             messageReadRepository.save(MessageReadEntity(message = message, profile = profile))
         }
     }
+
+    fun markMessageRead(messageId: String) = markMessageRead(messageId.toUUID())
 }

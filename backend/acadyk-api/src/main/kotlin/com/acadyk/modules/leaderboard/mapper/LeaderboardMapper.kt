@@ -9,8 +9,8 @@ class LeaderboardMapper {
 
     fun toResponse(entity: LeaderboardEntryEntity): LeaderboardItemResponse {
         return LeaderboardItemResponse(
-            id = entity.id,
-            profileId = entity.profile.id,
+            id = entity.id.toString(),
+            profileId = entity.profile.id.toString(),
             username = entity.profile.username,
             fullName = entity.profile.fullName,
             profilePhotoUrl = entity.profile.profilePhotoUrl,

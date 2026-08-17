@@ -8,21 +8,22 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.Optional
+import java.util.UUID
 
 @Repository
-interface StartupRepository : JpaRepository<StartupEntity, String> {
+interface StartupRepository : JpaRepository<StartupEntity, UUID> {
     fun findAllByDeletedAtIsNullOrderByCreatedAtDesc(pageable: Pageable): Page<StartupEntity>
     fun findAllByStageAndDeletedAtIsNull(stage: String, pageable: Pageable): Page<StartupEntity>
-    fun findByIdAndDeletedAtIsNull(id: String): Optional<StartupEntity>
+    fun findByIdAndDeletedAtIsNull(id: UUID): Optional<StartupEntity>
 }
 
 @Repository
-interface StartupMemberRepository : JpaRepository<StartupMemberEntity, String> {
-    fun findAllByStartupId(startupId: String): List<StartupMemberEntity>
-    fun findAllByProfileId(profileId: String): List<StartupMemberEntity>
+interface StartupMemberRepository : JpaRepository<StartupMemberEntity, UUID> {
+    fun findAllByStartupId(startupId: UUID): List<StartupMemberEntity>
+    fun findAllByProfileId(profileId: UUID): List<StartupMemberEntity>
 }
 
 @Repository
-interface StartupMediaRepository : JpaRepository<StartupMediaEntity, String> {
-    fun findAllByStartupIdOrderByPositionAsc(startupId: String): List<StartupMediaEntity>
+interface StartupMediaRepository : JpaRepository<StartupMediaEntity, UUID> {
+    fun findAllByStartupIdOrderByPositionAsc(startupId: UUID): List<StartupMediaEntity>
 }

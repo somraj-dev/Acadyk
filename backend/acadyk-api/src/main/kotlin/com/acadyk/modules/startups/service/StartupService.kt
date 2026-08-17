@@ -2,6 +2,7 @@ package com.acadyk.modules.startups.service
 
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
+import com.acadyk.common.toUUID
 import com.acadyk.modules.profiles.repository.ProfileRepository
 import com.acadyk.modules.startups.dto.CreateStartupRequest
 import com.acadyk.modules.startups.dto.StartupResponse
@@ -16,6 +17,7 @@ import com.acadyk.security.CurrentUserProvider
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 @Transactional
@@ -44,12 +46,15 @@ class StartupService(
     }
 
     @Transactional(readOnly = true)
-    fun getStartupById(id: String): StartupResponse {
+    fun getStartupById(id: UUID): StartupResponse {
         val startup = startupRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Startup with id $id not found") }
         val media = startupMediaRepository.findAllByStartupIdOrderByPositionAsc(startup.id)
         return startupMapper.toResponse(startup, media)
     }
+
+    @Transactional(readOnly = true)
+    fun getStartupById(id: String): StartupResponse = getStartupById(id.toUUID())
 
     fun createStartup(request: CreateStartupRequest): StartupResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()

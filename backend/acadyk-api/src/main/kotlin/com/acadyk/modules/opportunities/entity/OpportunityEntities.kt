@@ -10,7 +10,7 @@ import java.util.UUID
 @Table(name = "opportunities")
 data class OpportunityEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "posted_by_id")
@@ -53,7 +53,7 @@ data class OpportunityEntity(
 @Table(name = "opportunity_applications")
 data class OpportunityApplicationEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "opportunity_id", nullable = false)

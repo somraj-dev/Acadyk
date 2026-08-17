@@ -9,7 +9,7 @@ import java.util.UUID
 @Table(name = "events")
 data class EventEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizer_id")
@@ -47,7 +47,7 @@ data class EventEntity(
 @Table(name = "event_registrations")
 data class EventRegistrationEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)

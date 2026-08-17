@@ -10,7 +10,7 @@ import java.util.UUID
 @Table(name = "leaderboard_entries")
 data class LeaderboardEntryEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "profile_id", nullable = false)

@@ -10,7 +10,7 @@ class StartupMapper {
 
     fun toResponse(entity: StartupEntity, mediaList: List<StartupMediaEntity> = emptyList()): StartupResponse {
         return StartupResponse(
-            id = entity.id,
+            id = entity.id.toString(),
             name = entity.name,
             slug = entity.slug,
             pitch = entity.pitch,

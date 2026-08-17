@@ -41,14 +41,14 @@ class UserService(
     fun getCurrentUserIdentity(): UserIdentityResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val user = userRepository.findById(currentUserId)
-            .or { userRepository.findByFirebaseUid(currentUserId) }
+            .or { userRepository.findByFirebaseUid(currentUserId.toString()) }
             .orElseThrow { ResourceNotFoundException("User identity not found") }
 
         val profile = profileRepository.findById(user.id)
             .orElseGet { profileRepository.findById(currentUserId).orElseThrow { ResourceNotFoundException("Profile not found") } }
 
         return UserIdentityResponse(
-            userId = user.id,
+            userId = user.id.toString(),
             firebaseUid = user.firebaseUid,
             collegeEmail = user.collegeEmail ?: user.email,
             enrollmentNumber = user.enrollmentNumber ?: profile.username,

@@ -38,8 +38,8 @@ class MessageServiceTest {
     private lateinit var domainEventPublisher: DomainEventPublisher
     private lateinit var chatService: ChatService
 
-    private val testUserId = UUID.randomUUID().toString()
-    private val testConvId = UUID.randomUUID().toString()
+    private val testUserId: UUID = UUID.randomUUID()
+    private val testConvId: UUID = UUID.randomUUID()
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> anyNonNull(): T {
@@ -96,7 +96,7 @@ class MessageServiceTest {
         )
 
         val savedMsg = MessageEntity(
-            id = UUID.randomUUID().toString(),
+            id = UUID.randomUUID(),
             conversation = conv,
             sender = sender,
             content = request.content
@@ -114,7 +114,7 @@ class MessageServiceTest {
 
         assertNotNull(result)
         assertEquals(request.content, result.content)
-        assertEquals(testUserId, result.sender.id)
+        assertEquals(testUserId.toString(), result.sender.id)
         verify(messageRepository, times(1)).save(anyNonNull())
         verify(domainEventPublisher, times(1)).publishMessageSent(anyNonNull())
     }

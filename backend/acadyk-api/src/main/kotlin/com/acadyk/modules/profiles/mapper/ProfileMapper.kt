@@ -9,7 +9,7 @@ class ProfileMapper {
 
     fun toResponse(entity: ProfileEntity): ProfileResponse {
         return ProfileResponse(
-            id = entity.id,
+            id = entity.id.toString(),
             username = entity.username,
             fullName = entity.fullName,
             email = entity.email,
@@ -33,7 +33,7 @@ class ProfileMapper {
     }
 
     fun toDto(entity: EducationEntity): EducationDto = EducationDto(
-        id = entity.id,
+        id = entity.id.toString(),
         institution = entity.institution,
         degree = entity.degree,
         fieldOfStudy = entity.fieldOfStudy,
@@ -44,7 +44,7 @@ class ProfileMapper {
     )
 
     fun toDto(entity: ExperienceEntity): ExperienceDto = ExperienceDto(
-        id = entity.id,
+        id = entity.id.toString(),
         title = entity.title,
         companyName = entity.companyName,
         employmentType = entity.employmentType,
@@ -56,7 +56,7 @@ class ProfileMapper {
     )
 
     fun toDto(entity: CertificateEntity): CertificateDto = CertificateDto(
-        id = entity.id,
+        id = entity.id.toString(),
         name = entity.name,
         issuingOrganization = entity.issuingOrganization,
         issueDate = entity.issueDate,
@@ -66,7 +66,7 @@ class ProfileMapper {
     )
 
     fun toDto(entity: ResumeEntity): ResumeDto = ResumeDto(
-        id = entity.id,
+        id = entity.id.toString(),
         title = entity.title,
         fileUrl = entity.fileUrl,
         isPrimary = entity.isPrimary,

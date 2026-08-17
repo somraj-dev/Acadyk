@@ -35,8 +35,8 @@ class EventServiceTest {
     private lateinit var redisDistributedLock: RedisDistributedLock
     private lateinit var eventService: EventService
 
-    private val testUserId = UUID.randomUUID().toString()
-    private val testEventId = UUID.randomUUID().toString()
+    private val testUserId: UUID = UUID.randomUUID()
+    private val testEventId: UUID = UUID.randomUUID()
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> anyNonNull(): T {
@@ -115,7 +115,7 @@ class EventServiceTest {
 
     @Test
     fun `registerForEvent checks existence, creates registration and publishes EventRegistered event`() {
-        val organizer = ProfileEntity(id = "org1", username = "org", email = "org@acadyk.com", fullName = "Acadyk")
+        val organizer = ProfileEntity(id = UUID.randomUUID(), username = "org", email = "org@acadyk.com", fullName = "Acadyk")
         val user = ProfileEntity(id = testUserId, username = "user1", email = "user@acadyk.com", fullName = "Somraj")
 
         val event = EventEntity(
@@ -133,7 +133,7 @@ class EventServiceTest {
         `when`(profileRepository.findById(testUserId)).thenReturn(Optional.of(user))
         `when`(registrationRepository.existsByEventIdAndProfileId(testEventId, testUserId)).thenReturn(false)
         `when`(registrationRepository.save(anyNonNull())).thenAnswer {
-            EventRegistrationEntity(id = "reg_1", event = event, profile = user)
+            EventRegistrationEntity(id = UUID.randomUUID(), event = event, profile = user)
         }
 
         val registered = eventService.registerForEvent(testEventId)

@@ -10,16 +10,16 @@ class CommentMapper {
 
     fun toResponse(entity: CommentEntity): CommentResponse {
         return CommentResponse(
-            id = entity.id,
-            postId = entity.post.id,
+            id = entity.id.toString(),
+            postId = entity.post.id.toString(),
             author = CommentAuthorDto(
-                id = entity.author.id,
+                id = entity.author.id.toString(),
                 username = entity.author.username,
                 fullName = entity.author.fullName,
                 profilePhotoUrl = entity.author.profilePhotoUrl
             ),
             content = entity.content,
-            parentId = entity.parentId,
+            parentId = entity.parentId?.toString(),
             likesCount = entity.likesCount,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt

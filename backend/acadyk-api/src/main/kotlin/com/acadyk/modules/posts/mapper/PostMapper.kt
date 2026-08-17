@@ -16,9 +16,9 @@ class PostMapper {
         isBookmarked: Boolean = false
     ): PostResponse {
         return PostResponse(
-            id = entity.id,
+            id = entity.id.toString(),
             author = PostAuthorDto(
-                id = entity.author.id,
+                id = entity.author.id.toString(),
                 username = entity.author.username,
                 fullName = entity.author.fullName,
                 headline = entity.author.headline,

@@ -2,6 +2,8 @@ package com.acadyk.modules.comments.service
 
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
+import com.acadyk.common.toUUID
+import com.acadyk.common.toUUIDOrNull
 import com.acadyk.infrastructure.kafka.CommentCreatedEvent
 import com.acadyk.infrastructure.kafka.DomainEventPublisher
 import com.acadyk.modules.comments.dto.AddCommentRequest
@@ -15,6 +17,7 @@ import com.acadyk.security.CurrentUserProvider
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 @Transactional
@@ -28,13 +31,17 @@ class CommentService(
 ) {
 
     @Transactional(readOnly = true)
-    fun getComments(postId: String, page: Int, size: Int): PageResponse<CommentResponse> {
+    fun getComments(postId: UUID, page: Int, size: Int): PageResponse<CommentResponse> {
         val pageable = PageRequest.of(page, size)
         val commentsPage = commentRepository.findAllByPostIdAndDeletedAtIsNullOrderByCreatedAtAsc(postId, pageable)
         return PageResponse.from(commentsPage, commentMapper::toResponse)
     }
 
-    fun addComment(postId: String, request: AddCommentRequest): CommentResponse {
+    @Transactional(readOnly = true)
+    fun getComments(postId: String, page: Int, size: Int): PageResponse<CommentResponse> =
+        getComments(postId.toUUID(), page, size)
+
+    fun addComment(postId: UUID, request: AddCommentRequest): CommentResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val post = postRepository.findByIdAndDeletedAtIsNull(postId)
             .orElseThrow { ResourceNotFoundException("Post with id $postId not found") }
@@ -46,7 +53,7 @@ class CommentService(
             post = post,
             author = author,
             content = request.content,
-            parentId = request.parentId
+            parentId = request.parentId?.toUUIDOrNull()
         )
         val savedComment = commentRepository.save(comment)
 
@@ -55,10 +62,10 @@ class CommentService(
 
         domainEventPublisher.publishCommentCreated(
             CommentCreatedEvent(
-                commentId = savedComment.id,
-                postId = postId,
-                postAuthorId = post.author.id,
-                commenterId = author.id,
+                commentId = savedComment.id.toString(),
+                postId = postId.toString(),
+                postAuthorId = post.author.id.toString(),
+                commenterId = author.id.toString(),
                 commenterName = author.fullName,
                 contentSnippet = savedComment.content.take(100)
             )
@@ -66,4 +73,7 @@ class CommentService(
 
         return commentMapper.toResponse(savedComment)
     }
+
+    fun addComment(postId: String, request: AddCommentRequest): CommentResponse =
+        addComment(postId.toUUID(), request)
 }

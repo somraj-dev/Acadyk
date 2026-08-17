@@ -2,6 +2,8 @@ package com.acadyk.modules.opportunities.service
 
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
+import com.acadyk.common.toUUID
+import com.acadyk.common.toUUIDOrNull
 import com.acadyk.infrastructure.kafka.ApplicationSubmittedEvent
 import com.acadyk.infrastructure.kafka.DomainEventPublisher
 import com.acadyk.infrastructure.kafka.OpportunityCreatedEvent
@@ -20,6 +22,7 @@ import com.acadyk.security.CurrentUserProvider
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 @Transactional
@@ -52,13 +55,16 @@ class OpportunityService(
     }
 
     @Transactional(readOnly = true)
-    fun getOpportunityById(id: String): OpportunityResponse {
+    fun getOpportunityById(id: UUID): OpportunityResponse {
         val opp = opportunityRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Opportunity with id $id not found") }
         val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
         val isApplied = currentUserId?.let { opportunityApplicationRepository.existsByOpportunityIdAndProfileId(opp.id, it) } ?: false
         return opportunityMapper.toResponse(opp, isApplied)
     }
+
+    @Transactional(readOnly = true)
+    fun getOpportunityById(id: String): OpportunityResponse = getOpportunityById(id.toUUID())
 
     fun createOpportunity(request: CreateOpportunityRequest): OpportunityResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
@@ -85,7 +91,7 @@ class OpportunityService(
 
         domainEventPublisher.publishOpportunityCreated(
             OpportunityCreatedEvent(
-                opportunityId = saved.id,
+                opportunityId = saved.id.toString(),
                 title = saved.title,
                 companyName = saved.companyName,
                 opportunityType = saved.opportunityType
@@ -95,7 +101,7 @@ class OpportunityService(
         return opportunityMapper.toResponse(saved, false)
     }
 
-    fun apply(id: String, request: ApplyOpportunityRequest): Boolean {
+    fun apply(id: UUID, request: ApplyOpportunityRequest): Boolean {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val opp = opportunityRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Opportunity with id $id not found") }
@@ -103,7 +109,7 @@ class OpportunityService(
         val profile = profileRepository.findById(currentUserId)
             .orElseThrow { ResourceNotFoundException("User profile not found") }
 
-        val resume = request.resumeId?.let { resumeRepository.findById(it).orElse(null) }
+        val resume = request.resumeId?.toUUIDOrNull()?.let { resumeRepository.findById(it).orElse(null) }
 
         // Use distributed lock for atomic submission idempotency
         redisDistributedLock.withLock("opportunity:apply:$id:$currentUserId") {
@@ -121,11 +127,11 @@ class OpportunityService(
 
                 domainEventPublisher.publishApplicationSubmitted(
                     ApplicationSubmittedEvent(
-                        applicationId = application.id,
-                        opportunityId = opp.id,
+                        applicationId = application.id.toString(),
+                        opportunityId = opp.id.toString(),
                         opportunityTitle = opp.title,
-                        posterId = opp.postedBy?.id,
-                        applicantId = profile.id,
+                        posterId = opp.postedBy?.id?.toString(),
+                        applicantId = profile.id.toString(),
                         applicantName = profile.fullName
                     )
                 )
@@ -134,4 +140,6 @@ class OpportunityService(
 
         return true
     }
+
+    fun apply(id: String, request: ApplyOpportunityRequest): Boolean = apply(id.toUUID(), request)
 }

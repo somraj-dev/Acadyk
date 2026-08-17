@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import java.time.Instant
+import java.util.UUID
 
 @MappedSuperclass
 abstract class BaseEntity(
@@ -72,37 +73,56 @@ class BadRequestException(message: String) : RuntimeException(message)
 class UnauthorizedException(message: String) : RuntimeException(message)
 class ForbiddenException(message: String) : RuntimeException(message)
 
+fun String.toUUID(): UUID = try {
+    UUID.fromString(this)
+} catch (e: Exception) {
+    throw BadRequestException("Invalid UUID format: $this")
+}
+
+fun String?.toUUIDOrNull(): UUID? = this?.let {
+    try {
+        UUID.fromString(it)
+    } catch (_: Exception) {
+        null
+    }
+}
+
 @RestControllerAdvice
 class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException::class)
-    fun handleNotFound(e: ResourceNotFoundException): ResponseEntity<ApiResponse<Nothing>> {
+    fun handleNotFound(e: ResourceNotFoundException): ResponseEntity<ApiResponse<Unit>> {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.message ?: "Resource not found"))
     }
 
     @ExceptionHandler(BadRequestException::class)
-    fun handleBadRequest(e: BadRequestException): ResponseEntity<ApiResponse<Nothing>> {
+    fun handleBadRequest(e: BadRequestException): ResponseEntity<ApiResponse<Unit>> {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.message ?: "Bad request"))
     }
 
+    @ExceptionHandler(IllegalArgumentException::class)
+    fun handleIllegalArgument(e: IllegalArgumentException): ResponseEntity<ApiResponse<Unit>> {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.message ?: "Invalid UUID or argument"))
+    }
+
     @ExceptionHandler(UnauthorizedException::class)
-    fun handleUnauthorized(e: UnauthorizedException): ResponseEntity<ApiResponse<Nothing>> {
+    fun handleUnauthorized(e: UnauthorizedException): ResponseEntity<ApiResponse<Unit>> {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(e.message ?: "Unauthorized"))
     }
 
     @ExceptionHandler(ForbiddenException::class)
-    fun handleForbidden(e: ForbiddenException): ResponseEntity<ApiResponse<Nothing>> {
+    fun handleForbidden(e: ForbiddenException): ResponseEntity<ApiResponse<Unit>> {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.message ?: "Forbidden"))
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
-    fun handleValidation(e: MethodArgumentNotValidException): ResponseEntity<ApiResponse<Nothing>> {
+    fun handleValidation(e: MethodArgumentNotValidException): ResponseEntity<ApiResponse<Unit>> {
         val errorMessage = e.bindingResult.fieldErrors.joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(errorMessage))
     }
 
     @ExceptionHandler(Exception::class)
-    fun handleGeneric(e: Exception): ResponseEntity<ApiResponse<Nothing>> {
+    fun handleGeneric(e: Exception): ResponseEntity<ApiResponse<Unit>> {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ApiResponse.error(e.message ?: "An unexpected error occurred"))
     }

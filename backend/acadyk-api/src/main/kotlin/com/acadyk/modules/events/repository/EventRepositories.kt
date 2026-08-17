@@ -7,16 +7,17 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.Optional
+import java.util.UUID
 
 @Repository
-interface EventRepository : JpaRepository<EventEntity, String> {
+interface EventRepository : JpaRepository<EventEntity, UUID> {
     fun findAllByDeletedAtIsNullOrderByStartTimeDesc(pageable: Pageable): Page<EventEntity>
     fun findAllByEventTypeAndDeletedAtIsNullOrderByStartTimeDesc(eventType: String, pageable: Pageable): Page<EventEntity>
-    fun findByIdAndDeletedAtIsNull(id: String): Optional<EventEntity>
+    fun findByIdAndDeletedAtIsNull(id: UUID): Optional<EventEntity>
 }
 
 @Repository
-interface EventRegistrationRepository : JpaRepository<EventRegistrationEntity, String> {
-    fun existsByEventIdAndProfileId(eventId: String, profileId: String): Boolean
-    fun findAllByProfileId(profileId: String): List<EventRegistrationEntity>
+interface EventRegistrationRepository : JpaRepository<EventRegistrationEntity, UUID> {
+    fun existsByEventIdAndProfileId(eventId: UUID, profileId: UUID): Boolean
+    fun findAllByProfileId(profileId: UUID): List<EventRegistrationEntity>
 }

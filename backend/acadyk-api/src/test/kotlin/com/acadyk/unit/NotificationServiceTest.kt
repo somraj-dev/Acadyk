@@ -1,7 +1,6 @@
 package com.acadyk.unit
 
 import com.acadyk.infrastructure.fcm.FcmService
-import com.acadyk.modules.notifications.dto.NotificationPreferencesDto
 import com.acadyk.modules.notifications.entity.NotificationEntity
 import com.acadyk.modules.notifications.entity.NotificationPreferenceEntity
 import com.acadyk.modules.notifications.mapper.NotificationMapper
@@ -29,7 +28,7 @@ class NotificationServiceTest {
     private lateinit var fcmService: FcmService
     private lateinit var notificationService: NotificationService
 
-    private val testUserId = UUID.randomUUID().toString()
+    private val testUserId: UUID = UUID.randomUUID()
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> anyNonNull(): T {
@@ -66,7 +65,7 @@ class NotificationServiceTest {
         )
 
         val notif = NotificationEntity(
-            id = UUID.randomUUID().toString(),
+            id = UUID.randomUUID(),
             recipient = recipient,
             type = "post_like",
             title = "New reaction",
@@ -87,7 +86,7 @@ class NotificationServiceTest {
     @Test
     fun `getPreferences returns preferences when found`() {
         val pref = NotificationPreferenceEntity(
-            id = UUID.randomUUID().toString(),
+            id = UUID.randomUUID(),
             profileId = testUserId,
             pushEnabled = true,
             emailEnabled = true

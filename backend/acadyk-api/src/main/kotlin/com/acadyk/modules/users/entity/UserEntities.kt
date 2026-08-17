@@ -16,7 +16,7 @@ enum class AccountStatus {
 @Table(name = "users")
 data class UserEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @Column(name = "firebase_uid", nullable = false, unique = true)
     var firebaseUid: String,
@@ -80,13 +80,13 @@ data class UserEntity(
 @Table(name = "auth_audit_logs")
 data class AuthAuditLogEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @Column(name = "firebase_uid")
     var firebaseUid: String? = null,
 
     @Column(name = "user_id")
-    var userId: String? = null,
+    var userId: UUID? = null,
 
     @Column(nullable = false)
     var email: String,

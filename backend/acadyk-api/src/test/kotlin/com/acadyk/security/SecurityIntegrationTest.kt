@@ -3,6 +3,7 @@ package com.acadyk.security
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import java.util.UUID
 
 class SecurityIntegrationTest {
 
@@ -19,13 +20,14 @@ class SecurityIntegrationTest {
 
     @Test
     fun `UserPrincipal sets correct authorities based on role`() {
+        val id = UUID.randomUUID()
         val principal = UserPrincipal(
-            id = "user_123",
+            id = id,
             email = "somraj@acadyk.com",
             role = Role.SUPER_ADMIN
         )
 
-        assertEquals("user_123", principal.id)
+        assertEquals(id, principal.id)
         assertEquals("somraj@acadyk.com", principal.email)
         assertTrue(principal.authorities.contains(SimpleGrantedAuthority("ROLE_SUPER_ADMIN")))
     }

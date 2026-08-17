@@ -7,15 +7,16 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.Optional
+import java.util.UUID
 
 @Repository
-interface NotificationRepository : JpaRepository<NotificationEntity, String> {
-    fun findAllByRecipientIdOrderByCreatedAtDesc(recipientId: String, pageable: Pageable): Page<NotificationEntity>
-    fun countByRecipientIdAndIsReadFalse(recipientId: String): Long
-    fun findByIdAndRecipientId(id: String, recipientId: String): Optional<NotificationEntity>
+interface NotificationRepository : JpaRepository<NotificationEntity, UUID> {
+    fun findAllByRecipientIdOrderByCreatedAtDesc(recipientId: UUID, pageable: Pageable): Page<NotificationEntity>
+    fun countByRecipientIdAndIsReadFalse(recipientId: UUID): Long
+    fun findByIdAndRecipientId(id: UUID, recipientId: UUID): Optional<NotificationEntity>
 }
 
 @Repository
-interface NotificationPreferenceRepository : JpaRepository<NotificationPreferenceEntity, String> {
-    fun findByProfileId(profileId: String): Optional<NotificationPreferenceEntity>
+interface NotificationPreferenceRepository : JpaRepository<NotificationPreferenceEntity, UUID> {
+    fun findByProfileId(profileId: UUID): Optional<NotificationPreferenceEntity>
 }

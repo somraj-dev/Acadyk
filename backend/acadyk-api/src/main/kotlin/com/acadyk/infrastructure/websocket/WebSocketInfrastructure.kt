@@ -1,8 +1,8 @@
 package com.acadyk.infrastructure.websocket
 
+import com.acadyk.common.toUUIDOrNull
 import com.acadyk.infrastructure.kafka.DomainEventPublisher
 import com.acadyk.infrastructure.kafka.MessageSentEvent
-import com.acadyk.modules.chat.dto.MessageDto
 import com.acadyk.modules.chat.dto.SendMessageRequest
 import com.acadyk.modules.chat.entity.MessageEntity
 import com.acadyk.modules.chat.mapper.ChatMapper
@@ -33,6 +33,7 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer
 import java.security.Principal
+import java.util.UUID
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -86,9 +87,10 @@ class WebSocketAuthInterceptor(
                 val verifiedUser = tokenVerifier.verifyToken(token)
 
                 if (verifiedUser != null) {
-                    val profile = profileRepository.findById(verifiedUser.uid).orElse(null)
+                    val profile = verifiedUser.uid.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
+                        ?: profileRepository.findByEmail(verifiedUser.email).orElse(null)
                     val principal = UserPrincipal(
-                        id = verifiedUser.uid,
+                        id = profile?.id ?: UUID.nameUUIDFromBytes(verifiedUser.uid.toByteArray()),
                         email = verifiedUser.email,
                         username = profile?.username ?: verifiedUser.email.substringBefore("@")
                     )
@@ -127,8 +129,11 @@ class RealtimeChatController(
         val senderId = principal?.name ?: "anonymous"
         if (payload.content.isBlank()) return
 
-        val conversation = conversationRepository.findByIdAndDeletedAtIsNull(conversationId).orElse(null) ?: return
-        val sender = profileRepository.findById(senderId).orElse(null) ?: return
+        val convUuid = conversationId.toUUIDOrNull() ?: return
+        val senderUuid = senderId.toUUIDOrNull() ?: return
+
+        val conversation = conversationRepository.findByIdAndDeletedAtIsNull(convUuid).orElse(null) ?: return
+        val sender = profileRepository.findById(senderUuid).orElse(null) ?: return
 
         // 1. Persist message in PostgreSQL FIRST (Source of Truth)
         val messageEntity = MessageEntity(
@@ -150,12 +155,12 @@ class RealtimeChatController(
         messagingTemplate.convertAndSend("/topic/conversations/$conversationId", messageDto)
 
         // 3. Publish asynchronous MessageSentEvent to Kafka for offline push notifications
-        val memberIds = conversationMemberRepository.findAllByConversationId(conversationId).map { it.profile.id }
+        val memberIds = conversationMemberRepository.findAllByConversationId(convUuid).map { it.profile.id.toString() }
         domainEventPublisher.publishMessageSent(
             MessageSentEvent(
-                messageId = savedMessage.id,
+                messageId = savedMessage.id.toString(),
                 conversationId = conversationId,
-                senderId = sender.id,
+                senderId = sender.id.toString(),
                 senderName = sender.fullName,
                 contentSnippet = payload.content,
                 recipientIds = memberIds

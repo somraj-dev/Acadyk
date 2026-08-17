@@ -9,7 +9,7 @@ import java.util.UUID
 @Table(name = "profiles")
 data class ProfileEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false, unique = true)
     var username: String,
@@ -48,8 +48,8 @@ data class ProfileEntity(
 @Table(name = "education")
 data class EducationEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
-    val profileId: String,
+    val id: UUID = UUID.randomUUID(),
+    val profileId: UUID,
     var institution: String,
     var degree: String,
     var fieldOfStudy: String? = null,
@@ -64,8 +64,8 @@ data class EducationEntity(
 @Table(name = "experiences")
 data class ExperienceEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
-    val profileId: String,
+    val id: UUID = UUID.randomUUID(),
+    val profileId: UUID,
     var title: String,
     var companyName: String,
     var employmentType: String = "Full-time",
@@ -81,8 +81,8 @@ data class ExperienceEntity(
 @Table(name = "certificates")
 data class CertificateEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
-    val profileId: String,
+    val id: UUID = UUID.randomUUID(),
+    val profileId: UUID,
     var name: String,
     var issuingOrganization: String,
     var issueDate: LocalDate = LocalDate.now(),
@@ -96,8 +96,8 @@ data class CertificateEntity(
 @Table(name = "achievements")
 data class AchievementEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
-    val profileId: String,
+    val id: UUID = UUID.randomUUID(),
+    val profileId: UUID,
     var title: String,
     var issuer: String? = null,
     var dateAchieved: LocalDate? = null,
@@ -109,8 +109,8 @@ data class AchievementEntity(
 @Table(name = "responsibilities")
 data class ResponsibilityEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
-    val profileId: String,
+    val id: UUID = UUID.randomUUID(),
+    val profileId: UUID,
     var title: String,
     var organization: String,
     var description: String? = null,
@@ -123,8 +123,8 @@ data class ResponsibilityEntity(
 @Table(name = "resumes")
 data class ResumeEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
-    val profileId: String,
+    val id: UUID = UUID.randomUUID(),
+    val profileId: UUID,
     var title: String = "My Resume",
     var fileUrl: String,
     var isPrimary: Boolean = false,

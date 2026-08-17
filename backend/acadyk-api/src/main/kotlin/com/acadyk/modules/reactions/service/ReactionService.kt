@@ -1,6 +1,7 @@
 package com.acadyk.modules.reactions.service
 
 import com.acadyk.common.ResourceNotFoundException
+import com.acadyk.common.toUUID
 import com.acadyk.infrastructure.kafka.DomainEventPublisher
 import com.acadyk.infrastructure.kafka.PostLikedEvent
 import com.acadyk.modules.comments.repository.CommentRepository
@@ -15,6 +16,7 @@ import com.acadyk.modules.reactions.repository.PostReactionRepository
 import com.acadyk.security.CurrentUserProvider
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 @Transactional
@@ -28,7 +30,7 @@ class ReactionService(
     private val domainEventPublisher: DomainEventPublisher
 ) {
 
-    fun togglePostReaction(postId: String, reactionType: String = "like"): ToggleReactionResponse {
+    fun togglePostReaction(postId: UUID, reactionType: String = "like"): ToggleReactionResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val post = postRepository.findByIdAndDeletedAtIsNull(postId)
             .orElseThrow { ResourceNotFoundException("Post with id $postId not found") }
@@ -52,19 +54,22 @@ class ReactionService(
 
             domainEventPublisher.publishPostLiked(
                 PostLikedEvent(
-                    postId = post.id,
-                    authorId = post.author.id,
-                    likerId = user.id,
+                    postId = post.id.toString(),
+                    authorId = post.author.id.toString(),
+                    likerId = user.id.toString(),
                     likerName = user.fullName
                 )
             )
         }
 
         postRepository.save(post)
-        return ToggleReactionResponse(postId, isReacted, reactionType, post.likesCount)
+        return ToggleReactionResponse(postId.toString(), isReacted, reactionType, post.likesCount)
     }
 
-    fun toggleCommentReaction(commentId: String, reactionType: String = "like"): ToggleReactionResponse {
+    fun togglePostReaction(postId: String, reactionType: String = "like"): ToggleReactionResponse =
+        togglePostReaction(postId.toUUID(), reactionType)
+
+    fun toggleCommentReaction(commentId: UUID, reactionType: String = "like"): ToggleReactionResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val comment = commentRepository.findByIdAndDeletedAtIsNull(commentId)
             .orElseThrow { ResourceNotFoundException("Comment with id $commentId not found") }
@@ -88,8 +93,11 @@ class ReactionService(
         }
 
         commentRepository.save(comment)
-        return ToggleReactionResponse(commentId, isReacted, reactionType, comment.likesCount)
+        return ToggleReactionResponse(commentId.toString(), isReacted, reactionType, comment.likesCount)
     }
+
+    fun toggleCommentReaction(commentId: String, reactionType: String = "like"): ToggleReactionResponse =
+        toggleCommentReaction(commentId.toUUID(), reactionType)
 
     fun toggleBookmark(postId: String): BookmarkResponse {
         return BookmarkResponse(postId, true)

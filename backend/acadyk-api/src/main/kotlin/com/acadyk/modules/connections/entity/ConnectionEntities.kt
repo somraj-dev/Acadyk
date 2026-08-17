@@ -9,7 +9,7 @@ import java.util.UUID
 @Table(name = "connections")
 data class ConnectionEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_a_id", nullable = false)
@@ -27,7 +27,7 @@ data class ConnectionEntity(
 @Table(name = "connection_requests")
 data class ConnectionRequestEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sender_id", nullable = false)
@@ -50,7 +50,7 @@ data class ConnectionRequestEntity(
 @Table(name = "follows")
 data class FollowEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "follower_id", nullable = false)

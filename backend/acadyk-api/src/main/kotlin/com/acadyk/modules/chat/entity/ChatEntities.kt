@@ -9,7 +9,7 @@ import java.util.UUID
 @Table(name = "conversations")
 data class ConversationEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     var isGroup: Boolean = false,
     var title: String? = null,
@@ -30,7 +30,7 @@ data class ConversationEntity(
 @Table(name = "conversation_members")
 data class ConversationMemberEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversation_id", nullable = false)
@@ -50,7 +50,7 @@ data class ConversationMemberEntity(
 @Table(name = "messages")
 data class MessageEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversation_id", nullable = false)
@@ -80,7 +80,7 @@ data class MessageEntity(
 @Table(name = "message_reads")
 data class MessageReadEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "message_id", nullable = false)

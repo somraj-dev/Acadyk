@@ -35,7 +35,7 @@ class OpportunityServiceTest {
     private lateinit var redisDistributedLock: RedisDistributedLock
     private lateinit var opportunityService: OpportunityService
 
-    private val testUserId = UUID.randomUUID().toString()
+    private val testUserId: UUID = UUID.randomUUID()
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> anyNonNull(): T {
@@ -95,7 +95,7 @@ class OpportunityServiceTest {
         )
 
         val saved = OpportunityEntity(
-            id = UUID.randomUUID().toString(),
+            id = UUID.randomUUID(),
             postedBy = poster,
             title = request.title,
             companyName = request.companyName,

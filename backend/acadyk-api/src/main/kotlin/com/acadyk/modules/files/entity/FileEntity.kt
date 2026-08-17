@@ -11,9 +11,9 @@ import java.util.UUID
 @Table(name = "files")
 data class FileEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
-    var uploaderId: String? = null,
+    var uploaderId: UUID? = null,
 
     @Column(nullable = false)
     var bucketName: String = "acadyk-media-production",

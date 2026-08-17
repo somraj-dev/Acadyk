@@ -9,7 +9,7 @@ class ClubMapper {
 
     fun toResponse(entity: ClubEntity, isMember: Boolean = false): ClubResponse {
         return ClubResponse(
-            id = entity.id,
+            id = entity.id.toString(),
             collegeName = entity.collegeName,
             name = entity.name,
             slug = entity.slug,

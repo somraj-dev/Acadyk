@@ -9,7 +9,7 @@ import java.util.UUID
 @Table(name = "communities")
 data class CommunityEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id")
@@ -43,7 +43,7 @@ data class CommunityEntity(
 @Table(name = "community_members")
 data class CommunityMemberEntity(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "community_id", nullable = false)

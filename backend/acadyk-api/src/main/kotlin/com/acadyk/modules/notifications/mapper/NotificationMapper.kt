@@ -11,13 +11,13 @@ class NotificationMapper {
 
     fun toResponse(entity: NotificationEntity): NotificationResponse {
         return NotificationResponse(
-            id = entity.id,
+            id = entity.id.toString(),
             type = entity.type,
             title = entity.title,
             body = entity.body,
             actionUrl = entity.actionUrl,
             entityType = entity.entityType,
-            entityId = entity.entityId,
+            entityId = entity.entityId?.toString(),
             isRead = entity.isRead,
             actorName = entity.actor?.fullName,
             actorPhotoUrl = entity.actor?.profilePhotoUrl,

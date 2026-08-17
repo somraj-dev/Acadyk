@@ -1,10 +1,12 @@
 package com.acadyk.security
 
+import com.acadyk.common.toUUIDOrNull
 import com.acadyk.modules.users.entity.AuthAuditLogEntity
 import com.acadyk.modules.users.repository.AuthAuditLogRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.Instant
+import java.util.UUID
 
 @Service
 class AuditService(
@@ -14,7 +16,7 @@ class AuditService(
 
     fun logAuthEvent(
         action: String,
-        userId: String?,
+        userId: UUID? = null,
         email: String,
         ipAddress: String,
         success: Boolean,
@@ -45,5 +47,29 @@ class AuditService(
         } catch (e: Exception) {
             logger.error("Failed to persist security audit record to DB: {}", e.message)
         }
+    }
+
+    fun logAuthEventWithStringId(
+        action: String,
+        userId: String?,
+        email: String,
+        ipAddress: String,
+        success: Boolean,
+        details: String? = null,
+        firebaseUid: String? = null,
+        deviceInfo: String? = null,
+        appVersion: String? = null
+    ) {
+        logAuthEvent(
+            action = action,
+            userId = userId?.toUUIDOrNull(),
+            email = email,
+            ipAddress = ipAddress,
+            success = success,
+            details = details,
+            firebaseUid = firebaseUid,
+            deviceInfo = deviceInfo,
+            appVersion = appVersion
+        )
     }
 }

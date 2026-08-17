@@ -3,6 +3,7 @@ package com.acadyk.modules.posts.service
 import com.acadyk.common.ForbiddenException
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
+import com.acadyk.common.toUUID
 import com.acadyk.infrastructure.kafka.DomainEventPublisher
 import com.acadyk.infrastructure.kafka.PostCreatedEvent
 import com.acadyk.infrastructure.redis.RedisCacheService
@@ -18,8 +19,8 @@ import com.acadyk.security.CurrentUserProvider
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 
 @Service
 @Transactional
@@ -45,12 +46,15 @@ class PostService(
     }
 
     @Transactional(readOnly = true)
-    fun getPostById(id: String): PostResponse {
+    fun getPostById(id: UUID): PostResponse {
         val post = postRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Post with id $id not found") }
         val media = postMediaRepository.findAllByPostIdOrderByPositionAsc(post.id)
         return postMapper.toResponse(post, media)
     }
+
+    @Transactional(readOnly = true)
+    fun getPostById(id: String): PostResponse = getPostById(id.toUUID())
 
     fun createPost(request: CreatePostRequest): PostResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
@@ -80,8 +84,8 @@ class PostService(
         // Asynchronous side effects dispatched over Kafka
         domainEventPublisher.publishPostCreated(
             PostCreatedEvent(
-                postId = savedPost.id,
-                authorId = author.id,
+                postId = savedPost.id.toString(),
+                authorId = author.id.toString(),
                 contentSnippet = savedPost.content.take(100),
                 postType = savedPost.postType
             )
@@ -90,7 +94,7 @@ class PostService(
         return postMapper.toResponse(savedPost, savedMedia)
     }
 
-    fun deletePost(id: String) {
+    fun deletePost(id: UUID) {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val post = postRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Post with id $id not found") }
@@ -105,4 +109,6 @@ class PostService(
         redisCacheService.evictPattern("feed:")
         redisCacheService.evict("posts:${post.id}")
     }
+
+    fun deletePost(id: String) = deletePost(id.toUUID())
 }
