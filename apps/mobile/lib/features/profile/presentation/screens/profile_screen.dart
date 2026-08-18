@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:math';
@@ -7,9 +10,9 @@ import 'your_account_screen.dart';
 import 'settings_edit_profile_screen.dart';
 import 'edit_status_screen.dart';
 import 'connections_list_screen.dart';
+import 'project_details.dart';
 import '../../../feed/presentation/screens/post_detail_screen.dart';
 import 'package:acadyk/common/services/auth_service.dart';
-import 'package:acadyk/common/services/storage_service.dart';
 import 'package:acadyk/common/services/profile_service.dart';
 import 'package:acadyk/common/services/post_service.dart';
 import 'package:acadyk/common/services/follow_service.dart';
@@ -49,6 +52,157 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _profilePhotoUrl;
   String? _coverPhotoUrl;
 
+  Timer? _bannerHoldTimer;
+  Timer? _avatarHoldTimer;
+  bool _avatarHoldTriggered = false;
+
+  void _startBannerHoldTimer() {
+    _bannerHoldTimer?.cancel();
+    _bannerHoldTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        _showImagePreviewDialog(
+          title: 'Cover Photo',
+          imageWidget: _buildBannerFullImageWidget(),
+        );
+      }
+    });
+  }
+
+  void _cancelBannerHoldTimer() {
+    _bannerHoldTimer?.cancel();
+    _bannerHoldTimer = null;
+  }
+
+  void _startAvatarHoldTimer(String avatar, String initials, int bgColorHex, bool isMITS) {
+    _avatarHoldTimer?.cancel();
+    _avatarHoldTriggered = false;
+    _avatarHoldTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        _avatarHoldTriggered = true;
+        _showImagePreviewDialog(
+          title: 'Profile Photo',
+          imageWidget: _buildAvatarFullImageWidget(
+            photoUrl: _profilePhotoUrl,
+            avatarString: avatar,
+            initials: initials,
+            bgColorHex: bgColorHex,
+            isMITS: isMITS,
+          ),
+        );
+      }
+    });
+  }
+
+  void _cancelAvatarHoldTimer() {
+    _avatarHoldTimer?.cancel();
+    _avatarHoldTimer = null;
+  }
+
+  void _showStatusDetailsDialog({
+    required String name,
+    required String emoji,
+    required String text,
+    required bool isBusy,
+    String? expiration,
+  }) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFEF4444), width: 2),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isBusy ? 'Busy • Status Active' : 'Status Active',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: isBusy ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF64748B), size: 22),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Text(
+                    text.isNotEmpty ? text : "No status description provided.",
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF334155),
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                if (expiration != null && expiration.isNotEmpty && expiration != 'Never') ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(Icons.schedule, size: 14, color: Color(0xFF94A3B8)),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Expires: $expiration',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _onProfileUpdated() {
     if (mounted) {
       setState(() {
@@ -72,6 +226,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
+    _cancelBannerHoldTimer();
+    _cancelAvatarHoldTimer();
     ProfileManager.profileUpdateNotifier.removeListener(_onProfileUpdated);
     PostService.feedChangeNotifier.removeListener(_onProfileUpdated);
     FollowService.followChangeNotifier.removeListener(_onProfileUpdated);
@@ -185,27 +341,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 left: 16,
                 right: 16,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    // Back button
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).maybePop(),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.45),
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-
                     // Right side search and menu options
                     Row(
                       children: [
@@ -311,34 +448,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 // Banner Image
                 GestureDetector(
-                  onTap: widget.isOwnProfile
-                      ? () async {
-                          final file = await StorageService.pickImage();
-                          if (file != null) {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Uploading cover photo...')),
-                            );
-                            final url = await StorageService.uploadCoverPhoto(
-                              AuthService.currentUser!.id,
-                              file,
-                            );
-                            if (url != null) {
-                              await ProfileService.updateProfile(
-                                AuthService.currentUser!.id,
-                                {'cover_photo_url': url},
-                              );
-                              setState(() {
-                                _coverPhotoUrl = url;
-                              });
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Cover photo updated successfully!')),
-                              );
-                            }
-                          }
-                        }
-                      : null,
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: (_) => _startBannerHoldTimer(),
+                  onTapUp: (_) => _cancelBannerHoldTimer(),
+                  onTapCancel: () => _cancelBannerHoldTimer(),
+                  onPanDown: (_) => _startBannerHoldTimer(),
+                  onPanEnd: (_) => _cancelBannerHoldTimer(),
+                  onPanCancel: () => _cancelBannerHoldTimer(),
                   child: Stack(
                     children: [
                       _buildBannerImageWidget(),
@@ -366,80 +482,117 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Positioned(
                   left: 20,
                   bottom: 0,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(26),
-                          border: Border.all(color: Colors.white, width: 4.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.12),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: UserStatusState.statusNotifier,
+                    builder: (context, statusVal, child) {
+                      final bool hasActiveStatus = widget.isOwnProfile
+                          ? UserStatusState.isStatusActive
+                          : (widget.userData != null &&
+                              (widget.userData!['hasStatus'] == true ||
+                                  (widget.userData!['status'] != null &&
+                                      widget.userData!['status'].toString().isNotEmpty)));
+
+                      final String currentDisplayEmoji = widget.isOwnProfile
+                          ? (UserStatusState.emoji ?? '🎓')
+                          : (widget.userData?['statusEmoji'] ?? '🎓');
+
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 96,
+                            height: 96,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(26),
+                              border: Border.all(
+                                color: hasActiveStatus ? const Color(0xFFEF4444) : Colors.white,
+                                width: hasActiveStatus ? 3.5 : 4.0,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: hasActiveStatus
+                                      ? const Color(0xFFEF4444).withValues(alpha: 0.38)
+                                      : Colors.black.withValues(alpha: 0.12),
+                                  blurRadius: hasActiveStatus ? 12 : 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: GestureDetector(
-                          onTap: widget.isOwnProfile
-                              ? () async {
-                                  final file = await StorageService.pickImage();
-                                  if (file != null) {
-                                    if (!mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Uploading profile photo...')),
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTapDown: (_) {
+                                _avatarHoldTriggered = false;
+                                _startAvatarHoldTimer(avatar, initials, bgColorHex, isMITS);
+                              },
+                              onTapUp: (_) {
+                                _cancelAvatarHoldTimer();
+                                if (!_avatarHoldTriggered) {
+                                  if (widget.isOwnProfile) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const EditStatusScreen()),
                                     );
-                                    final url = await StorageService.uploadProfilePhoto(
-                                      AuthService.currentUser!.id,
-                                      file,
-                                    );
-                                    if (url != null) {
-                                      await ProfileService.updateProfile(
-                                        AuthService.currentUser!.id,
-                                        {'profile_photo_url': url},
+                                  } else {
+                                    if (hasActiveStatus) {
+                                      _showStatusDetailsDialog(
+                                        name: name,
+                                        emoji: widget.userData?['statusEmoji'] ?? '🎓',
+                                        text: widget.userData?['status'] ?? widget.userData?['headline'] ?? '',
+                                        isBusy: widget.userData?['isBusy'] == true,
+                                        expiration: widget.userData?['statusExpiration'],
                                       );
-                                      setState(() {
-                                        _profilePhotoUrl = url;
-                                      });
-                                      if (!mounted) return;
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Profile photo updated successfully!')),
+                                    } else {
+                                      _showStatusDetailsDialog(
+                                        name: name,
+                                        emoji: '🎓',
+                                        text: widget.userData?['headline'] ?? bio,
+                                        isBusy: false,
                                       );
                                     }
                                   }
                                 }
-                              : null,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(22),
-                            child: _buildAvatarImageWidget(
-                              photoUrl: _profilePhotoUrl,
-                              avatarString: avatar,
-                              initials: initials,
-                              bgColorHex: bgColorHex,
-                              isMITS: isMITS,
+                              },
+                              onTapCancel: () => _cancelAvatarHoldTimer(),
+                              onPanDown: (_) {
+                                _avatarHoldTriggered = false;
+                                _startAvatarHoldTimer(avatar, initials, bgColorHex, isMITS);
+                              },
+                              onPanEnd: (_) => _cancelAvatarHoldTimer(),
+                              onPanCancel: () => _cancelAvatarHoldTimer(),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(22),
+                                child: _buildAvatarImageWidget(
+                                  photoUrl: _profilePhotoUrl,
+                                  avatarString: avatar,
+                                  initials: initials,
+                                  bgColorHex: bgColorHex,
+                                  isMITS: isMITS,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
 
-                      // Emoji status badge
-                      Positioned(
-                        bottom: -2,
-                        right: -2,
-                        child: ValueListenableBuilder<bool>(
-                          valueListenable: UserStatusState.statusNotifier,
-                          builder: (context, statusValue, child) {
-                            final displayEmoji = UserStatusState.emoji ?? '🎓';
-                            return GestureDetector(
+                          // Emoji status badge
+                          Positioned(
+                            bottom: -2,
+                            right: -2,
+                            child: GestureDetector(
                               onTap: () {
                                 if (widget.isOwnProfile) {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(builder: (context) => const EditStatusScreen()),
                                   );
+                                } else {
+                                  if (hasActiveStatus) {
+                                    _showStatusDetailsDialog(
+                                      name: name,
+                                      emoji: widget.userData?['statusEmoji'] ?? '🎓',
+                                      text: widget.userData?['status'] ?? widget.userData?['headline'] ?? '',
+                                      isBusy: widget.userData?['isBusy'] == true,
+                                      expiration: widget.userData?['statusExpiration'],
+                                    );
+                                  }
                                 }
                               },
                               child: Container(
@@ -448,10 +601,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF1E293B),
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2.5),
+                                  border: Border.all(
+                                    color: hasActiveStatus ? const Color(0xFFEF4444) : Colors.white,
+                                    width: 2.5,
+                                  ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.15),
+                                      color: hasActiveStatus
+                                          ? const Color(0xFFEF4444).withValues(alpha: 0.3)
+                                          : Colors.black.withValues(alpha: 0.15),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -459,15 +617,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
-                                  displayEmoji,
+                                  currentDisplayEmoji,
                                   style: const TextStyle(fontSize: 14),
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -483,13 +641,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // Edit Profile / Follow button
                 if (widget.isOwnProfile)
                   GestureDetector(
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => const SettingsEditProfileScreen(),
                         ),
                       );
+                      _onProfileUpdated();
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -1864,118 +2023,144 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final bool isExpanded = _expandedProjectIndices.contains(index);
     final String desc = proj['description'] as String;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(proj['title']!, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
-        Text(proj['time']!, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
-        const SizedBox(height: 6),
-        Row(
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProjectDetailsScreen(projectData: proj),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              alignment: Alignment.center,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: Image.asset(
-                  proj['association'].toString().toLowerCase().contains('quantaforze')
-                      ? 'assets/images/quantaforze_logo.png'
-                      : proj['association'].toString().toLowerCase().contains('mits')
-                          ? 'assets/images/mits_logo.png'
-                          : 'assets/images/acadyk_logo.png',
-                  width: 18,
-                  height: 18,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.code, size: 12, color: Colors.black54),
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                'Associated with ${proj['association']}',
-                style: const TextStyle(fontSize: 13, color: Color(0xFF191919)),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              if (isExpanded) {
-                _expandedProjectIndices.remove(index);
-              } else {
-                _expandedProjectIndices.add(index);
-              }
-            });
-          },
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(fontSize: 14, color: Color(0xFF191919), height: 1.4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                TextSpan(
-                  text: isExpanded ? desc : (desc.length > 100 ? '${desc.substring(0, 100)}...' : desc),
-                ),
-                if (desc.length > 100)
-                  TextSpan(
-                    text: isExpanded ? ' Show less' : ' more',
-                    style: const TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.w600),
+                Expanded(
+                  child: Text(
+                    proj['title']!,
+                    style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
                   ),
+                ),
+                const Icon(Icons.arrow_forward_ios, size: 13, color: Color(0xFF9CA3AF)),
               ],
             ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        const Text('Contributors', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(image: AssetImage('assets/images/somraj_avatar.jpg'), fit: BoxFit.cover),
+            const SizedBox(height: 2),
+            Text(proj['time']!, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  alignment: Alignment.center,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: Image.asset(
+                      proj['association'].toString().toLowerCase().contains('quantaforze')
+                          ? 'assets/images/quantaforze_logo.png'
+                          : proj['association'].toString().toLowerCase().contains('mits')
+                              ? 'assets/images/mits_logo.png'
+                              : 'assets/images/acadyk_logo.png',
+                      width: 18,
+                      height: 18,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.code, size: 12, color: Colors.black54),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Associated with ${proj['association']}',
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF191919)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (isExpanded) {
+                    _expandedProjectIndices.remove(index);
+                  } else {
+                    _expandedProjectIndices.add(index);
+                  }
+                });
+              },
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 14, color: Color(0xFF191919), height: 1.4),
+                  children: [
+                    TextSpan(
+                      text: isExpanded ? desc : (desc.length > 100 ? '${desc.substring(0, 100)}...' : desc),
+                    ),
+                    if (desc.length > 100)
+                      TextSpan(
+                        text: isExpanded ? ' Show less' : ' more',
+                        style: const TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.w600),
+                      ),
+                  ],
+                ),
               ),
             ),
-            Transform.translate(
-              offset: const Offset(-6, 0),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(image: AssetImage('assets/images/dharmik_avatar.jpg'), fit: BoxFit.cover),
+            const SizedBox(height: 12),
+            const Text('Contributors', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(image: AssetImage('assets/images/somraj_avatar.jpg'), fit: BoxFit.cover),
+                  ),
                 ),
-              ),
-            ),
-            Transform.translate(
-              offset: const Offset(-12, 0),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFF0F0F0),
-                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                Transform.translate(
+                  offset: const Offset(-6, 0),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: DecorationImage(image: AssetImage('assets/images/dharmik_avatar.jpg'), fit: BoxFit.cover),
+                    ),
+                  ),
                 ),
-                alignment: Alignment.center,
-                child: Text(
-                  '+${proj['contributors']}',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E)),
+                Transform.translate(
+                  offset: const Offset(-12, 0),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFF0F0F0),
+                      border: Border.all(color: const Color(0xFFE0E0E0)),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '+${proj['contributors']}',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E)),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 
@@ -2295,31 +2480,175 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 
 
-  Widget _buildBannerImageWidget() {
-    if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty && _coverPhotoUrl!.startsWith('http')) {
-      return Image.network(
-        _coverPhotoUrl!,
-        fit: BoxFit.cover,
-        height: 215,
-        width: double.infinity,
-        errorBuilder: (context, error, stackTrace) {
-          return Image.asset('assets/images/ocean_wave_header.png', fit: BoxFit.cover, height: 215, width: double.infinity);
-        },
-      );
-    }
-    if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty && _coverPhotoUrl!.startsWith('assets/')) {
-      return Image.asset(
-        _coverPhotoUrl!,
-        fit: BoxFit.cover,
-        height: 215,
-        width: double.infinity,
-        errorBuilder: (context, error, stackTrace) {
-          return Image.asset('assets/images/ocean_wave_header.png', fit: BoxFit.cover, height: 215, width: double.infinity);
-        },
-      );
+  void _showImagePreviewDialog({
+    required String title,
+    required Widget imageWidget,
+  }) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.88),
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Top Bar with Title and Close Button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 26),
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Image Container with Zoom & Pan support
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(dialogContext).size.height * 0.65,
+                    maxWidth: 480,
+                  ),
+                  color: Colors.black45,
+                  child: InteractiveViewer(
+                    minScale: 0.8,
+                    maxScale: 3.5,
+                    child: imageWidget,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBannerFullImageWidget() {
+    if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty) {
+      if (_coverPhotoUrl!.startsWith('http')) {
+        return Image.network(
+          _coverPhotoUrl!,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return Image.asset('assets/images/young_entrepreneur.jpg', fit: BoxFit.contain);
+          },
+        );
+      } else if (_coverPhotoUrl!.startsWith('assets/')) {
+        return Image.asset(
+          _coverPhotoUrl!,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return Image.asset('assets/images/young_entrepreneur.jpg', fit: BoxFit.contain);
+          },
+        );
+      } else {
+        if (kIsWeb) {
+          return Image.network(_coverPhotoUrl!, fit: BoxFit.contain, errorBuilder: (_, __, ___) => Image.asset('assets/images/young_entrepreneur.jpg', fit: BoxFit.contain));
+        } else {
+          return Image.file(File(_coverPhotoUrl!), fit: BoxFit.contain, errorBuilder: (_, __, ___) => Image.asset('assets/images/young_entrepreneur.jpg', fit: BoxFit.contain));
+        }
+      }
     }
     return Image.asset(
-      'assets/images/ocean_wave_header.png',
+      'assets/images/young_entrepreneur.jpg',
+      fit: BoxFit.contain,
+    );
+  }
+
+  Widget _buildAvatarFullImageWidget({
+    required String? photoUrl,
+    required String avatarString,
+    required String initials,
+    required int bgColorHex,
+    required bool isMITS,
+  }) {
+    if (photoUrl != null && photoUrl.isNotEmpty) {
+      if (photoUrl.startsWith('http')) {
+        return Image.network(
+          photoUrl,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => _buildInitialsFallback(initials, bgColorHex),
+        );
+      } else if (photoUrl.startsWith('assets/')) {
+        return Image.asset(
+          photoUrl,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => _buildInitialsFallback(initials, bgColorHex),
+        );
+      } else {
+        if (kIsWeb) {
+          return Image.network(photoUrl, fit: BoxFit.contain, errorBuilder: (_, __, ___) => _buildInitialsFallback(initials, bgColorHex));
+        } else {
+          return Image.file(File(photoUrl), fit: BoxFit.contain, errorBuilder: (_, __, ___) => _buildInitialsFallback(initials, bgColorHex));
+        }
+      }
+    }
+
+    if (avatarString.isNotEmpty && avatarString.startsWith('assets/')) {
+      return Image.asset(
+        avatarString,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => _buildInitialsFallback(initials, bgColorHex),
+      );
+    }
+
+    if (isMITS) {
+      return Image.asset(
+        'assets/images/mits_logo.png',
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => _buildInitialsFallback('MITS', bgColorHex),
+      );
+    }
+
+    return _buildInitialsFallback(initials, bgColorHex);
+  }
+
+  Widget _buildBannerImageWidget() {
+    if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty) {
+      if (_coverPhotoUrl!.startsWith('http')) {
+        return Image.network(
+          _coverPhotoUrl!,
+          fit: BoxFit.cover,
+          height: 215,
+          width: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+            return Image.asset('assets/images/young_entrepreneur.jpg', fit: BoxFit.cover, height: 215, width: double.infinity);
+          },
+        );
+      } else if (_coverPhotoUrl!.startsWith('assets/')) {
+        return Image.asset(
+          _coverPhotoUrl!,
+          fit: BoxFit.cover,
+          height: 215,
+          width: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+            return Image.asset('assets/images/young_entrepreneur.jpg', fit: BoxFit.cover, height: 215, width: double.infinity);
+          },
+        );
+      } else {
+        if (kIsWeb) {
+          return Image.network(_coverPhotoUrl!, fit: BoxFit.cover, height: 215, width: double.infinity, errorBuilder: (_, __, ___) => Image.asset('assets/images/young_entrepreneur.jpg', fit: BoxFit.cover, height: 215, width: double.infinity));
+        } else {
+          return Image.file(File(_coverPhotoUrl!), fit: BoxFit.cover, height: 215, width: double.infinity, errorBuilder: (_, __, ___) => Image.asset('assets/images/young_entrepreneur.jpg', fit: BoxFit.cover, height: 215, width: double.infinity));
+        }
+      }
+    }
+    return Image.asset(
+      'assets/images/young_entrepreneur.jpg',
       fit: BoxFit.cover,
       height: 215,
       width: double.infinity,
@@ -2346,6 +2675,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => _buildInitialsFallback(initials, bgColorHex),
         );
+      } else {
+        if (kIsWeb) {
+          return Image.network(photoUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildInitialsFallback(initials, bgColorHex));
+        } else {
+          return Image.file(File(photoUrl), fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildInitialsFallback(initials, bgColorHex));
+        }
       }
     }
 

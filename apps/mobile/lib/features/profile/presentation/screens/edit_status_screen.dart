@@ -7,10 +7,20 @@ class UserStatusState {
   static String? text;
   static bool isBusy = false;
   static String expiration = 'Never';
+  static DateTime? expiresAt;
   static String visibleTo = 'Everyone';
   static bool hasStatus = false;
 
   static final ValueNotifier<bool> statusNotifier = ValueNotifier<bool>(false);
+
+  static bool get isStatusActive {
+    if (!hasStatus) return false;
+    if (expiresAt != null && DateTime.now().isAfter(expiresAt!)) {
+      clear();
+      return false;
+    }
+    return true;
+  }
 
   static void setStatus({
     required String emojiVal,
@@ -24,7 +34,28 @@ class UserStatusState {
     isBusy = busyVal;
     expiration = expirationVal;
     visibleTo = visibleToVal;
-    hasStatus = textVal.trim().isNotEmpty;
+    hasStatus = textVal.trim().isNotEmpty || emojiVal.isNotEmpty;
+
+    final now = DateTime.now();
+    switch (expirationVal) {
+      case '1 hour':
+        expiresAt = now.add(const Duration(hours: 1));
+        break;
+      case '4 hours':
+        expiresAt = now.add(const Duration(hours: 4));
+        break;
+      case 'Today':
+        expiresAt = DateTime(now.year, now.month, now.day, 23, 59, 59);
+        break;
+      case 'This week':
+        expiresAt = now.add(const Duration(days: 7));
+        break;
+      case 'Never':
+      default:
+        expiresAt = null;
+        break;
+    }
+
     statusNotifier.value = !statusNotifier.value;
   }
 
@@ -33,6 +64,7 @@ class UserStatusState {
     text = null;
     isBusy = false;
     expiration = 'Never';
+    expiresAt = null;
     visibleTo = 'Everyone';
     hasStatus = false;
     statusNotifier.value = !statusNotifier.value;

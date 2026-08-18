@@ -1,6 +1,9 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:acadyk/common/services/auth_service.dart';
 import 'package:acadyk/common/services/profile_service.dart';
+import 'package:acadyk/common/services/storage_service.dart';
 import '../services/profile_manager.dart';
 
 class SettingsEditProfileScreen extends StatefulWidget {
@@ -17,6 +20,14 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
   late TextEditingController _websiteCtrl;
   late TextEditingController _dobCtrl;
 
+  File? _pickedAvatarFile;
+  String? _avatarPath;
+
+  File? _pickedBannerFile;
+  String? _bannerPath;
+
+  bool _isSaving = false;
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +36,9 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
     _locationCtrl = TextEditingController(text: ProfileManager.location);
     _websiteCtrl = TextEditingController(text: ProfileManager.website);
     _dobCtrl = TextEditingController(text: ProfileManager.dateOfBirth);
+
+    _avatarPath = ProfileManager.avatarUrl;
+    _bannerPath = ProfileManager.bannerUrl;
   }
 
   @override
@@ -37,30 +51,138 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
     super.dispose();
   }
 
-  void _saveProfile() async {
+  Future<void> _pickBannerImage() async {
+    final file = await StorageService.pickImage();
+    if (file != null) {
+      setState(() {
+        _pickedBannerFile = file;
+        _bannerPath = file.path;
+      });
+    }
+  }
+
+  Future<void> _pickAvatarImage() async {
+    final file = await StorageService.pickImage();
+    if (file != null) {
+      setState(() {
+        _pickedAvatarFile = file;
+        _avatarPath = file.path;
+      });
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (_isSaving) return;
+    setState(() {
+      _isSaving = true;
+    });
+
+    String finalAvatarUrl = _avatarPath ?? ProfileManager.avatarUrl;
+    String finalBannerUrl = _bannerPath ?? ProfileManager.bannerUrl;
+
+    final user = AuthService.currentUser;
+    if (user != null) {
+      try {
+        if (_pickedBannerFile != null) {
+          final uploadedBanner = await StorageService.uploadCoverPhoto(user.id, _pickedBannerFile!);
+          if (uploadedBanner != null && uploadedBanner.isNotEmpty) {
+            finalBannerUrl = uploadedBanner;
+          }
+        }
+
+        if (_pickedAvatarFile != null) {
+          final uploadedAvatar = await StorageService.uploadProfilePhoto(user.id, _pickedAvatarFile!);
+          if (uploadedAvatar != null && uploadedAvatar.isNotEmpty) {
+            finalAvatarUrl = uploadedAvatar;
+          }
+        }
+
+        await ProfileService.updateProfile(user.id, {
+          'full_name': _nameCtrl.text.trim(),
+          'bio': _bioCtrl.text.trim(),
+          'location': _locationCtrl.text.trim(),
+          'website': _websiteCtrl.text.trim(),
+          'profile_photo_url': finalAvatarUrl,
+          'cover_photo_url': finalBannerUrl,
+        });
+      } catch (e) {
+        debugPrint('[EditProfile] Profile update sync warning: $e');
+      }
+    }
+
     ProfileManager.updateProfile(
       newName: _nameCtrl.text.trim(),
       newBio: _bioCtrl.text.trim(),
       newLocation: _locationCtrl.text.trim(),
       newWebsite: _websiteCtrl.text.trim(),
       newDateOfBirth: _dobCtrl.text.trim(),
+      newAvatar: finalAvatarUrl,
+      newBanner: finalBannerUrl,
     );
 
-    final user = AuthService.currentUser;
-    if (user != null) {
-      try {
-        await ProfileService.updateProfile(user.id, {
-          'full_name': _nameCtrl.text.trim(),
-          'bio': _bioCtrl.text.trim(),
-          'location': _locationCtrl.text.trim(),
-          'website': _websiteCtrl.text.trim(),
-        });
-      } catch (_) {}
+    if (mounted) {
+      setState(() {
+        _isSaving = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully!'),
+          backgroundColor: Color(0xFF10B981),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      Navigator.of(context).pop(true);
+    }
+  }
+
+  Widget _buildImageWidget(String? path, File? file, String fallbackAsset) {
+    if (file != null) {
+      if (kIsWeb) {
+        return Image.network(
+          file.path,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
+        );
+      } else {
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
+        );
+      }
     }
 
-    if (mounted) {
-      Navigator.of(context).pop();
+    if (path != null && path.isNotEmpty) {
+      if (path.startsWith('http')) {
+        return Image.network(
+          path,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
+        );
+      } else if (path.startsWith('assets/')) {
+        return Image.asset(
+          path,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
+        );
+      } else {
+        if (kIsWeb) {
+          return Image.network(
+            path,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
+          );
+        } else {
+          return Image.file(
+            File(path),
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
+          );
+        }
+      }
     }
+
+    return Image.asset(fallbackAsset, fit: BoxFit.cover);
   }
 
   @override
@@ -90,15 +212,21 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
         centerTitle: false,
         actions: [
           TextButton(
-            onPressed: _saveProfile,
-            child: const Text(
-              'Save',
-              style: TextStyle(
-                color: Color(0xFF5E5E5E),
-                fontWeight: FontWeight.bold,
-                fontSize: 15.5,
-              ),
-            ),
+            onPressed: _isSaving ? null : _saveProfile,
+            child: _isSaving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0F4C81)),
+                  )
+                : const Text(
+                    'Save',
+                    style: TextStyle(
+                      color: Color(0xFF191919),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15.5,
+                    ),
+                  ),
           ),
           const SizedBox(width: 8),
         ],
@@ -113,24 +241,35 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
                 clipBehavior: Clip.none,
                 children: [
                   // Banner Area
-                  Container(
-                    width: double.infinity,
-                    height: 140,
-                    decoration: BoxDecoration(
+                  GestureDetector(
+                    onTap: _pickBannerImage,
+                    child: Container(
+                      width: double.infinity,
+                      height: 140,
                       color: Colors.black,
-                      image: DecorationImage(
-                        image: AssetImage(ProfileManager.bannerUrl),
-                        fit: BoxFit.cover,
-                        colorFilter: ColorFilter.mode(
-                          Colors.black.withValues(alpha: 0.35),
-                          BlendMode.srcOver,
-                        ),
-                      ),
-                    ),
-                    child: Center(
-                      child: IconButton(
-                        icon: const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 28),
-                        onPressed: () {},
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _buildImageWidget(_bannerPath, _pickedBannerFile, 'assets/images/young_entrepreneur.jpg'),
+                          Container(
+                            color: Colors.black.withValues(alpha: 0.38),
+                          ),
+                          Center(
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt_outlined,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -138,30 +277,41 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
                   Positioned(
                     bottom: -45,
                     left: 20,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 90,
-                          height: 90,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
-                            image: DecorationImage(
-                              image: AssetImage(ProfileManager.avatarUrl),
-                              fit: BoxFit.cover,
-                              colorFilter: ColorFilter.mode(
-                                Colors.black.withValues(alpha: 0.35),
-                                BlendMode.srcOver,
-                              ),
+                    child: GestureDetector(
+                      onTap: _pickAvatarImage,
+                      child: Container(
+                        width: 90,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
                             ),
+                          ],
+                        ),
+                        child: ClipOval(
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              _buildImageWidget(_avatarPath, _pickedAvatarFile, 'assets/images/somraj_avatar.jpg'),
+                              Container(
+                                color: Colors.black.withValues(alpha: 0.38),
+                              ),
+                              const Center(
+                                child: Icon(
+                                  Icons.camera_alt_outlined,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 22),
-                          onPressed: () {},
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
