@@ -708,10 +708,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
   // STEP 2: FACE DETECTION & ID CARD MATCHING (with captured live photo)
   // ===========================================================================
   Widget _buildStep2ScanningAndMatching() {
-    final avatar = widget.avatarUrl ??
-        (ProfileManager.avatarUrl.isNotEmpty
-            ? ProfileManager.avatarUrl
-            : 'assets/images/somraj_avatar.jpg');
+    final avatar = widget.avatarUrl ?? ProfileManager.avatarUrl;
 
     return Scaffold(
       key: const ValueKey(2),
@@ -899,10 +896,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
   // STEP 3: IDENTITY VERIFIED SUCCESS STATUS
   // ===========================================================================
   Widget _buildStep3Verified() {
-    final avatar = widget.avatarUrl ??
-        (ProfileManager.avatarUrl.isNotEmpty
-            ? ProfileManager.avatarUrl
-            : 'assets/images/somraj_avatar.jpg');
+    final avatar = widget.avatarUrl ?? ProfileManager.avatarUrl;
 
     return Scaffold(
       key: const ValueKey(3),

@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:acadyk/features/profile/presentation/services/profile_manager.dart';
 import 'package:acadyk/features/notifications/presentation/screens/notification_screen.dart';
 import 'package:acadyk/features/feed/presentation/screens/home_feed_screen.dart';
+import '../services/auth_service.dart';
 
 class AcadykTopHeaderBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -45,12 +46,19 @@ class AcadykTopHeaderBar extends StatelessWidget implements PreferredSizeWidget 
             child: ValueListenableBuilder<bool>(
               valueListenable: ProfileManager.profileUpdateNotifier,
               builder: (context, _, __) {
-                final avatarUrl = ProfileManager.avatarUrl.isNotEmpty
-                    ? ProfileManager.avatarUrl
-                    : 'assets/images/somraj_avatar.jpg';
-                final ImageProvider avatarProvider = avatarUrl.startsWith('http')
-                    ? NetworkImage(avatarUrl)
-                    : AssetImage(avatarUrl) as ImageProvider;
+                final avatarUrl = ProfileManager.avatarUrl;
+                final ImageProvider? avatarProvider = ProfileManager.avatarBytes != null
+                    ? MemoryImage(ProfileManager.avatarBytes!)
+                    : (avatarUrl.isNotEmpty
+                        ? (avatarUrl.startsWith('http')
+                            ? NetworkImage(avatarUrl)
+                            : AssetImage(avatarUrl) as ImageProvider)
+                        : null);
+                final initials = ProfileManager.name.isNotEmpty
+                    ? ProfileManager.name.substring(0, 1).toUpperCase()
+                    : (AuthService.currentUser?.fullName?.isNotEmpty == true
+                        ? AuthService.currentUser!.fullName!.substring(0, 1).toUpperCase()
+                        : 'U');
 
                 return GestureDetector(
                   onTap: () {
@@ -66,11 +74,21 @@ class AcadykTopHeaderBar extends StatelessWidget implements PreferredSizeWidget 
                     height: 34,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: avatarProvider,
-                        fit: BoxFit.cover,
-                      ),
+                      color: const Color(0xFF1565C0),
+                      image: avatarProvider != null
+                          ? DecorationImage(
+                              image: avatarProvider,
+                              fit: BoxFit.cover,
+                            )
+                          : null,
                     ),
+                    alignment: Alignment.center,
+                    child: avatarProvider == null
+                        ? Text(
+                            initials,
+                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                          )
+                        : null,
                   ),
                 );
               },

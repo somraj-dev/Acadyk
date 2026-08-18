@@ -180,12 +180,43 @@ class _SettingsNotificationsScreenState extends State<SettingsNotificationsScree
   }
 
   Widget _buildSwitchTile(String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
-    return SwitchListTile(
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 13, color: Color(0xFF737373))),
-      value: value,
-      activeColor: const Color(0xFF0073B1),
-      onChanged: onChanged,
+    return InkWell(
+      onTap: () => onChanged(!value),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: Color(0xFF191919),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF737373),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            AcadykToggleSwitch(
+              value: value,
+              onChanged: onChanged,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -194,6 +225,55 @@ class _SettingsNotificationsScreenState extends State<SettingsNotificationsScree
       height: 1,
       thickness: 1,
       color: Color(0xFFF3F3F3),
+    );
+  }
+}
+
+class AcadykToggleSwitch extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const AcadykToggleSwitch({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        width: 48,
+        height: 28,
+        padding: const EdgeInsets.all(2.5),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          color: value ? const Color(0xFF0F4C81) : const Color(0xFFE2E8F0),
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 23,
+            height: 23,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 3,
+                  offset: const Offset(0, 1.5),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

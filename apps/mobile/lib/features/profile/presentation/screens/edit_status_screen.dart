@@ -489,16 +489,27 @@ class StatusAvatar extends StatelessWidget {
       builder: (context, statusValue, child) {
         final bool showRing = UserStatusState.hasStatus &&
             !isProfilePageAccountHolder &&
-            (avatarAsset.contains('somraj_avatar.jpg') || avatarAsset == ProfileManager.avatarUrl);
+            (avatarAsset.isNotEmpty && avatarAsset == ProfileManager.avatarUrl);
 
-        final ImageProvider imageProvider = avatarAsset.startsWith('http')
-            ? NetworkImage(avatarAsset)
-            : AssetImage(avatarAsset.isNotEmpty ? avatarAsset : 'assets/images/somraj_avatar.jpg') as ImageProvider;
+        final ImageProvider? imageProvider = ProfileManager.avatarBytes != null
+            ? MemoryImage(ProfileManager.avatarBytes!)
+            : (avatarAsset.isNotEmpty
+                ? (avatarAsset.startsWith('http')
+                    ? NetworkImage(avatarAsset)
+                    : AssetImage(avatarAsset) as ImageProvider)
+                : null);
 
         Widget avatarWidget = CircleAvatar(
           radius: radius,
+          backgroundColor: const Color(0xFF1565C0),
           backgroundImage: imageProvider,
-          onBackgroundImageError: (_, __) {},
+          onBackgroundImageError: imageProvider != null ? (_, __) {} : null,
+          child: imageProvider == null
+              ? Text(
+                  ProfileManager.name.isNotEmpty ? ProfileManager.name.substring(0, 1).toUpperCase() : 'U',
+                  style: TextStyle(color: Colors.white, fontSize: radius * 0.7, fontWeight: FontWeight.bold),
+                )
+              : null,
         );
 
         if (showRing) {

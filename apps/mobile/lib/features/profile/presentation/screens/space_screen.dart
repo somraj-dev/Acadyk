@@ -557,10 +557,10 @@ class _SpaceScreenState extends State<SpaceScreen> {
 
   Widget _buildAvatarStack() {
     final avatars = [
-      'assets/images/somraj_avatar.jpg',
+      'assets/images/user_avatar.jpg',
       'assets/images/dharmik_avatar.jpg',
       'assets/images/alina_avatar.jpg',
-      'assets/images/user_avatar.jpg',
+      'assets/images/mits_logo.png',
     ];
     return SizedBox(
       width: 22.0 * 3 + 36,

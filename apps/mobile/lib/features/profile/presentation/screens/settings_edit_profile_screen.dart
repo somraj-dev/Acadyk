@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:acadyk/common/services/auth_service.dart';
 import 'package:acadyk/common/services/profile_service.dart';
 import 'package:acadyk/common/services/storage_service.dart';
+import 'package:path/path.dart' as p;
 import '../services/profile_manager.dart';
 
 class SettingsEditProfileScreen extends StatefulWidget {
@@ -20,10 +20,12 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
   late TextEditingController _websiteCtrl;
   late TextEditingController _dobCtrl;
 
-  File? _pickedAvatarFile;
+  Uint8List? _pickedAvatarBytes;
+  String? _pickedAvatarName;
   String? _avatarPath;
 
-  File? _pickedBannerFile;
+  Uint8List? _pickedBannerBytes;
+  String? _pickedBannerName;
   String? _bannerPath;
 
   bool _isSaving = false;
@@ -39,6 +41,8 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
 
     _avatarPath = ProfileManager.avatarUrl;
     _bannerPath = ProfileManager.bannerUrl;
+    _pickedAvatarBytes = ProfileManager.avatarBytes;
+    _pickedBannerBytes = ProfileManager.bannerBytes;
   }
 
   @override
@@ -52,21 +56,25 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
   }
 
   Future<void> _pickBannerImage() async {
-    final file = await StorageService.pickImage();
-    if (file != null) {
+    final xfile = await StorageService.pickImageXFile();
+    if (xfile != null) {
+      final bytes = await xfile.readAsBytes();
       setState(() {
-        _pickedBannerFile = file;
-        _bannerPath = file.path;
+        _pickedBannerBytes = bytes;
+        _pickedBannerName = xfile.name;
+        _bannerPath = xfile.path;
       });
     }
   }
 
   Future<void> _pickAvatarImage() async {
-    final file = await StorageService.pickImage();
-    if (file != null) {
+    final xfile = await StorageService.pickImageXFile();
+    if (xfile != null) {
+      final bytes = await xfile.readAsBytes();
       setState(() {
-        _pickedAvatarFile = file;
-        _avatarPath = file.path;
+        _pickedAvatarBytes = bytes;
+        _pickedAvatarName = xfile.name;
+        _avatarPath = xfile.path;
       });
     }
   }
@@ -83,15 +91,23 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
     final user = AuthService.currentUser;
     if (user != null) {
       try {
-        if (_pickedBannerFile != null) {
-          final uploadedBanner = await StorageService.uploadCoverPhoto(user.id, _pickedBannerFile!);
+        if (_pickedBannerBytes != null) {
+          final uploadedBanner = await StorageService.uploadCoverPhotoBytes(
+            user.id,
+            _pickedBannerBytes!,
+            extension: _pickedBannerName != null ? p.extension(_pickedBannerName!) : '.jpg',
+          );
           if (uploadedBanner != null && uploadedBanner.isNotEmpty) {
             finalBannerUrl = uploadedBanner;
           }
         }
 
-        if (_pickedAvatarFile != null) {
-          final uploadedAvatar = await StorageService.uploadProfilePhoto(user.id, _pickedAvatarFile!);
+        if (_pickedAvatarBytes != null) {
+          final uploadedAvatar = await StorageService.uploadProfilePhotoBytes(
+            user.id,
+            _pickedAvatarBytes!,
+            extension: _pickedAvatarName != null ? p.extension(_pickedAvatarName!) : '.jpg',
+          );
           if (uploadedAvatar != null && uploadedAvatar.isNotEmpty) {
             finalAvatarUrl = uploadedAvatar;
           }
@@ -102,8 +118,8 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
           'bio': _bioCtrl.text.trim(),
           'location': _locationCtrl.text.trim(),
           'website': _websiteCtrl.text.trim(),
-          'profile_photo_url': finalAvatarUrl,
-          'cover_photo_url': finalBannerUrl,
+          if (finalAvatarUrl.isNotEmpty) 'profile_photo_url': finalAvatarUrl,
+          if (finalBannerUrl.isNotEmpty) 'cover_photo_url': finalBannerUrl,
         });
       } catch (e) {
         debugPrint('[EditProfile] Profile update sync warning: $e');
@@ -118,6 +134,8 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
       newDateOfBirth: _dobCtrl.text.trim(),
       newAvatar: finalAvatarUrl,
       newBanner: finalBannerUrl,
+      newAvatarBytes: _pickedAvatarBytes,
+      newBannerBytes: _pickedBannerBytes,
     );
 
     if (mounted) {
@@ -135,21 +153,13 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
     }
   }
 
-  Widget _buildImageWidget(String? path, File? file, String fallbackAsset) {
-    if (file != null) {
-      if (kIsWeb) {
-        return Image.network(
-          file.path,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
-        );
-      } else {
-        return Image.file(
-          file,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
-        );
-      }
+  Widget _buildImageWidget(String? path, Uint8List? bytes, String fallbackAsset) {
+    if (bytes != null) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildFallbackWidget(fallbackAsset),
+      );
     }
 
     if (path != null && path.isNotEmpty) {
@@ -157,39 +167,37 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
         return Image.network(
           path,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
+          errorBuilder: (_, __, ___) => _buildFallbackWidget(fallbackAsset),
         );
       } else if (path.startsWith('assets/')) {
         return Image.asset(
           path,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
+          errorBuilder: (_, __, ___) => _buildFallbackWidget(fallbackAsset),
         );
-      } else {
-        if (kIsWeb) {
-          return Image.network(
-            path,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
-          );
-        } else {
-          return Image.file(
-            File(path),
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, fit: BoxFit.cover),
-          );
-        }
       }
     }
 
-    return Image.asset(fallbackAsset, fit: BoxFit.cover);
+    return _buildFallbackWidget(fallbackAsset);
+  }
+
+  Widget _buildFallbackWidget(String fallbackAsset) {
+    if (fallbackAsset.isNotEmpty) {
+      return Image.asset(fallbackAsset, fit: BoxFit.cover);
+    }
+    return Container(
+      color: const Color(0xFF1565C0),
+      alignment: Alignment.center,
+      child: Text(
+        ProfileManager.name.isNotEmpty ? ProfileManager.name.substring(0, 1).toUpperCase() : 'U',
+        style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     const bgColor = Colors.white;
-    final currentAuthUser = AuthService.currentUser?.username ?? '';
-    final username = (currentAuthUser.isNotEmpty ? currentAuthUser : ProfileManager.username).toLowerCase();
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -250,7 +258,7 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          _buildImageWidget(_bannerPath, _pickedBannerFile, 'assets/images/young_entrepreneur.jpg'),
+                          _buildImageWidget(_bannerPath, _pickedBannerBytes, ''),
                           Container(
                             color: Colors.black.withValues(alpha: 0.38),
                           ),
@@ -297,7 +305,7 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              _buildImageWidget(_avatarPath, _pickedAvatarFile, 'assets/images/somraj_avatar.jpg'),
+                              _buildImageWidget(_avatarPath, _pickedAvatarBytes, ''),
                               Container(
                                 color: Colors.black.withValues(alpha: 0.38),
                               ),
@@ -328,7 +336,6 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
                       label: 'Name',
                       controller: _nameCtrl,
                     ),
-                    _buildImmutableUsernameField(username),
                     _buildFormInputField(
                       label: 'Bio',
                       controller: _bioCtrl,
@@ -354,122 +361,6 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildImmutableUsernameField(String username) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: InkWell(
-        onTap: _showUsernameRequestDialog,
-        borderRadius: BorderRadius.circular(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: const [
-                Text(
-                  'Username',
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(width: 6),
-                Icon(Icons.lock_outline, size: 14, color: Color(0xFF94A3B8)),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '@$username',
-                  style: const TextStyle(
-                    fontSize: 15.5,
-                    color: Color(0xFF334155),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'Fixed',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            const Divider(color: Color(0xFFE2E8F0), height: 1, thickness: 1),
-            const SizedBox(height: 4),
-            const Text(
-              'Unique username assigned by Acadyk. Tap to request a change from the Acadyk Management Team.',
-              style: TextStyle(
-                fontSize: 11.5,
-                color: Color(0xFF94A3B8),
-                height: 1.3,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showUsernameRequestDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.lock_rounded, color: Color(0xFF0F172A), size: 22),
-            SizedBox(width: 10),
-            Text(
-              'Username Policy',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: const Text(
-          'Your @username is unique and assigned by Acadyk. It is fixed and non-upgradeable directly from settings.\n\nIf you wish to change your username, please submit a formal change request to the Acadyk Management Team.',
-          style: TextStyle(fontSize: 14, color: Color(0xFF334155), height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0F172A),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Username change request submitted to Acadyk Management Team.'),
-                  backgroundColor: Color(0xFF10B981),
-                  duration: Duration(seconds: 3),
-                ),
-              );
-            },
-            child: const Text('Request Change'),
-          ),
-        ],
       ),
     );
   }

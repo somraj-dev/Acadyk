@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'edit_status_screen.dart';
 import 'profile_screen.dart';
+import '../services/profile_manager.dart';
+import '../../../../common/services/auth_service.dart';
 import '../../../feed/presentation/screens/company_profile_screen.dart';
 
 class StoryViewScreen extends StatefulWidget {
@@ -67,7 +69,9 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final displayName = widget.name ?? 'somraj_lodhi';
+    final currentAuthUser = AuthService.currentUser?.username ?? '';
+    final baseUser = currentAuthUser.isNotEmpty ? currentAuthUser : ProfileManager.username;
+    final displayName = widget.name ?? (baseUser.isNotEmpty ? baseUser : 'user');
     final hasAssetAvatar = widget.avatarAsset != null && widget.avatarAsset!.isNotEmpty;
 
     final activeEmoji = widget.statusEmoji ?? (UserStatusState.emoji ?? '🤕');
@@ -296,7 +300,11 @@ class _StoryViewScreenState extends State<StoryViewScreen> with SingleTickerProv
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => ProfileScreen(isOwnProfile: displayName == 'somraj_lodhi'),
+                                    builder: (context) => ProfileScreen(
+                                      isOwnProfile: (currentAuthUser.isNotEmpty && displayName == currentAuthUser) ||
+                                          (ProfileManager.username.isNotEmpty && displayName == ProfileManager.username) ||
+                                          (ProfileManager.name.isNotEmpty && displayName == ProfileManager.name),
+                                    ),
                                   ),
                                 );
                               }

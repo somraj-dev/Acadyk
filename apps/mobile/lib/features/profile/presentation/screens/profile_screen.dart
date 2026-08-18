@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'dart:math';
 import '../services/profile_manager.dart';
 import 'about_account_screen.dart';
@@ -28,7 +27,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ScrollController _scrollController = ScrollController();
-  final GlobalKey _activityKey = GlobalKey();
 
   bool _isFollowing = false;
   bool _isSummaryExpanded = false;
@@ -37,11 +35,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _showAllExperience = false;
   bool _showAllSkills = false;
   bool _showAllClubs = false;
-
-  bool _isActivityLiked = false;
-  int _activityLikesCount = 12;
-  bool _isActivityBookmarked = false;
-  bool _isPostTextExpanded = false;
 
   final Map<int, bool> _featuredLikedMap = {};
   final Map<int, int> _featuredLikesMap = {};
@@ -63,6 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _showImagePreviewDialog(
           title: 'Cover Photo',
           imageWidget: _buildBannerFullImageWidget(),
+          isAvatar: false,
         );
       }
     });
@@ -88,6 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             bgColorHex: bgColorHex,
             isMITS: isMITS,
           ),
+          isAvatar: true,
         );
       }
     });
@@ -239,32 +234,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (widget.userData != null) {
       _profileName = widget.userData!['name'] ?? widget.userData!['full_name'] ?? widget.userData!['authorName'];
       _profileBio = widget.userData!['headline'] ?? widget.userData!['bio'] ?? widget.userData!['authorSubtitle'];
-      _profileLocation = widget.userData!['location'] ?? 'Gwalior, India';
+      _profileLocation = widget.userData!['location'];
       _profilePhotoUrl = widget.userData!['avatar'] ?? widget.userData!['avatarUrl'] ?? widget.userData!['profile_photo_url'];
       _coverPhotoUrl = widget.userData!['cover_photo_url'] ?? widget.userData!['banner'];
     } else {
-      _profileName = widget.isOwnProfile ? ProfileManager.name : 'MITS Gwalior';
-      _profileBio = widget.isOwnProfile
-          ? ProfileManager.bio
-          : 'Madhav Institute of Technology & Science, Gwalior (M.P.) • Premier Technical Institution Est. 1957';
-      _profileLocation = widget.isOwnProfile ? ProfileManager.location : 'Gwalior, India';
-      _profilePhotoUrl = widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/mits_logo.png';
-      _coverPhotoUrl = widget.isOwnProfile ? ProfileManager.bannerUrl : 'assets/images/ocean_wave_header.png';
+      _profileName = widget.isOwnProfile ? (ProfileManager.name.isNotEmpty ? ProfileManager.name : (AuthService.currentUser?.fullName ?? '')) : '';
+      _profileBio = widget.isOwnProfile ? ProfileManager.bio : '';
+      _profileLocation = widget.isOwnProfile ? ProfileManager.location : '';
+      _profilePhotoUrl = widget.isOwnProfile ? ProfileManager.avatarUrl : '';
+      _coverPhotoUrl = widget.isOwnProfile ? ProfileManager.bannerUrl : '';
     }
 
     try {
       final userId = widget.isOwnProfile
           ? AuthService.currentUser?.id
           : widget.userData?['id'];
-      if (userId != null) {
-        final data = await ProfileService.getProfile(userId);
+      if (userId != null && userId.isNotEmpty) {
+        final data = widget.isOwnProfile
+            ? (await ProfileService.getMyProfile() ?? await ProfileService.getProfile(userId))
+            : await ProfileService.getProfile(userId);
         if (data != null && mounted) {
+          if (widget.isOwnProfile) {
+            ProfileManager.loadFromProfileData(data);
+          }
           setState(() {
-            _profileName = data['full_name'];
-            _profileBio = data['bio'];
-            _profileLocation = data['location'];
-            _profilePhotoUrl = data['profile_photo_url'];
-            _coverPhotoUrl = data['cover_photo_url'];
+            _profileName = data['full_name'] ?? data['fullName'] ?? _profileName;
+            _profileBio = data['bio'] ?? _profileBio;
+            _profileLocation = data['location'] ?? _profileLocation;
+            _profilePhotoUrl = data['profile_photo_url'] ?? data['profilePhotoUrl'] ?? _profilePhotoUrl;
+            _coverPhotoUrl = data['cover_photo_url'] ?? data['coverPhotoUrl'] ?? _coverPhotoUrl;
           });
         }
       }
@@ -305,10 +303,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // SECTION 3: Listed / Featured
                     _buildFeaturedSection(),
-                    const SizedBox(height: 8),
-
-                    // SECTION 4: Activity
-                    _buildActivitySection(),
                     const SizedBox(height: 8),
 
                     // SECTION 5: Experience
@@ -413,27 +407,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // SECTION 1: Profile Header Card
   // =============================================================
   Widget _buildProfileHeaderCard() {
-    final String name = _profileName ?? widget.userData?['name'] ?? widget.userData?['full_name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'MITS Gwalior');
-    final String currentAuthUser = AuthService.currentUser?.username ?? '';
-    final String baseUsername = currentAuthUser.isNotEmpty ? currentAuthUser : ProfileManager.username;
-    final String username = widget.userData != null
-        ? '@${(widget.userData!['username'] ?? widget.userData!['handle'] ?? 'somrajlodhi').toString().toLowerCase().replaceAll('@', '')}'
-        : (widget.isOwnProfile ? '@${baseUsername.replaceAll(' ', '').toLowerCase()}' : '@mitsgwalior');
-
+    final String name = _profileName ?? widget.userData?['name'] ?? widget.userData?['full_name'] ?? (widget.isOwnProfile ? (ProfileManager.name.isNotEmpty ? ProfileManager.name : (AuthService.currentUser?.fullName?.isNotEmpty == true ? AuthService.currentUser!.fullName! : 'Acadyk Member')) : 'Member');
     final String bio = _profileBio ?? widget.userData?['headline'] ?? widget.userData?['bio'] ?? (widget.isOwnProfile
         ? ProfileManager.bio
-        : 'Madhav Institute of Technology & Science, Gwalior (M.P.) • Premier Technical Institution Est. 1957');
+        : '');
 
     final String avatar = widget.userData != null
         ? (widget.userData!['avatar'] ?? widget.userData!['avatarUrl'] ?? '')
-        : (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/mits_logo.png');
+        : (widget.isOwnProfile ? ProfileManager.avatarUrl : '');
 
-    final String initials = widget.userData?['initials'] ?? (name.isNotEmpty ? name.substring(0, min(2, name.length)).toUpperCase() : 'M');
+    final String initials = widget.userData?['initials'] ?? (name.isNotEmpty ? name.substring(0, min(2, name.length)).toUpperCase() : 'U');
     final int bgColorHex = widget.userData?['bgColor'] ?? 0xFF1565C0;
     final bool isMITS = name.contains('MITS');
 
-    final String followingCount = widget.userData?['following']?.toString() ?? (widget.isOwnProfile ? '357' : '${(name.hashCode.abs() % 400 + 40)}');
-    final String followersCount = widget.userData?['followers']?.toString() ?? (widget.isOwnProfile ? '197.3K' : '${((name.hashCode.abs() % 800 + 100) / 10).toStringAsFixed(1)}K');
+    final String followingCount = widget.userData?['following']?.toString() ?? (widget.isOwnProfile ? '${ProfileManager.followingCount}' : '0');
+    final String followersCount = widget.userData?['followers']?.toString() ?? (widget.isOwnProfile ? (ProfileManager.followersCount > 1000 ? '${(ProfileManager.followersCount / 1000).toStringAsFixed(1)}K' : '${ProfileManager.followersCount}') : '0');
 
     return Container(
       color: Colors.white,
@@ -715,25 +703,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     letterSpacing: -0.4,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  username,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w400,
+                if (bio.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    bio,
+                    style: const TextStyle(
+                      fontSize: 14.5,
+                      color: Color(0xFF334155),
+                      height: 1.35,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  bio,
-                  style: const TextStyle(
-                    fontSize: 14.5,
-                    color: Color(0xFF334155),
-                    height: 1.35,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
+                ],
                 const SizedBox(height: 16),
 
                 // Stats Row: Following & Followers
@@ -747,7 +728,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             builder: (_) => ConnectionsListScreen(
                               initialTab: 'following',
                               userName: name,
-                              userHandle: username,
+                              userHandle: '',
                             ),
                           ),
                         );
@@ -784,7 +765,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             builder: (_) => ConnectionsListScreen(
                               initialTab: 'followers',
                               userName: name,
-                              userHandle: username,
+                              userHandle: '',
                             ),
                           ),
                         );
@@ -827,12 +808,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // SECTION 2: Summary / About
   // =============================================================
   Widget _buildAboutSection() {
-    final String name = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
     final String defaultSummary = widget.isOwnProfile
-        ? 'I am a Machine Learning student at Madhav Institute of Technology and Science (MITS), Gwalior, with a strong interest in building scalable technology solutions at the intersection of healthcare and intelligent systems.\nCurrently, I am working on AxioVital, a modern digital health infrastructure layer, and Acadex, a student credential and institutional workflow platform.'
+        ? (ProfileManager.summary.isNotEmpty ? ProfileManager.summary : (ProfileManager.bio.isNotEmpty ? ProfileManager.bio : 'No summary added yet.'))
         : (widget.userData?['summary'] ??
             widget.userData?['about'] ??
-            'I am $name, passionate about engineering, technology research, and active student collaboration at MITS Gwalior. Enthusiastic about creating meaningful, scalable solutions that empower developers, academia, and open-source communities.');
+            (widget.userData?['bio'] != null && widget.userData!['bio'].toString().isNotEmpty ? widget.userData!['bio'] : 'No summary provided.'));
 
     return Container(
       color: Colors.white,
@@ -893,18 +873,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // SECTION 3: Listed / Featured
   // =============================================================
   List<Map<String, dynamic>> _getFeaturedItems() {
-    final String name = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
-    final String bio = _profileBio ?? widget.userData?['headline'] ?? (widget.isOwnProfile ? ProfileManager.bio : 'Innovator at MITS');
-    final String avatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/somraj_avatar.jpg');
+    final String name = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? (ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Acadyk Member') : 'Member');
+    final String bio = _profileBio ?? widget.userData?['headline'] ?? (widget.isOwnProfile ? ProfileManager.bio : '');
+    final String avatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : '');
 
     final List<Map<String, dynamic>> userCreatedItems = [];
-    if (widget.isOwnProfile || name.contains('Somraj')) {
+    if (widget.isOwnProfile) {
       final userPosts = PostService.getUserCreatedPosts();
       for (final p in userPosts) {
         userCreatedItems.add({
           'category': 'Post',
           'text': p['content'] ?? '',
-          'imageAsset': (p['imageUrl'] != null && (p['imageUrl'] as String).isNotEmpty) ? p['imageUrl'] : 'assets/images/arogya_dashboard.jpg',
+          'imageAsset': (p['imageUrl'] != null && (p['imageUrl'] as String).isNotEmpty) ? p['imageUrl'] : '',
           'reactions': p['likes'] ?? 0,
           'authorName': name,
           'authorHeadline': bio,
@@ -912,42 +892,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'timeAgo': p['timeAgo'] ?? 'Just now',
         });
       }
+    } else {
+      final posts = widget.userData?['posts'] as List<dynamic>?;
+      if (posts != null && posts.isNotEmpty) {
+        for (final p in posts) {
+          if (p is Map) {
+            userCreatedItems.add({
+              'category': p['category'] ?? 'Post',
+              'text': p['content'] ?? p['text'] ?? '',
+              'imageAsset': p['imageUrl'] ?? p['imageAsset'] ?? '',
+              'reactions': p['likes'] ?? p['reactions'] ?? 0,
+              'authorName': name,
+              'authorHeadline': bio,
+              'authorAvatar': avatar,
+              'timeAgo': p['timeAgo'] ?? 'Recently',
+            });
+          }
+        }
+      }
     }
 
-    final defaultItems = [
-      {
-        'category': 'Post',
-        'text': "Healthcare isn't broken because of lack of technology — it's broken because of fragmentation across diagnostic workflows.",
-        'imageAsset': 'assets/images/arogya_dashboard.jpg',
-        'reactions': 13,
-        'authorName': name,
-        'authorHeadline': bio,
-        'authorAvatar': avatar,
-        'timeAgo': '2w',
-      },
-      {
-        'category': 'Article',
-        'text': "The Future of Decentralized Teamwork and Remote Engineering Collaborations in Higher Education.",
-        'imageAsset': 'assets/images/warp_team.jpg',
-        'reactions': 42,
-        'authorName': name,
-        'authorHeadline': bio,
-        'authorAvatar': avatar,
-        'timeAgo': '1mo',
-      },
-      {
-        'category': 'Post',
-        'text': "Deeply honored to be recognized among the top young student innovators and engineering builders of this year!",
-        'imageAsset': 'assets/images/young_entrepreneur.jpg',
-        'reactions': 58,
-        'authorName': name,
-        'authorHeadline': bio,
-        'authorAvatar': avatar,
-        'timeAgo': '3w',
-      },
-    ];
-
-    return [...userCreatedItems, ...defaultItems];
+    return userCreatedItems;
   }
 
   Widget _buildFeaturedSection() {
@@ -1131,573 +1096,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // =============================================================
-  // SECTION 4: Activity
-  // =============================================================
-  Widget _buildActivitySection() {
-    final String name = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
-    final String bio = _profileBio ?? widget.userData?['headline'] ?? (widget.isOwnProfile ? ProfileManager.bio : 'Innovator | Developer');
-    final String avatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/somraj_avatar.jpg');
-
-    const String postBody =
-        'Akedex is built on a universal identity fabric for education. Every learner receives a lifelong Universal Academic ID from the first day of learning. We are transforming school-to-college transitions with unified verifiable credentials.';
-
-    return Container(
-      key: _activityKey,
-      color: Colors.white,
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Activity',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-                  ),
-                  Text(
-                    widget.isOwnProfile ? '197.3K followers' : 'Active contributor',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
-                  ),
-                ],
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PostDetailScreen(
-                        authorName: name,
-                        authorHeadline: bio,
-                        authorAvatar: avatar,
-                        timeAgo: '3w',
-                        postText: postBody,
-                      ),
-                    ),
-                  );
-                },
-                child: const Text(
-                  'Show all posts',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Author Row
-          InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PostDetailScreen(
-                    authorName: name,
-                    authorHeadline: bio,
-                    authorAvatar: avatar,
-                    timeAgo: '3w',
-                    postText: postBody,
-                  ),
-                ),
-              );
-            },
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Image.asset(
-                    avatar,
-                    width: 40,
-                    height: 40,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      width: 40,
-                      height: 40,
-                      color: const Color(0xFF0F4C81),
-                      child: const Icon(Icons.person, color: Colors.white, size: 20),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              name,
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.verified, size: 14, color: Color(0xFF0A66C2)),
-                          if (widget.isOwnProfile) ...[
-                            const SizedBox(width: 4),
-                            Text('• You', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-                          ],
-                        ],
-                      ),
-                      Text(
-                        bio,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                      Row(
-                        children: [
-                          Text('3w • Edited • ', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                          Icon(Icons.public, size: 12, color: Colors.grey[600]),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.more_vert, size: 20, color: Color(0xFF5E5E5E)),
-                  onPressed: () {
-                    _showPostOptionsModal(context);
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Post Text with expandable "more"
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isPostTextExpanded = !_isPostTextExpanded;
-              });
-            },
-            child: RichText(
-              text: TextSpan(
-                style: const TextStyle(fontSize: 14, color: Color(0xFF191919), height: 1.45),
-                children: [
-                  TextSpan(
-                    text: _isPostTextExpanded
-                        ? postBody
-                        : (postBody.length > 140 ? '${postBody.substring(0, 140)}...' : postBody),
-                  ),
-                  if (postBody.length > 140)
-                    TextSpan(
-                      text: _isPostTextExpanded ? ' Show less' : ' more',
-                      style: const TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.w600),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Dark Banner / Media Card
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PostDetailScreen(
-                    authorName: name,
-                    authorHeadline: bio,
-                    authorAvatar: avatar,
-                    timeAgo: '3w',
-                    postText: postBody,
-                  ),
-                ),
-              );
-            },
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                width: double.infinity,
-                height: 220,
-                color: const Color(0xFF1A1A1A),
-                child: Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: Alignment.bottomCenter,
-                          radius: 1.2,
-                          colors: [
-                            Colors.white.withValues(alpha: 0.1),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                    const Positioned(
-                      left: 20,
-                      top: 50,
-                      child: Text(
-                        'SOMETHING NEW\nIS COMING.',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          height: 1.3,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 40,
-                      left: 0,
-                      right: 0,
-                      child: Center(
-                        child: Icon(Icons.auto_awesome, size: 20, color: Colors.white.withValues(alpha: 0.9)),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 16,
-                      left: 20,
-                      right: 20,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'More thoughtful.',
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
-                          ),
-                          Text(
-                            'More intelligent.',
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Interactive Engagement Bar: Heart, Comments, Bookmark, Share
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  // Like / Heart
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _isActivityLiked = !_isActivityLiked;
-                        _activityLikesCount += _isActivityLiked ? 1 : -1;
-                      });
-                    },
-                    child: Row(
-                      children: [
-                        Icon(
-                          _isActivityLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-                          size: 24,
-                          color: _isActivityLiked ? Colors.redAccent : Colors.black87,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$_activityLikesCount',
-                          style: TextStyle(
-                            color: _isActivityLiked ? Colors.redAccent : Colors.black87,
-                            fontSize: 14.0,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-
-                  // Comment
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PostDetailScreen(
-                            authorName: name,
-                            authorHeadline: bio,
-                            authorAvatar: avatar,
-                            timeAgo: '3w',
-                            postText: postBody,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Row(
-                      children: const [
-                        Icon(CupertinoIcons.chat_bubble, size: 23, color: Colors.black87),
-                        SizedBox(width: 6),
-                        Text(
-                          '3',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 14.0,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-
-                  // Share
-                  GestureDetector(
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Post link copied to clipboard!')),
-                      );
-                    },
-                    child: const Icon(CupertinoIcons.arrow_turn_up_right, size: 22, color: Colors.black87),
-                  ),
-                ],
-              ),
-
-              // Bookmark
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isActivityBookmarked = !_isActivityBookmarked;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(_isActivityBookmarked ? 'Post saved to bookmarks!' : 'Post removed from bookmarks'),
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
-                },
-                child: Icon(
-                  _isActivityBookmarked ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
-                  size: 24,
-                  color: _isActivityBookmarked ? const Color(0xFF0F4C81) : Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPostOptionsModal(BuildContext context) {
-    final String authorName = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
-    final String authorAvatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/somraj_avatar.jpg');
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 12.0, bottom: 20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top drag handle
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 24),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                // Top row of actions (Save, Repost, Share)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildTopActionIcon(
-                      _isActivityBookmarked ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
-                      'Save',
-                      color: _isActivityBookmarked ? const Color(0xFF1E88E5) : Colors.black,
-                      onTap: () {
-                        setState(() {
-                          _isActivityBookmarked = !_isActivityBookmarked;
-                        });
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(_isActivityBookmarked ? 'Post saved to bookmarks!' : 'Post removed from bookmarks'),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildTopActionIcon(
-                      CupertinoIcons.repeat,
-                      'Repost',
-                      onTap: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Post reposted to your network!')),
-                        );
-                      },
-                    ),
-                    _buildTopActionIcon(
-                      CupertinoIcons.paperplane,
-                      'Share',
-                      onTap: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Share options loaded!')),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                // Vertical list actions (Hide, About this account, Report)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    children: [
-                      _buildListAction(CupertinoIcons.eye_slash, 'Hide', onTap: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Post hidden from your feed')),
-                        );
-                      }),
-                      const SizedBox(height: 20),
-                      _buildListAction(CupertinoIcons.person, 'About this account', onTap: () {
-                        Navigator.pop(context);
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => AboutAccountScreen(
-                              accountData: {
-                                'name': authorName,
-                                'avatarUrl': authorAvatar,
-                                'dateJoined': 'June 2024',
-                                'location': _profileLocation ?? 'Gwalior, India',
-                                'sharedFollowers': 18,
-                              },
-                            ),
-                          ),
-                        );
-                      }),
-                      const SizedBox(height: 20),
-                      _buildListAction(
-                        CupertinoIcons.exclamationmark_bubble,
-                        'Report',
-                        color: const Color(0xFFED4956),
-                        onTap: () {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Post reported for review.')),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTopActionIcon(IconData icon, String label, {Color color = Colors.black, VoidCallback? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        children: [
-          Container(
-            width: 65,
-            height: 65,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF2F2F2),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w400),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildListAction(IconData icon, String label, {Color color = Colors.black, VoidCallback? onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 26),
-          const SizedBox(width: 16),
-          Text(
-            label,
-            style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w400),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // =============================================================
   // SECTION 5: Experience
   // =============================================================
   List<Map<String, dynamic>> _getExperienceList() {
-    final String name = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
-
-    if (widget.isOwnProfile || name.contains('Somraj')) {
-      return [
-        {
-          'title': 'Founder',
-          'company': 'Quantaforze Corporation · Full-time',
-          'duration': 'Oct 2025 - Present · 9 mos',
-          'location': 'Gwalior, Madhya Pradesh, India · On-site',
-          'highlight': 'Start-up Leadership and Business Ownership',
-        },
-        {
-          'title': 'AI & Machine Learning Researcher',
-          'company': 'MITS Innovation & Research Lab · Part-time',
-          'duration': 'Aug 2024 - Oct 2025 · 1 yr 3 mos',
-          'location': 'Gwalior, India · Hybrid',
-          'highlight': 'Deep Learning, Computer Vision & Edge AI',
-        },
-        {
-          'title': 'Lead Mobile Architect',
-          'company': 'Acadyk Open Systems · Open Source',
-          'duration': 'Jan 2025 - Present · 6 mos',
-          'location': 'Remote',
-          'highlight': 'Cross-platform Mobile Architecture & Backend APIs',
-        },
-      ];
+    if (widget.isOwnProfile) {
+      return ProfileManager.experiences;
     } else {
-      return [
-        {
-          'title': widget.userData?['headline'] ?? 'Lead Researcher & Developer',
-          'company': 'MITS Gwalior · Full-time',
-          'duration': '2024 - Present',
-          'location': 'Gwalior, Madhya Pradesh, India',
-          'highlight': 'Academic Innovation, Systems Architecture & Mentorship',
-        },
-        {
-          'title': 'Technical Contributor',
-          'company': 'Student Development Cell (SDC)',
-          'duration': '2023 - 2024 · 1 yr',
-          'location': 'Gwalior, India',
-          'highlight': 'Campus Technology Solutions & Hackathons',
-        },
-      ];
+      final List<dynamic>? userExp = widget.userData?['experiences'] as List<dynamic>?;
+      if (userExp != null && userExp.isNotEmpty) {
+        return userExp.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
     }
   }
 
@@ -1718,43 +1127,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          for (int i = 0; i < displayedExperiences.length; i++) ...[
-            _buildExperienceItem(displayedExperiences[i]),
-            if (i < displayedExperiences.length - 1) ...[
-              const SizedBox(height: 16),
-              const Divider(height: 1, color: Color(0xFFE0E0E0)),
-              const SizedBox(height: 16),
+          if (experiences.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                'No experience added yet.',
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+              ),
+            )
+          else ...[
+            for (int i = 0; i < displayedExperiences.length; i++) ...[
+              _buildExperienceItem(displayedExperiences[i]),
+              if (i < displayedExperiences.length - 1) ...[
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                const SizedBox(height: 16),
+              ],
             ],
-          ],
-          if (experiences.length > 1) ...[
-            const SizedBox(height: 16),
-            Center(
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _showAllExperience = !_showAllExperience;
-                  });
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _showAllExperience ? 'Show less' : 'Show all experiences (${experiences.length})',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        _showAllExperience ? Icons.keyboard_arrow_up : Icons.arrow_forward,
-                        size: 18,
-                        color: const Color(0xFF0A66C2),
-                      ),
-                    ],
+            if (experiences.length > 1) ...[
+              const SizedBox(height: 16),
+              Center(
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _showAllExperience = !_showAllExperience;
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _showAllExperience ? 'Show less' : 'Show all experiences (${experiences.length})',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          _showAllExperience ? Icons.keyboard_arrow_up : Icons.arrow_forward,
+                          size: 18,
+                          color: const Color(0xFF0A66C2),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ],
       ),
@@ -1833,10 +1252,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  List<Map<String, dynamic>> _getEducationList() {
+    if (widget.isOwnProfile) {
+      if (ProfileManager.education.isNotEmpty) {
+        return ProfileManager.education;
+      }
+      if (ProfileManager.branch.isNotEmpty || ProfileManager.degree.isNotEmpty) {
+        return [
+          {
+            'school': 'Madhav Institute of Technology and Science, Gwalior',
+            'degree': '${ProfileManager.degree.isNotEmpty ? ProfileManager.degree : "Bachelor of Technology"}, ${ProfileManager.branch.isNotEmpty ? ProfileManager.branch : ""}',
+            'duration': '2025 – 2029',
+          }
+        ];
+      }
+      return [];
+    } else {
+      final List<dynamic>? userEdu = widget.userData?['education'] as List<dynamic>?;
+      if (userEdu != null && userEdu.isNotEmpty) {
+        return userEdu.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      if (widget.userData?['degree'] != null || widget.userData?['branch'] != null) {
+        return [
+          {
+            'school': 'Madhav Institute of Technology and Science, Gwalior',
+            'degree': '${widget.userData?['degree'] ?? "Bachelor of Technology"}, ${widget.userData?['branch'] ?? ""}',
+            'duration': '2025 – 2029',
+          }
+        ];
+      }
+      return [];
+    }
+  }
+
   // =============================================================
   // SECTION 6: Education
   // =============================================================
   Widget _buildEducationSection() {
+    final educations = _getEducationList();
+
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.all(16.0),
@@ -1849,56 +1303,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.all(4),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.asset(
-                    'assets/images/mits_logo.png',
-                    width: 40,
-                    height: 40,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const Icon(
-                      Icons.school,
-                      size: 22,
-                      color: Color(0xFF0F4C81),
+          if (educations.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                'No education details added yet.',
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+              ),
+            )
+          else ...[
+            for (int i = 0; i < educations.length; i++) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(4),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.asset(
+                        'assets/images/mits_logo.png',
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.school,
+                          size: 22,
+                          color: Color(0xFF0F4C81),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          educations[i]['school'] ?? 'Madhav Institute of Technology and Science, Gwalior',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
+                        ),
+                        if (educations[i]['degree'] != null && educations[i]['degree'].toString().isNotEmpty)
+                          Text(
+                            educations[i]['degree']!,
+                            style: const TextStyle(fontSize: 13, color: Color(0xFF191919)),
+                          ),
+                        if (educations[i]['duration'] != null && educations[i]['duration'].toString().isNotEmpty)
+                          Text(
+                            educations[i]['duration']!,
+                            style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E)),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Madhav Institute of Technology and Science, Gwalior',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-                    ),
-                    Text(
-                      'Bachelor of Technology - BTech, Artificial intelligence and machine learning',
-                      style: TextStyle(fontSize: 13, color: Color(0xFF191919)),
-                    ),
-                    Text(
-                      'Aug 2025 – Aug 2029',
-                      style: TextStyle(fontSize: 13, color: Color(0xFF5E5E5E)),
-                    ),
-                  ],
-                ),
-              ),
+              if (i < educations.length - 1) ...[
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                const SizedBox(height: 16),
+              ],
             ],
-          ),
+          ],
         ],
       ),
     );
@@ -1908,54 +1381,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // SECTION 7: Projects 
   // =============================================================
   List<Map<String, dynamic>> _getProjectsList() {
-    final String name = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
-
-    if (widget.isOwnProfile || name.contains('Somraj')) {
-      return [
-        {
-          'title': 'Acadex',
-          'time': 'Feb 2026 – Present',
-          'association': 'Quantaforze Corporation',
-          'description':
-              'Acadex is a school-to-school or institute-to-institute student records and workflow network that simplifies credit transfer, academic verifications, and cross-campus collaboration with cryptographically signed micro-credentials.',
-          'contributors': 3,
-        },
-        {
-          'title': 'AxioVital',
-          'time': 'Nov 2025 – Present',
-          'association': 'Quantaforze Corporation',
-          'description':
-              'AxioVital is building the digital infrastructure layer for modern healthcare — connecting patients, clinics, and diagnostic labs in real-time with zero latency and AI-assisted triage telemetry.',
-          'contributors': 4,
-        },
-        {
-          'title': 'NeuralMesh AI',
-          'time': 'Aug 2025 – Jan 2026',
-          'association': 'MITS AI Research Lab',
-          'description':
-              'An open-source distributed edge inference network optimizing ONNX runtime models for mobile and IoT devices across low-bandwidth environments.',
-          'contributors': 2,
-        },
-      ];
+    if (widget.isOwnProfile) {
+      return ProfileManager.projects;
     } else {
-      return [
-        {
-          'title': 'Campus Connect Hub',
-          'time': '2025 – Present',
-          'association': 'MITS-DU Engineering Portal',
-          'description':
-              'Collaborative engineering portal enabling student teams to publish research repositories, find project partners, and manage club events.',
-          'contributors': 3,
-        },
-        {
-          'title': 'Smart Diagnostic Classifier',
-          'time': '2024 – 2025',
-          'association': 'SDC Hackathon',
-          'description':
-              'Convolutional neural network for automatic classification of biomedical imagery with 96.4% test accuracy.',
-          'contributors': 2,
-        },
-      ];
+      final List<dynamic>? userProjects = widget.userData?['projects'] as List<dynamic>?;
+      if (userProjects != null && userProjects.isNotEmpty) {
+        return userProjects.map((p) => Map<String, dynamic>.from(p as Map)).toList();
+      }
+      return [];
     }
   }
 
@@ -2039,125 +1472,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    proj['title']!,
-                    style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-                  ),
-                ),
-                const Icon(Icons.arrow_forward_ios, size: 13, color: Color(0xFF9CA3AF)),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(proj['time']!, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
-            const SizedBox(height: 6),
-            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 20,
-                  height: 20,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
                   alignment: Alignment.center,
+                  padding: const EdgeInsets.all(4),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: Image.asset(
-                      proj['association'].toString().toLowerCase().contains('quantaforze')
-                          ? 'assets/images/quantaforze_logo.png'
-                          : proj['association'].toString().toLowerCase().contains('mits')
-                              ? 'assets/images/mits_logo.png'
-                              : 'assets/images/acadyk_logo.png',
-                      width: 18,
-                      height: 18,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.code, size: 12, color: Colors.black54),
-                    ),
+                    borderRadius: BorderRadius.circular(6),
+                    child: (proj['association'] != null &&
+                            proj['association'].toString().toLowerCase().contains('quantaforze'))
+                        ? Image.asset(
+                            'assets/images/quantaforze_logo.png',
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.asset(
+                            proj['association'].toString().toLowerCase().contains('mits')
+                                ? 'assets/images/mits_logo.png'
+                                : 'assets/images/acadyk_logo.png',
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.folder_outlined,
+                              size: 22,
+                              color: Color(0xFF0F4C81),
+                            ),
+                          ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    'Associated with ${proj['association']}',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF191919)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(proj['title'] ?? '', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => ProjectDetailsScreen(projectData: proj)),
+                              );
+                            },
+                            child: const Icon(Icons.arrow_outward, size: 18, color: Color(0xFF5E5E5E)),
+                          ),
+                        ],
+                      ),
+                      if (proj['time'] != null && proj['time'].toString().isNotEmpty)
+                        Text(proj['time']!, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
+                      if (proj['association'] != null && proj['association'].toString().isNotEmpty)
+                        Text(proj['association']!, style: const TextStyle(fontSize: 13, color: Color(0xFF191919))),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  if (isExpanded) {
-                    _expandedProjectIndices.remove(index);
-                  } else {
-                    _expandedProjectIndices.add(index);
-                  }
-                });
-              },
-              child: RichText(
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF191919), height: 1.4),
-                  children: [
-                    TextSpan(
-                      text: isExpanded ? desc : (desc.length > 100 ? '${desc.substring(0, 100)}...' : desc),
-                    ),
-                    if (desc.length > 100)
+            if (desc.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (isExpanded) {
+                      _expandedProjectIndices.remove(index);
+                    } else {
+                      _expandedProjectIndices.add(index);
+                    }
+                  });
+                },
+                child: RichText(
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 13.5, color: Color(0xFF191919), height: 1.4),
+                    children: [
                       TextSpan(
-                        text: isExpanded ? ' Show less' : ' more',
-                        style: const TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.w600),
+                        text: isExpanded
+                            ? desc
+                            : (desc.length > 120 ? '${desc.substring(0, 120)}...' : desc),
                       ),
-                  ],
+                      if (desc.length > 120)
+                        TextSpan(
+                          text: isExpanded ? ' Show less' : ' more',
+                          style: const TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.w600),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            const Text('Contributors', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(image: AssetImage('assets/images/somraj_avatar.jpg'), fit: BoxFit.cover),
-                  ),
-                ),
-                Transform.translate(
-                  offset: const Offset(-6, 0),
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(image: AssetImage('assets/images/dharmik_avatar.jpg'), fit: BoxFit.cover),
-                    ),
-                  ),
-                ),
-                Transform.translate(
-                  offset: const Offset(-12, 0),
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFFF0F0F0),
-                      border: Border.all(color: const Color(0xFFE0E0E0)),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '+${proj['contributors']}',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            ],
           ],
         ),
       ),
@@ -2168,21 +1580,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // SECTION 8: Skills & Connected Apps
   // =============================================================
   List<Map<String, String>> _getSkillsList() {
-    final String name = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
-
-    if (widget.isOwnProfile || name.contains('Somraj')) {
-      return [
-        {'name': 'Start-up Leadership', 'association': 'Founder at Quantaforze Corporation'},
-        {'name': 'Business Ownership', 'association': 'Founder at Quantaforze Corporation'},
-        {'name': 'Artificial Intelligence & Deep Learning', 'association': 'MITS AI Research Lab'},
-        {'name': 'Flutter & Dart Mobile Architecture', 'association': 'Acadyk Production Stack'},
-      ];
+    if (widget.isOwnProfile) {
+      return ProfileManager.skills;
     } else {
-      return [
-        {'name': 'Applied Machine Learning', 'association': 'Certified Academic Researcher'},
-        {'name': 'Full-Stack Development', 'association': 'Software Engineering Lead'},
-        {'name': 'Open Source Collaboration', 'association': 'Community Contributor'},
-      ];
+      final List<dynamic>? userSkills = widget.userData?['skills'] as List<dynamic>?;
+      if (userSkills != null && userSkills.isNotEmpty) {
+        return userSkills.map((s) {
+          if (s is Map) {
+            return Map<String, String>.from(s.map((k, v) => MapEntry(k.toString(), v.toString())));
+          }
+          return <String, String>{'name': s.toString(), 'association': ''};
+        }).toList();
+      }
+      return [];
     }
   }
 
@@ -2202,43 +1612,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          for (int i = 0; i < displayedSkills.length; i++) ...[
-            _buildSkillItem(displayedSkills[i]),
-            if (i < displayedSkills.length - 1) ...[
-              const SizedBox(height: 14),
-              const Divider(height: 1, color: Color(0xFFE0E0E0)),
-              const SizedBox(height: 14),
+          if (skills.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                'No skills added yet.',
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+              ),
+            )
+          else ...[
+            for (int i = 0; i < displayedSkills.length; i++) ...[
+              _buildSkillItem(displayedSkills[i]),
+              if (i < displayedSkills.length - 1) ...[
+                const SizedBox(height: 14),
+                const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                const SizedBox(height: 14),
+              ],
             ],
-          ],
-          if (skills.length > 2) ...[
-            const SizedBox(height: 16),
-            Center(
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _showAllSkills = !_showAllSkills;
-                  });
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _showAllSkills ? 'Show less' : 'Show all skills (${skills.length})',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        _showAllSkills ? Icons.keyboard_arrow_up : Icons.arrow_forward,
-                        size: 18,
-                        color: const Color(0xFF0A66C2),
-                      ),
-                    ],
+            if (skills.length > 2) ...[
+              const SizedBox(height: 16),
+              Center(
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _showAllSkills = !_showAllSkills;
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _showAllSkills ? 'Show less' : 'Show all skills (${skills.length})',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          _showAllSkills ? Icons.keyboard_arrow_up : Icons.arrow_forward,
+                          size: 18,
+                          color: const Color(0xFF0A66C2),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ],
       ),
@@ -2273,72 +1693,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // SECTION 9: Clubs & Organizations
   // =============================================================
   List<Map<String, dynamic>> _getClubsList() {
-    final String name = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
-
-    if (widget.isOwnProfile || name.contains('Somraj')) {
-      return [
-        {
-          'name': 'Student Development Cell (SDC)',
-          'role': 'Technical Core Lead & Platform Architect',
-          'organization': 'MITS-DU Student Innovation & Technology Council',
-          'duration': 'Aug 2024 – Present · 2 yrs',
-          'icon': Icons.groups_rounded,
-          'iconBg': const Color(0xFF0F4C81),
-          'description': 'Leading campus software architectures, open-source repositories, and student hackathons.',
-        },
-        {
-          'name': 'Google Developer Groups (GDG) on Campus',
-          'role': 'AI/ML & Mobile App Core Member',
-          'organization': 'GDG MITS Gwalior Chapter',
-          'duration': 'Sep 2024 – Present',
-          'icon': Icons.code_rounded,
-          'iconBg': const Color(0xFF1E293B),
-          'description': 'Mentoring students in Flutter, TensorFlow, and cloud architectures.',
-        },
-        {
-          'name': 'ACM Student Chapter MITS',
-          'role': 'Competitive Programming & Systems Research',
-          'organization': 'ACM Chapter, Department of CSE & IT',
-          'duration': '2024 – Present',
-          'icon': Icons.terminal_rounded,
-          'iconBg': const Color(0xFF4C1D95),
-          'description': 'Organizing coding contests, algorithmic workshops, and research symposiums.',
-        },
-        {
-          'name': 'MITS Robotics & AI Club (RAI)',
-          'role': 'Edge Computing & Vision Systems Contributor',
-          'organization': 'MITS Innovation Hub',
-          'duration': '2024 – 2025',
-          'icon': Icons.smart_toy_rounded,
-          'iconBg': const Color(0xFF334155),
-          'description': 'Designed lightweight neural network architectures for embedded microcontrollers.',
-        },
-      ];
+    if (widget.isOwnProfile) {
+      return ProfileManager.clubs;
     } else {
       final List<dynamic>? userClubs = widget.userData?['clubs'] as List<dynamic>?;
       if (userClubs != null && userClubs.isNotEmpty) {
         return userClubs.map((c) => Map<String, dynamic>.from(c as Map)).toList();
       }
-      return [
-        {
-          'name': 'Student Development Cell (SDC)',
-          'role': 'Technical Contributor',
-          'organization': 'MITS-DU Student Council',
-          'duration': '2024 – Present',
-          'icon': Icons.groups_rounded,
-          'iconBg': const Color(0xFF0F4C81),
-          'description': 'Collaborating on student campus projects and workshops.',
-        },
-        {
-          'name': 'Google Developer Groups (GDG) on Campus',
-          'role': 'Campus Member',
-          'organization': 'GDG MITS Chapter',
-          'duration': '2024 – Present',
-          'icon': Icons.code_rounded,
-          'iconBg': const Color(0xFF1E293B),
-          'description': 'Participating in developer events and technology sessions.',
-        },
-      ];
+      return [];
     }
   }
 
@@ -2362,43 +1724,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          for (int i = 0; i < displayedClubs.length; i++) ...[
-            _buildClubItem(displayedClubs[i]),
-            if (i < displayedClubs.length - 1) ...[
-              const SizedBox(height: 16),
-              const Divider(height: 1, color: Color(0xFFE0E0E0)),
-              const SizedBox(height: 16),
+          if (clubs.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                'No clubs or organizations added yet.',
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+              ),
+            )
+          else ...[
+            for (int i = 0; i < displayedClubs.length; i++) ...[
+              _buildClubItem(displayedClubs[i]),
+              if (i < displayedClubs.length - 1) ...[
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                const SizedBox(height: 16),
+              ],
             ],
-          ],
-          if (clubs.length > 2) ...[
-            const SizedBox(height: 16),
-            Center(
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _showAllClubs = !_showAllClubs;
-                  });
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _showAllClubs ? 'Show less' : 'Show all clubs (${clubs.length})',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        _showAllClubs ? Icons.keyboard_arrow_up : Icons.arrow_forward,
-                        size: 18,
-                        color: const Color(0xFF0A66C2),
-                      ),
-                    ],
+            if (clubs.length > 2) ...[
+              const SizedBox(height: 16),
+              Center(
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _showAllClubs = !_showAllClubs;
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _showAllClubs ? 'Show less' : 'Show all clubs (${clubs.length})',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          _showAllClubs ? Icons.keyboard_arrow_up : Icons.arrow_forward,
+                          size: 18,
+                          color: const Color(0xFF0A66C2),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ],
       ),
@@ -2483,6 +1855,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showImagePreviewDialog({
     required String title,
     required Widget imageWidget,
+    bool isAvatar = false,
   }) {
     showDialog(
       context: context,
@@ -2530,6 +1903,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
+              if (widget.isOwnProfile) ...[
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF0F172A),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  ),
+                  icon: const Icon(Icons.photo_camera_outlined, size: 18),
+                  label: Text(
+                    isAvatar ? 'Change Profile Photo' : 'Change Cover Photo',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5),
+                  ),
+                  onPressed: () async {
+                    Navigator.of(dialogContext).pop();
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SettingsEditProfileScreen(),
+                      ),
+                    );
+                    _onProfileUpdated();
+                  },
+                ),
+              ],
             ],
           ),
         );
@@ -2538,6 +1937,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildBannerFullImageWidget() {
+    if (widget.isOwnProfile && ProfileManager.bannerBytes != null) {
+      return Image.memory(
+        ProfileManager.bannerBytes!,
+        fit: BoxFit.contain,
+      );
+    }
     if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty) {
       if (_coverPhotoUrl!.startsWith('http')) {
         return Image.network(
@@ -2576,6 +1981,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required int bgColorHex,
     required bool isMITS,
   }) {
+    if (widget.isOwnProfile && ProfileManager.avatarBytes != null) {
+      return Image.memory(
+        ProfileManager.avatarBytes!,
+        fit: BoxFit.contain,
+      );
+    }
     if (photoUrl != null && photoUrl.isNotEmpty) {
       if (photoUrl.startsWith('http')) {
         return Image.network(
@@ -2618,6 +2029,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildBannerImageWidget() {
+    if (widget.isOwnProfile && ProfileManager.bannerBytes != null) {
+      return Image.memory(
+        ProfileManager.bannerBytes!,
+        fit: BoxFit.cover,
+        height: 215,
+        width: double.infinity,
+      );
+    }
     if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty) {
       if (_coverPhotoUrl!.startsWith('http')) {
         return Image.network(
@@ -2662,6 +2081,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required int bgColorHex,
     required bool isMITS,
   }) {
+    if (widget.isOwnProfile && ProfileManager.avatarBytes != null) {
+      return Image.memory(
+        ProfileManager.avatarBytes!,
+        fit: BoxFit.cover,
+      );
+    }
     if (photoUrl != null && photoUrl.isNotEmpty) {
       if (photoUrl.startsWith('http')) {
         return Image.network(
@@ -2719,8 +2144,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showProfileOptionsBottomSheet(BuildContext context) {
-    final String currentMemberName = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
-    final String currentMemberAvatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : 'assets/images/somraj_avatar.jpg');
+    final String currentMemberName = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? (ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Acadyk Member') : 'Member');
+    final String currentMemberAvatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : '');
 
     showModalBottomSheet(
       context: context,
@@ -2781,9 +2206,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         accountData: {
                           'name': currentMemberName,
                           'avatarUrl': currentMemberAvatar,
-                          'dateJoined': 'June 2024',
-                          'location': 'Gwalior, India',
-                          'sharedFollowers': 18,
+                          'dateJoined': '2026',
+                          'location': widget.isOwnProfile ? (ProfileManager.location.isNotEmpty ? ProfileManager.location : 'Campus') : (widget.userData?['location'] ?? 'Campus'),
+                          'sharedFollowers': 0,
                         },
                       ),
                     ),
@@ -2799,6 +2224,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showContactInfoBottomSheet(BuildContext context) {
+    final String contactEmail = widget.isOwnProfile
+        ? (ProfileManager.email.isNotEmpty ? ProfileManager.email : (AuthService.currentUser?.email ?? ''))
+        : (widget.userData?['email'] ?? widget.userData?['collegeEmail'] ?? '');
+    final String contactWebsite = widget.isOwnProfile
+        ? ProfileManager.website
+        : (widget.userData?['website'] ?? '');
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -2835,24 +2267,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                _buildContactInfoTile(
-                  icon: Icons.email_outlined,
-                  title: 'Email',
-                  value: 'somraj.lodhi@acadyk.com',
-                ),
+                if (contactEmail.isNotEmpty) ...[
+                  _buildContactInfoTile(
+                    icon: Icons.email_outlined,
+                    title: 'Email',
+                    value: contactEmail,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (contactWebsite.isNotEmpty) ...[
+                  _buildContactInfoTile(
+                    icon: Icons.link,
+                    title: 'Website',
+                    value: contactWebsite,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (contactEmail.isEmpty && contactWebsite.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    child: Center(
+                      child: Text(
+                        'No public contact information listed.',
+                        style: TextStyle(color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 16),
-                _buildContactInfoTile(
-                  icon: Icons.phone_outlined,
-                  title: 'Phone',
-                  value: '+91 98765 43210',
-                ),
-                const SizedBox(height: 16),
-                _buildContactInfoTile(
-                  icon: Icons.link,
-                  title: 'Website',
-                  value: 'https://acadyk.com',
-                ),
-                const SizedBox(height: 24),
               ],
             ),
           ),

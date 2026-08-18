@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:acadyk/common/services/post_service.dart';
+import 'package:acadyk/common/services/auth_service.dart';
 import '../../../profile/presentation/screens/edit_status_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../profile/presentation/services/profile_manager.dart';
@@ -274,17 +275,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             // Avatar
                             GestureDetector(
                               onTap: () {
-                                final isOwn = widget.authorName == ProfileManager.name || 
-                                              widget.authorName.toLowerCase().contains('somraj');
+                                final isOwn = (ProfileManager.name.isNotEmpty && widget.authorName == ProfileManager.name) || 
+                                              (AuthService.currentUser?.fullName?.isNotEmpty == true && widget.authorName == AuthService.currentUser!.fullName);
                                 Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => ProfileScreen(
-                                      isOwnProfile: isOwn,
-                                    ),
-                                  ),
-                                );
-                              },
+                                   context,
+                                   MaterialPageRoute(
+                                     builder: (_) => ProfileScreen(
+                                       isOwnProfile: isOwn,
+                                     ),
+                                   ),
+                                 );
+                               },
                               child: ClipOval(
                                 child: Container(
                                   width: 44,
@@ -304,7 +305,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                           ),
                                         )
                                       : Image.asset(
-                                          widget.authorAvatar.isNotEmpty ? widget.authorAvatar : 'assets/images/somraj_avatar.jpg',
+                                          widget.authorAvatar.isNotEmpty ? widget.authorAvatar : 'assets/images/user_avatar.jpg',
                                           width: 44,
                                           height: 44,
                                           fit: BoxFit.cover,
@@ -328,8 +329,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       Flexible(
                                         child: GestureDetector(
                                           onTap: () {
-                                            final isOwn = widget.authorName == ProfileManager.name || 
-                                                          widget.authorName.toLowerCase().contains('somraj');
+                                            final isOwn = (ProfileManager.name.isNotEmpty && widget.authorName == ProfileManager.name) || 
+                                                          (AuthService.currentUser?.fullName?.isNotEmpty == true && widget.authorName == AuthService.currentUser!.fullName);
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(

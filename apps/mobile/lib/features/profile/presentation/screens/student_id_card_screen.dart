@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:acadyk/features/profile/presentation/services/profile_manager.dart';
+import 'package:acadyk/common/services/auth_service.dart';
 import 'face_verification_screen.dart';
 
 class StudentIdCardScreen extends StatefulWidget {
@@ -53,14 +54,21 @@ class _StudentIdCardScreenState extends State<StudentIdCardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final fullName = ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Somraj Lodhi';
+    final authUser = AuthService.currentUser;
+    final fullName = ProfileManager.name.isNotEmpty
+        ? ProfileManager.name
+        : (authUser?.fullName?.isNotEmpty == true ? authUser!.fullName! : 'Acadyk Member');
     final nameParts = fullName.trim().split(' ');
-    final firstName = nameParts.isNotEmpty ? nameParts.first : 'Somraj';
-    final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : 'Lodhi';
+    final firstName = nameParts.isNotEmpty ? nameParts.first : 'Member';
+    final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
 
-    final studentId = ProfileManager.enrollmentNumber.isNotEmpty ? ProfileManager.enrollmentNumber : 'BTAM25O1080';
-    final avatarPath = ProfileManager.avatarUrl.isNotEmpty ? ProfileManager.avatarUrl : 'assets/images/somraj_avatar.jpg';
-    final studentBranch = ProfileManager.branch.isNotEmpty ? ProfileManager.branch : 'AIML';
+    final studentId = ProfileManager.enrollmentNumber.isNotEmpty
+        ? ProfileManager.enrollmentNumber
+        : (authUser?.enrollmentNumber ?? authUser?.username ?? '');
+    final avatarPath = ProfileManager.avatarUrl;
+    final studentBranch = ProfileManager.branch.isNotEmpty
+        ? ProfileManager.branch
+        : (authUser?.branch ?? 'Student');
 
     return Scaffold(
       backgroundColor: const Color(0xFFC8CBD0),

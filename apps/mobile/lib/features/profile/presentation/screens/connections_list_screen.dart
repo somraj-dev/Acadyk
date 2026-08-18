@@ -9,7 +9,7 @@ class ConnectionsListScreen extends StatefulWidget {
     super.key,
     required this.initialTab,
     required this.userName,
-    required this.userHandle,
+    this.userHandle = '',
   });
 
   @override
@@ -23,7 +23,7 @@ class _ConnectionsListScreenState extends State<ConnectionsListScreen> with Sing
     {
       'name': 'Bhawana',
       'handle': '@cricbhawana',
-      'avatar': 'assets/images/somraj_avatar.jpg', // Fallback avatar asset
+      'avatar': 'assets/images/user_avatar.jpg', // Fallback avatar asset
       'bio': 'Cricket analyst | Context over chaos | Match reactions, game plans & strategy | Video \ud83c\udfa5 | Writing \u270d\ufe0f Collabs: DM \u2709\ufe0f',
       'verified': true,
       'isFollowing': false,
@@ -64,26 +64,26 @@ class _ConnectionsListScreenState extends State<ConnectionsListScreen> with Sing
 
   final List<Map<String, dynamic>> followingList = [
     {
-      'name': 'Somraj Lodhi',
-      'handle': '@SomrajLodhi',
-      'avatar': 'assets/images/somraj_avatar.jpg',
-      'bio': 'Founder | Thinker | Quant Engineer | Acadyk Developer',
-      'verified': true,
-      'isFollowing': true,
-    },
-    {
-      'name': 'Somraj Dev',
-      'handle': '@SomrajDev',
+      'name': 'Google Developer Groups',
+      'handle': '@GDGMITS',
       'avatar': 'assets/images/user_avatar.jpg',
-      'bio': 'Entrepreneur | Founder @ Nexure Agents & Black Torque Media',
+      'bio': 'GDG on Campus · MITS Gwalior Chapter | Building for developers',
       'verified': true,
       'isFollowing': true,
     },
     {
-      'name': 'Somraj Ghosh',
-      'handle': '@SomrajGhosh',
-      'avatar': 'assets/images/somraj_avatar.jpg',
-      'bio': 'Founder & CEO @ Layrda | Building the future of agentic web',
+      'name': 'Student Development Cell',
+      'handle': '@SDCMITS',
+      'avatar': 'assets/images/dharmik_avatar.jpg',
+      'bio': 'Official Student Council for Innovation, Hackathons & Tech at MITS-DU',
+      'verified': true,
+      'isFollowing': true,
+    },
+    {
+      'name': 'ACM Student Chapter',
+      'handle': '@ACMMITS',
+      'avatar': 'assets/images/user_avatar.jpg',
+      'bio': 'Association for Computing Machinery · Student Chapter at MITS Gwalior',
       'verified': true,
       'isFollowing': true,
     },

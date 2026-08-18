@@ -1,6 +1,22 @@
 import '../../core/network/api_client.dart';
 
 class ProfileService {
+  static Future<Map<String, dynamic>?> getMyProfile() async {
+    try {
+      final response = await ApiClient.get('/me/profile');
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          return resData['data'] as Map<String, dynamic>?;
+        }
+        return response.data as Map<String, dynamic>?;
+      }
+    } catch (e) {
+      // debug info
+    }
+    return null;
+  }
+
   static Future<Map<String, dynamic>?> getProfile(String userId) async {
     try {
       final response = await ApiClient.get('/profiles/$userId');
@@ -12,7 +28,7 @@ class ProfileService {
         return response.data as Map<String, dynamic>?;
       }
     } catch (e) {
-      print('Error getting profile: $e');
+      // debug info
     }
     return null;
   }

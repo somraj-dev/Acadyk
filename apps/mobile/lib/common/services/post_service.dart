@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../core/network/api_client.dart';
 import '../../features/profile/presentation/services/profile_manager.dart';
 import 'auth_service.dart';
+import 'storage_service.dart';
 
 class PostService {
   static final ValueNotifier<int> feedChangeNotifier = ValueNotifier<int>(0);
@@ -75,9 +77,9 @@ class PostService {
     final author = post['author'] is Map ? post['author'] as Map : null;
     final id = post['id']?.toString() ?? 'post_${DateTime.now().millisecondsSinceEpoch}';
 
-    final authorName = post['authorName']?.toString() ?? author?['fullName']?.toString() ?? author?['username']?.toString() ?? 'Somraj Lodhi';
-    final authorSubtitle = post['authorSubtitle']?.toString() ?? author?['headline']?.toString() ?? 'Student & Developer';
-    final authorAvatar = post['authorAvatar']?.toString() ?? author?['profilePhotoUrl']?.toString() ?? 'assets/images/somraj_avatar.jpg';
+    final authorName = post['authorName']?.toString() ?? author?['fullName']?.toString() ?? author?['username']?.toString() ?? 'Acadyk Member';
+    final authorSubtitle = post['authorSubtitle']?.toString() ?? author?['headline']?.toString() ?? '';
+    final authorAvatar = post['authorAvatar']?.toString() ?? author?['profilePhotoUrl']?.toString() ?? '';
     final content = post['content']?.toString() ?? '';
     final imageUrl = post['imageUrl']?.toString() ?? (post['mediaUrls'] is List && (post['mediaUrls'] as List).isNotEmpty ? post['mediaUrls'][0]?.toString() : null);
 
@@ -88,50 +90,61 @@ class PostService {
     final int comments = (rawComments is num) ? rawComments.toInt() : (int.tryParse(rawComments.toString()) ?? 0);
 
     final isLiked = _likedPosts[id] ?? (post['isLiked'] == true);
-    final isBookmarked = _bookmarkedPosts[id] ?? (post['isBookmarked'] == true);
 
     return {
       'id': id,
       'authorName': authorName,
       'authorSubtitle': authorSubtitle,
-      'authorInitials': authorName.isNotEmpty ? authorName.substring(0, authorName.length >= 2 ? 2 : 1).toUpperCase() : 'U',
-      'authorBgColor': (post['authorBgColor'] is num) ? (post['authorBgColor'] as num).toInt() : 0xFF0F4C81,
       'authorAvatar': authorAvatar,
-      'isVerified': post['isVerified'] == true,
-      'badgeType': post['badgeType']?.toString() ?? 'bronze',
-      'timeAgo': post['timeAgo']?.toString() ?? 'Just now',
       'content': content,
-      'postType': post['postType']?.toString() ?? 'text',
       'imageUrl': imageUrl,
       'likes': likes,
       'comments': comments,
       'isLiked': isLiked,
-      'isBookmarked': isBookmarked,
-      'createdAt': post['createdAt']?.toString() ?? DateTime.now().toIso8601String(),
+      'timeAgo': post['timeAgo'] ?? post['createdAt'] ?? 'Just now',
+      'raw': post,
     };
   }
 
-  /// Create a new post and persist to backend and local session
+  /// Create a new post and prepend to local state immediately
   static Future<Map<String, dynamic>?> createPost(
     String content, {
+    String? authorName,
+    String? authorBio,
+    String? authorAvatar,
+    String? authorHandle,
     String? postType,
     String? imageUrl,
+    File? imageFile,
   }) async {
     final currentUser = AuthService.currentUser;
-    final authorName = ProfileManager.name;
-    final authorHandle = ProfileManager.username;
-    final authorAvatar = ProfileManager.avatarUrl;
-    final authorBio = ProfileManager.bio;
+    final resolvedName = (authorName != null && authorName.isNotEmpty)
+        ? authorName
+        : (ProfileManager.name.isNotEmpty
+            ? ProfileManager.name
+            : (currentUser?.fullName ?? 'Acadyk Member'));
+    final resolvedBio = authorBio ?? ProfileManager.bio;
+    final resolvedAvatar = authorAvatar ?? ProfileManager.avatarUrl;
+    final resolvedHandle = (authorHandle != null && authorHandle.isNotEmpty)
+        ? authorHandle
+        : (ProfileManager.username.isNotEmpty
+            ? ProfileManager.username
+            : (currentUser?.username ?? 'user'));
+    String? uploadedImageUrl = imageUrl;
 
+    // Upload image to backend storage if provided
+    if (imageFile != null && currentUser != null) {
+      uploadedImageUrl = await StorageService.uploadPostImage(currentUser.id, imageFile);
+    }
+
+    // Call REST endpoint
     Map<String, dynamic>? createdData;
-
     try {
       final response = await ApiClient.post('/posts', data: {
         'content': content,
-        'postType': postType ?? (imageUrl != null ? 'image' : 'text'),
-        'imageUrl': imageUrl,
+        'postType': postType ?? (uploadedImageUrl != null ? 'image' : 'text'),
+        if (uploadedImageUrl != null) 'mediaUrls': [uploadedImageUrl],
       });
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final resData = response.data;
         if (resData is Map && resData.containsKey('data')) {
@@ -145,27 +158,28 @@ class PostService {
     }
 
     final newId = createdData?['id']?.toString() ?? 'local_post_${DateTime.now().millisecondsSinceEpoch}';
+    final authorInitials = resolvedName.isNotEmpty ? resolvedName.substring(0, 1).toUpperCase() : 'U';
 
     final fullPost = {
       'id': newId,
       'author': {
-        'id': currentUser?.id ?? 'somraj_dev',
-        'username': authorHandle,
-        'fullName': authorName,
-        'headline': authorBio,
-        'profilePhotoUrl': authorAvatar,
+        'id': currentUser?.id ?? '',
+        'username': resolvedHandle,
+        'fullName': resolvedName,
+        'headline': resolvedBio,
+        'profilePhotoUrl': resolvedAvatar,
       },
-      'authorName': authorName,
-      'authorSubtitle': '$authorBio • Just now',
-      'authorInitials': 'SL',
+      'authorName': resolvedName,
+      'authorSubtitle': resolvedBio.isNotEmpty ? '$resolvedBio • Just now' : 'Just now',
+      'authorInitials': authorInitials,
       'authorBgColor': 0xFF0F4C81,
-      'authorAvatar': authorAvatar,
+      'authorAvatar': resolvedAvatar,
       'isVerified': true,
       'badgeType': 'gold',
       'timeAgo': 'Just now',
       'content': content,
-      'postType': postType ?? (imageUrl != null ? 'image' : 'text'),
-      'imageUrl': imageUrl,
+      'postType': uploadedImageUrl != null ? 'image' : (postType ?? 'text'),
+      'imageUrl': uploadedImageUrl,
       'likes': 0,
       'comments': 0,
       'isLiked': false,

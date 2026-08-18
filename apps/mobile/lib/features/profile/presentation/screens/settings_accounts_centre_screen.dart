@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/profile_manager.dart';
 
 class SettingsAccountsCentreScreen extends StatelessWidget {
   const SettingsAccountsCentreScreen({super.key});
@@ -9,6 +10,10 @@ class SettingsAccountsCentreScreen extends StatelessWidget {
     const tileTextColor = Color(0xFF262626);
     const subtextColor = Color(0xFF737373);
     const blueColor = Color(0xFF0095F6);
+
+    final avatarUrl = ProfileManager.avatarUrl;
+    final userName = ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Acadyk Member';
+    final initials = userName.isNotEmpty ? userName.substring(0, 1).toUpperCase() : 'U';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -107,8 +112,18 @@ class SettingsAccountsCentreScreen extends StatelessWidget {
                             top: 0,
                             child: CircleAvatar(
                               radius: 16,
-                              backgroundColor: Colors.grey.shade300,
-                              backgroundImage: const AssetImage('assets/images/somraj_avatar.jpg'),
+                              backgroundColor: const Color(0xFF1565C0),
+                              backgroundImage: avatarUrl.isNotEmpty
+                                  ? (avatarUrl.startsWith('http')
+                                      ? NetworkImage(avatarUrl)
+                                      : AssetImage(avatarUrl) as ImageProvider)
+                                  : null,
+                              child: avatarUrl.isEmpty
+                                  ? Text(
+                                      initials,
+                                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                    )
+                                  : null,
                             ),
                           ),
                           Positioned(

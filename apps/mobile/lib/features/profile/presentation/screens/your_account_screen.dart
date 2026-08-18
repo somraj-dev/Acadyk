@@ -5,10 +5,10 @@ import '../../../auth/presentation/screens/login_screen.dart';
 import 'package:acadyk/common/services/auth_service.dart';
 import 'settings_account_management_screen.dart';
 import 'settings_profile_visibility_screen.dart';
-import 'settings_accounts_centre_screen.dart';
-import 'app_permissions_screen.dart';
+import 'settings_social_permissions_screen.dart';
 import 'settings_notifications_screen.dart';
 import 'settings_privacy_screen.dart';
+import 'in_app_web_view_screen.dart';
 
 class YourAccountScreen extends StatelessWidget {
   const YourAccountScreen({super.key});
@@ -77,26 +77,14 @@ class YourAccountScreen extends StatelessWidget {
                   onTap: () => _showSnackBar(context, 'Refine recommendations opened!'),
                 ),
 
-                // 4. Claimed external accounts
-                _buildSettingsItem(
-                  context,
-                  title: 'Claimed external accounts',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SettingsAccountsCentreScreen()),
-                    );
-                  },
-                ),
-
-                // 5. Social permissions
+                // 4. Social permissions
                 _buildSettingsItem(
                   context,
                   title: 'Social permissions',
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const AppPermissionsScreen()),
+                      MaterialPageRoute(builder: (_) => const SettingsSocialPermissionsScreen()),
                     );
                   },
                 ),
@@ -132,13 +120,6 @@ class YourAccountScreen extends StatelessWidget {
                   onTap: () => _showSnackBar(context, 'Reports and violations centre opened!'),
                 ),
 
-                // 9. Labs
-                _buildSettingsItem(
-                  context,
-                  title: 'Labs',
-                  onTap: () => _showSnackBar(context, 'Acadyk Experimental Labs!'),
-                ),
-
                 const SizedBox(height: 24),
 
                 // Section Header: Login
@@ -154,14 +135,7 @@ class YourAccountScreen extends StatelessWidget {
                   ),
                 ),
 
-                // 10. Add account
-                _buildSettingsItem(
-                  context,
-                  title: 'Add account',
-                  onTap: () => _showSnackBar(context, 'Add another account option selected'),
-                ),
-
-                // 11. Security
+                // 9. Security
                 _buildSettingsItem(
                   context,
                   title: 'Security',
@@ -176,10 +150,77 @@ class YourAccountScreen extends StatelessWidget {
                   onTap: () => _showLogoutDialog(context),
                 ),
 
+                const SizedBox(height: 24),
+
+                // Section Header: Support
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                  child: Text(
+                    'Support',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: titleColor,
+                    ),
+                  ),
+                ),
+
+                // 13. Help center
+                _buildSettingsItem(
+                  context,
+                  title: 'Help center',
+                  trailingIcon: Icons.arrow_outward,
+                  onTap: () => _openInAppWebPage(
+                    context,
+                    title: 'Help center',
+                    url: 'https://acadyk.quantaforze.com/help',
+                  ),
+                ),
+
+                // 14. Terms of service
+                _buildSettingsItem(
+                  context,
+                  title: 'Terms of service',
+                  trailingIcon: Icons.arrow_outward,
+                  onTap: () => _openInAppWebPage(
+                    context,
+                    title: 'Terms of service',
+                    url: 'https://acadyk.quantaforze.com/terms',
+                  ),
+                ),
+
+                // 15. Privacy policy
+                _buildSettingsItem(
+                  context,
+                  title: 'Privacy policy',
+                  trailingIcon: Icons.arrow_outward,
+                  onTap: () => _openInAppWebPage(
+                    context,
+                    title: 'Privacy policy',
+                    url: 'https://acadyk.quantaforze.com/policy',
+                  ),
+                ),
+
                 const SizedBox(height: 32),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  void _openInAppWebPage(
+    BuildContext context, {
+    required String title,
+    required String url,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InAppWebViewScreen(
+          title: title,
+          url: url,
         ),
       ),
     );
@@ -190,6 +231,10 @@ class YourAccountScreen extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
     Color textColor = const Color(0xFF0F172A),
+    FontWeight titleFontWeight = FontWeight.w600,
+    IconData trailingIcon = Icons.chevron_right,
+    Color iconColor = const Color(0xFF94A3B8),
+    double iconSize = 22,
   }) {
     return InkWell(
       onTap: onTap,
@@ -202,16 +247,16 @@ class YourAccountScreen extends StatelessWidget {
                 title,
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: titleFontWeight,
                   color: textColor,
                   letterSpacing: -0.2,
                 ),
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              size: 22,
-              color: Color(0xFF94A3B8),
+            Icon(
+              trailingIcon,
+              size: iconSize,
+              color: iconColor,
             ),
           ],
         ),

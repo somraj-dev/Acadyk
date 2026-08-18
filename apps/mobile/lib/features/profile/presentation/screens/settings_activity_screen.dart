@@ -4,6 +4,8 @@ import 'settings_notifications_screen.dart';
 import 'settings_privacy_screen.dart';
 import 'settings_account_management_screen.dart';
 import 'settings_profile_visibility_screen.dart';
+import 'settings_social_permissions_screen.dart';
+import 'in_app_web_view_screen.dart';
 
 class SettingsActivityScreen extends StatelessWidget {
   const SettingsActivityScreen({super.key});
@@ -42,41 +44,71 @@ class SettingsActivityScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               children: [
-                _buildPinterestTile('Account management', onTap: () {
+                _buildSettingsTile('Account management', onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const SettingsAccountManagementScreen()),
                   );
                 }),
-                _buildPinterestTile('Profile visibility', onTap: () {
+                _buildSettingsTile('Profile visibility', onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const SettingsProfileVisibilityScreen()),
                   );
                 }),
-                _buildPinterestTile('Refine your recommendations'),
-                _buildPinterestTile('Claimed external accounts'),
-                _buildPinterestTile('Social permissions'),
-                _buildPinterestTile('Notifications', onTap: () {
+                _buildSettingsTile('Refine your recommendations'),
+                _buildSettingsTile('Social permissions', onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const SettingsSocialPermissionsScreen()),
+                  );
+                }),
+                _buildSettingsTile('Notifications', onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const SettingsNotificationsScreen()),
                   );
                 }),
-                _buildPinterestTile('Privacy and data', onTap: () {
+                _buildSettingsTile('Privacy and data', onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const SettingsPrivacyScreen()),
                   );
                 }),
-                _buildPinterestTile('Reports and violations centre'),
-                _buildPinterestTile('Labs'),
+                _buildSettingsTile('Reports and violations centre'),
 
                 // Login Section
                 _buildSectionHeader('Login'),
-                _buildPinterestTile('Add account'),
-                _buildPinterestTile('Security'),
-                _buildPinterestTile('Log out', isDanger: true),
+                _buildSettingsTile('Security'),
+                _buildSettingsTile('Log out', isDanger: true),
 
                 // Support Section
                 _buildSectionHeader('Support'),
-                _buildPinterestTile('Help Centre'),
+                _buildSettingsTile('Help center', onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const InAppWebViewScreen(
+                        title: 'Help center',
+                        url: 'https://acadyk.quantaforze.com/help',
+                      ),
+                    ),
+                  );
+                }),
+                _buildSettingsTile('Terms of service', onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const InAppWebViewScreen(
+                        title: 'Terms of service',
+                        url: 'https://acadyk.quantaforze.com/terms',
+                      ),
+                    ),
+                  );
+                }),
+                _buildSettingsTile('Privacy policy', onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const InAppWebViewScreen(
+                        title: 'Privacy policy',
+                        url: 'https://acadyk.quantaforze.com/policy',
+                      ),
+                    ),
+                  );
+                }),
                 
                 const SizedBox(height: 48),
               ],
@@ -101,7 +133,7 @@ class SettingsActivityScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPinterestTile(String title, {bool isDanger = false, VoidCallback? onTap}) {
+  Widget _buildSettingsTile(String title, {bool isDanger = false, VoidCallback? onTap}) {
     return InkWell(
       onTap: onTap ?? () {},
       child: Padding(

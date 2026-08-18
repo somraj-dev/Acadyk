@@ -191,36 +191,6 @@ class AppearanceScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 32),
-              Divider(color: dividerColor),
-              const SizedBox(height: 24),
-
-              // Markdown Editor Font Preference Section
-              Text('Markdown editor font preference', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: titleColor)),
-              const SizedBox(height: 8),
-              Text('Font preference for plain text editors that support Markdown styling (e.g. pull request and issue descriptions, comments.)', style: TextStyle(color: textColor, fontSize: 13, height: 1.4)),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () {
-                  themeProvider.setUseMonospaceMarkdown(!themeProvider.useMonospaceMarkdown);
-                },
-                child: Row(
-                  children: [
-                    Icon(
-                      themeProvider.useMonospaceMarkdown ? Icons.check_box : Icons.check_box_outline_blank,
-                      color: themeProvider.useMonospaceMarkdown ? const Color(0xFF1F6FEB) : const Color(0xFF8B949E),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Use a fixed-width (monospace) font when editing Markdown',
-                        style: TextStyle(color: textColor, fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 48),
             ],
           ),

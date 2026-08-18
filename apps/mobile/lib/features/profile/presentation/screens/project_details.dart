@@ -222,7 +222,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                       child: _buildFounderCard(
                         name: f['name'] ?? 'Founder',
                         title: f['role'] ?? 'Founder/CEO',
-                        avatarAsset: f['avatar'] ?? 'assets/images/somraj_avatar.jpg',
+                        avatarAsset: f['avatar'] ?? 'assets/images/user_avatar.jpg',
                         bio: f['bio'] ?? 'Technical lead and active developer building the foundation of this venture.',
                       ),
                     ),
@@ -231,7 +231,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   _buildFounderCard(
                     name: 'Brian Chesky',
                     title: 'Founder/CEO',
-                    avatarAsset: 'assets/images/somraj_avatar.jpg',
+                    avatarAsset: 'assets/images/user_avatar.jpg',
                     bio:
                         'Brian Chesky is the co-founder, Head of Community, and CEO of Airbnb, which he started with Joe Gebbia and Nathan Blecharczyk in 2008. Brian sets the company\'s strategy to connect people to unique travel experiences, and drives Airbnb\'s mission to create a world where anyone can belong anywhere. Originally from New York, Brian graduated from the Rhode Island School of Design where he received a Bachelor of Fine Arts in Industrial Design.',
                   ),

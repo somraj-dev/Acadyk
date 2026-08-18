@@ -2428,18 +2428,21 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               builder: (context, _, __) {
                 final currentName = (AuthService.currentUser?.fullName != null && AuthService.currentUser!.fullName!.isNotEmpty)
                     ? AuthService.currentUser!.fullName!
-                    : (ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Somraj Lodhi');
+                    : (ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Acadyk Member');
                 final usernameRaw = (AuthService.currentUser?.enrollmentNumber != null && AuthService.currentUser!.enrollmentNumber!.isNotEmpty)
                     ? AuthService.currentUser!.enrollmentNumber!
                     : (AuthService.currentUser?.username != null && AuthService.currentUser!.username!.isNotEmpty
                         ? AuthService.currentUser!.username!
-                        : (ProfileManager.username.isNotEmpty ? ProfileManager.username : 'BTAM25O1080'));
-                final avatarUrl = ProfileManager.avatarUrl.isNotEmpty
-                    ? ProfileManager.avatarUrl
-                    : 'assets/images/somraj_avatar.jpg';
-                final ImageProvider drawerAvatarProvider = avatarUrl.startsWith('http')
-                    ? NetworkImage(avatarUrl)
-                    : AssetImage(avatarUrl) as ImageProvider;
+                        : (ProfileManager.username.isNotEmpty ? ProfileManager.username : 'user'));
+                final avatarUrl = ProfileManager.avatarUrl;
+                final ImageProvider? drawerAvatarProvider = ProfileManager.avatarBytes != null
+                    ? MemoryImage(ProfileManager.avatarBytes!)
+                    : (avatarUrl.isNotEmpty
+                        ? (avatarUrl.startsWith('http')
+                            ? NetworkImage(avatarUrl)
+                            : AssetImage(avatarUrl) as ImageProvider)
+                        : null);
+                final drawerInitials = currentName.isNotEmpty ? currentName.substring(0, 1).toUpperCase() : 'U';
 
                 return InkWell(
                   onTap: () {
@@ -2456,7 +2459,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           radius: 24,
                           backgroundColor: const Color(0xFF0F4C81),
                           backgroundImage: drawerAvatarProvider,
-                          onBackgroundImageError: (_, __) {},
+                          onBackgroundImageError: drawerAvatarProvider != null ? (_, __) {} : null,
+                          child: drawerAvatarProvider == null
+                              ? Text(
+                                  drawerInitials,
+                                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                )
+                              : null,
                         ),
                         const SizedBox(width: 14.0),
                         Expanded(
@@ -2501,15 +2510,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 8.0),
                 children: [
-                  _buildDrawerNavItem(
-                    'Profile',
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                      );
-                    },
-                  ),
                   _buildDrawerNavItem(
                     'My Courses',
                     onTap: () {
@@ -2654,21 +2654,20 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   Widget _buildFollowButton(String accountId, {String? authorName, String? authorId}) {
     final currentUserName = ProfileManager.name.isNotEmpty
         ? ProfileManager.name
-        : (AuthService.currentUser?.fullName ?? 'Somraj Lodhi');
+        : (AuthService.currentUser?.fullName ?? '');
     final currentUserId = AuthService.currentUser?.id;
     final currentUsername = ProfileManager.username.isNotEmpty
         ? ProfileManager.username
-        : (AuthService.currentUser?.username ?? 'BTAM25O1080');
+        : (AuthService.currentUser?.username ?? '');
 
     // Prevent users from following themselves on any of their posts
-    final bool isSelf = (authorName != null && authorName.trim().toLowerCase() == currentUserName.trim().toLowerCase()) ||
-        (authorName != null && authorName.trim().toLowerCase() == currentUsername.trim().toLowerCase()) ||
+    final bool isSelf = (authorName != null && currentUserName.isNotEmpty && authorName.trim().toLowerCase() == currentUserName.trim().toLowerCase()) ||
+        (authorName != null && currentUsername.isNotEmpty && authorName.trim().toLowerCase() == currentUsername.trim().toLowerCase()) ||
         (authorId != null && currentUserId != null && authorId == currentUserId) ||
-        (accountId == currentUserId) ||
-        (accountId == currentUserName) ||
-        (accountId == currentUsername) ||
-        (accountId == 'self') ||
-        (authorName == 'Somraj Lodhi' && (currentUserName == 'Somraj Lodhi' || AuthService.currentUser?.fullName == 'Somraj Lodhi'));
+        (currentUserId != null && accountId == currentUserId) ||
+        (currentUserName.isNotEmpty && accountId == currentUserName) ||
+        (currentUsername.isNotEmpty && accountId == currentUsername) ||
+        (accountId == 'self');
 
     if (isSelf) {
       return const SizedBox.shrink();

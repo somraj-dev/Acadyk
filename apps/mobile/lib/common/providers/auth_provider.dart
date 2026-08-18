@@ -12,13 +12,14 @@ class AuthProvider extends ChangeNotifier {
     try {
       _currentUser = AuthService.currentUser;
       if (_currentUser != null) {
+        final fallbackUsername = _currentUser!.email.isNotEmpty ? _currentUser!.email.split('@').first : 'user';
         _currentProfile = ProfileModel.fromJson({
           'id': _currentUser!.id,
           'email': _currentUser!.email,
-          'full_name': _currentUser!.fullName ?? 'Somraj Lodhi',
-          'username': _currentUser!.enrollmentNumber ?? _currentUser!.username ?? 'BTAM25O1080',
-          'major': _currentUser!.branch ?? 'AIML',
-          'degree': _currentUser!.degree ?? 'B.Tech',
+          'full_name': _currentUser!.fullName ?? '',
+          'username': _currentUser!.enrollmentNumber ?? _currentUser!.username ?? fallbackUsername,
+          'major': _currentUser!.branch ?? '',
+          'degree': _currentUser!.degree ?? '',
         });
         _fetchProfile(_currentUser!.id);
       }
@@ -35,17 +36,17 @@ class AuthProvider extends ChangeNotifier {
   void bypassSignIn() {
     final mockUser = AuthUser(
       id: 'mock-dev-user-id-999',
-      email: 'developer@acadyk.com',
-      fullName: 'Somraj Lodhi',
+      email: 'developer@mitsgwl.ac.in',
+      fullName: 'Developer',
       roles: ['STUDENT'],
     );
 
     final mockProfile = ProfileModel.fromJson({
       'id': 'mock-dev-user-id-999',
-      'email': 'developer@acadyk.com',
-      'full_name': 'Somraj Lodhi',
-      'username': 'BTAM25O1080',
-      'major': 'AIML',
+      'email': 'developer@mitsgwl.ac.in',
+      'full_name': 'Developer',
+      'username': 'developer',
+      'major': 'Computer Science',
       'degree': 'B.Tech',
     });
 
@@ -57,7 +58,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _fetchProfile(String userId) async {
     try {
-      final profileData = await ProfileService.getProfile(userId);
+      final profileData = await ProfileService.getMyProfile() ?? await ProfileService.getProfile(userId);
       if (profileData != null) {
         _currentProfile = ProfileModel.fromJson(profileData);
         notifyListeners();
@@ -66,15 +67,16 @@ class AuthProvider extends ChangeNotifier {
     } catch (_) {}
 
     if (_currentProfile == null) {
-      final mockProfile = ProfileModel.fromJson({
+      final fallbackUsername = _currentUser?.email.isNotEmpty == true ? _currentUser!.email.split('@').first : 'user';
+      final cleanProfile = ProfileModel.fromJson({
         'id': userId,
-        'email': _currentUser?.email ?? 'developer@acadyk.com',
-        'full_name': _currentUser?.fullName ?? 'Somraj Lodhi',
-        'username': _currentUser?.enrollmentNumber ?? _currentUser?.username ?? 'BTAM25O1080',
-        'major': _currentUser?.branch ?? 'AIML',
-        'degree': _currentUser?.degree ?? 'B.Tech',
+        'email': _currentUser?.email ?? '',
+        'full_name': _currentUser?.fullName ?? '',
+        'username': _currentUser?.enrollmentNumber ?? _currentUser?.username ?? fallbackUsername,
+        'major': _currentUser?.branch ?? '',
+        'degree': _currentUser?.degree ?? '',
       });
-      _currentProfile = mockProfile;
+      _currentProfile = cleanProfile;
       notifyListeners();
     }
   }

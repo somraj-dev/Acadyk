@@ -3,9 +3,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../../../../common/providers/theme_provider.dart';
 import '../../../../common/providers/auth_provider.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
 import 'settings_edit_profile_screen.dart';
 import 'appearance_screen.dart';
+import 'settings_deactivate_account_screen.dart';
+import 'settings_delete_account_screen.dart';
+import 'settings_change_password_screen.dart';
 
 class SettingsAccountManagementScreen extends StatefulWidget {
   const SettingsAccountManagementScreen({super.key});
@@ -43,7 +45,10 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
     }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final currentEmail = authProvider.currentProfile?.email ?? 'developer@acadyk.com';
+    final rawEmail = authProvider.currentProfile?.email ?? authProvider.currentUser?.email ?? 'developer@mitsgwl.ac.in';
+    final currentEmail = rawEmail.endsWith('@acadyk.com')
+        ? '${rawEmail.split('@').first}@mitsgwl.ac.in'
+        : (rawEmail.isNotEmpty ? rawEmail : 'developer@mitsgwl.ac.in');
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -108,29 +113,11 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                   textColor: tileTextColor,
                   descColor: descColor,
                   chevronColor: chevronColor,
-                  onTap: () async {
-                    try {
-                      await authProvider.sendPasswordReset(currentEmail);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Password reset instructions sent to $currentEmail')),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: $e')),
-                        );
-                      }
-                    }
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsChangePasswordScreen()),
+                    );
                   },
-                ),
-                _buildTileWithDesc(
-                  title: 'Convert to a business account',
-                  description: 'Grow your business or brand with tools such as ads and analytics. Your content, profile and followers will stay the same.',
-                  textColor: tileTextColor,
-                  descColor: descColor,
-                  chevronColor: chevronColor,
                 ),
                 _buildTile(
                   title: 'App theme',
@@ -156,6 +143,11 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                   textColor: tileTextColor,
                   descColor: descColor,
                   chevronColor: chevronColor,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsDeactivateAccountScreen()),
+                    );
+                  },
                 ),
                 _buildTileWithDesc(
                   title: 'Delete your data and account',
@@ -164,33 +156,8 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
                   descColor: descColor,
                   chevronColor: chevronColor,
                   onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Delete Account?'),
-                        content: const Text('This will permanently delete all your posts, profile, and account data. This action cannot be undone.'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
-                            onPressed: () async {
-                              Navigator.pop(ctx);
-                              try {
-                                await authProvider.deleteAccount();
-                              } catch (_) {
-                                await authProvider.signOut();
-                              }
-                              if (context.mounted) {
-                                Navigator.of(context).pushAndRemoveUntil(
-                                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                                  (route) => false,
-                                );
-                              }
-                            },
-                            child: const Text('Delete Permanently'),
-                          ),
-                        ],
-                      ),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsDeleteAccountScreen()),
                     );
                   },
                 ),
@@ -326,64 +293,30 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14.0),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE2F0D9),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.check_circle, size: 14, color: Color(0xFF385723)),
-                        SizedBox(width: 4),
-                        Text(
-                          'Confirmed',
-                          style: TextStyle(
-                            color: Color(0xFF385723),
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
               ),
             ),
             const SizedBox(width: 12),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  email,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: descColor,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  CupertinoIcons.right_chevron,
-                  size: 15,
-                  color: chevronColor,
-                ),
-              ],
+            Text(
+              email,
+              style: TextStyle(
+                fontSize: 14,
+                color: descColor,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              CupertinoIcons.right_chevron,
+              size: 15,
+              color: chevronColor,
             ),
           ],
         ),

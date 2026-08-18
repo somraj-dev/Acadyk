@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/auth/firebase_auth_service.dart';
 import '../../features/profile/presentation/services/profile_manager.dart';
+import 'profile_service.dart';
 
 class AuthUser {
   final String id;
@@ -42,7 +43,7 @@ class AuthUser {
       username: enrollment?.toString() ?? json['username']?.toString(),
       enrollmentNumber: enrollment?.toString(),
       collegeEmail: json['collegeEmail']?.toString() ?? json['college_email']?.toString(),
-      degree: json['degree']?.toString() ?? 'B.Tech',
+      degree: json['degree']?.toString(),
       branch: json['branch']?.toString() ?? json['major']?.toString(),
       joiningYear: json['joiningYear'] is int ? json['joiningYear'] : int.tryParse(json['joiningYear']?.toString() ?? ''),
       isFirstLogin: json['isFirstLogin'] == true,
@@ -112,7 +113,7 @@ class AuthService {
       _currentUser = AuthUser(
         id: fbUser.uid,
         email: email,
-        fullName: fbUser.displayName ?? 'Acadyk Member',
+        fullName: fbUser.displayName ?? '',
         username: email.isNotEmpty ? email.split('@').first : 'user',
         roles: const ['STUDENT'],
       );
@@ -131,18 +132,33 @@ class AuthService {
 
   static void _syncProfileManager(AuthUser user) {
     final extractedBranch = user.branch ?? _extractBranch(user.enrollmentNumber);
+    final fallbackUsername = user.email.isNotEmpty ? user.email.split('@').first : 'user';
     ProfileManager.setAuthenticatedUser(
-      authenticatedName: user.fullName ?? 'Somraj Lodhi',
-      authenticatedUsername: user.enrollmentNumber ?? user.username ?? 'somrajlodhi',
+      authenticatedName: user.fullName ?? '',
+      authenticatedUsername: user.enrollmentNumber ?? user.username ?? fallbackUsername,
+      authenticatedEmail: user.email,
       authenticatedBio: user.branch != null ? '${user.degree ?? "B.Tech"} in ${user.branch}' : null,
       authenticatedBranch: extractedBranch,
-      authenticatedDegree: user.degree ?? 'B.Tech',
-      authenticatedEnrollment: user.enrollmentNumber ?? 'BTAM25O1080',
+      authenticatedDegree: user.degree,
+      authenticatedEnrollment: user.enrollmentNumber,
     );
+
+    // Asynchronously pull latest profile details from backend
+    _fetchAndLoadBackendProfile(user.id);
   }
 
-  static String _extractBranch(String? enrollment) {
-    if (enrollment == null || enrollment.isEmpty) return 'AIML';
+  static Future<void> _fetchAndLoadBackendProfile(String userId) async {
+    if (userId.isEmpty) return;
+    try {
+      final data = await ProfileService.getMyProfile() ?? await ProfileService.getProfile(userId);
+      if (data != null) {
+        ProfileManager.loadFromProfileData(data);
+      }
+    } catch (_) {}
+  }
+
+  static String? _extractBranch(String? enrollment) {
+    if (enrollment == null || enrollment.isEmpty) return null;
     final upper = enrollment.toUpperCase();
     if (upper.contains('AM') || upper.contains('AIML')) return 'AIML';
     if (upper.contains('CS') || upper.contains('CSE')) return 'CSE';
@@ -151,7 +167,7 @@ class AuthService {
     if (upper.contains('EE')) return 'EE';
     if (upper.contains('ME')) return 'ME';
     if (upper.contains('CE')) return 'Civil';
-    return 'AIML';
+    return null;
   }
 
   static Future<AuthUser?> signInWithEmail(String email, String password) async {
@@ -220,6 +236,7 @@ class AuthService {
       await _storage.deleteAll();
     } catch (_) {}
     _currentUser = null;
+    ProfileManager.resetToDefaults();
   }
 
   static Future<void> deleteAccount() async {
@@ -228,5 +245,6 @@ class AuthService {
       await _storage.deleteAll();
     } catch (_) {}
     _currentUser = null;
+    ProfileManager.resetToDefaults();
   }
 }
