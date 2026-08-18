@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:acadyk/common/services/post_service.dart';
 import 'discover_opportunities_screen.dart';
 import 'select_opportunity_screen.dart';
@@ -2178,88 +2179,134 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
   void _showCreatePostBottomSheet(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.width >= 600;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF202022),
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      elevation: 0,
       constraints: BoxConstraints(maxWidth: isTablet ? 600 : double.infinity),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
       builder: (BuildContext context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 16.0, bottom: 32.0, left: 16.0, right: 16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top Row: Close and Title
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white, size: 28),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ),
-                    const Text(
-                      'Start creating now',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1E293B).withValues(alpha: 0.72)
+                    : Colors.white.withValues(alpha: 0.82),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.16)
+                      : Colors.white.withValues(alpha: 0.88),
+                  width: 1.5,
                 ),
-                const SizedBox(height: 32),
-                // Horizontal items
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildCreateOption(
-                      context,
-                      icon: Icons.push_pin_outlined,
-                      label: 'Post',
-                      onTap: () {
-                        Navigator.pop(context); // Close bottom sheet
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const CreatePostScreen()),
-                        );
-                      },
-                    ),
-                    _buildCreateOption(
-                      context,
-                      icon: Icons.content_cut_outlined,
-                      label: 'Event',
-                      onTap: () {
-                        Navigator.pop(context); // Close bottom sheet
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SelectOpportunityScreen(),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 30,
+                    offset: const Offset(0, -10),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 16.0, bottom: 32.0, left: 16.0, right: 16.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Drag Handle
+                      Container(
+                        width: 42,
+                        height: 4.5,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                      // Top Row: Close and Title
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.close_rounded,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                size: 24,
+                              ),
+                              onPressed: () => Navigator.pop(context),
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                    _buildCreateOption(
-                      context,
-                      icon: Icons.splitscreen_outlined,
-                      label: 'Board',
-                      onTap: () {
-                        Navigator.pop(context); // Close bottom sheet
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Board creation coming soon!'),
-                            duration: Duration(seconds: 2),
+                          Text(
+                            'Start creating now',
+                            style: TextStyle(
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.3,
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                  ],
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+                      // Horizontal items
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildCreateOption(
+                            context,
+                            icon: Icons.post_add_rounded,
+                            label: 'Post',
+                            isDark: isDark,
+                            onTap: () {
+                              Navigator.pop(context); // Close bottom sheet
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (context) => const CreatePostScreen()),
+                              );
+                            },
+                          ),
+                          _buildCreateOption(
+                            context,
+                            icon: Icons.calendar_month_rounded,
+                            label: 'Event',
+                            isDark: isDark,
+                            onTap: () {
+                              Navigator.pop(context); // Close bottom sheet
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SelectOpportunityScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildCreateOption(
+                            context,
+                            icon: Icons.dashboard_customize_outlined,
+                            label: 'Board',
+                            isDark: isDark,
+                            onTap: () {
+                              Navigator.pop(context); // Close bottom sheet
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Board creation coming soon!'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
         );
@@ -2267,27 +2314,54 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     );
   }
 
-  Widget _buildCreateOption(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildCreateOption(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 84,
-            height: 84,
+            width: 82,
+            height: 82,
             decoration: BoxDecoration(
-              color: const Color(0xFF2F3033),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.22)
+                    : Colors.white.withValues(alpha: 0.95),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.3)
+                      : const Color(0xFF0F172A).withValues(alpha: 0.08),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            child: Icon(icon, color: Colors.white, size: 36),
+            child: Icon(
+              icon,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+              size: 32,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
+            style: TextStyle(
+              color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A),
+              fontSize: 14.5,
               fontWeight: FontWeight.w600,
             ),
           ),
