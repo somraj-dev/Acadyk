@@ -1603,18 +1603,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildExperienceItem(Map<String, dynamic> exp) {
+    final String company = (exp['company'] ?? '').toString().toLowerCase();
+    final String? customLogo = exp['logo'];
+    final String? logoAsset = customLogo ?? (company.contains('quantaforze')
+        ? 'assets/images/quantaforze_logo.png'
+        : company.contains('mits')
+            ? 'assets/images/mits_logo.png'
+            : company.contains('acadyk')
+                ? 'assets/images/acadyk_logo.png'
+                : null);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 44,
-          height: 44,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(6),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
           alignment: Alignment.center,
-          child: const Icon(Icons.business_center, size: 22, color: Colors.white),
+          padding: const EdgeInsets.all(4),
+          child: logoAsset != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Image.asset(
+                    logoAsset,
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.business_center,
+                      size: 22,
+                      color: Color(0xFF191919),
+                    ),
+                  ),
+                )
+              : const Icon(Icons.business_center, size: 22, color: Color(0xFF191919)),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -1667,15 +1694,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F0F0),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.school, size: 22, color: Color(0xFF0F4C81)),
+                padding: const EdgeInsets.all(4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Image.asset(
+                    'assets/images/mits_logo.png',
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.school,
+                      size: 22,
+                      color: Color(0xFF0F4C81),
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -1705,7 +1746,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // =============================================================
-  // SECTION 7: Projects
+  // SECTION 7: Projects 
   // =============================================================
   List<Map<String, dynamic>> _getProjectsList() {
     final String name = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? ProfileManager.name : 'Somraj Lodhi');
@@ -1834,8 +1875,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               width: 20,
               height: 20,
-              decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(4)),
-              child: const Icon(Icons.code, size: 12, color: Colors.white),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              alignment: Alignment.center,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: Image.asset(
+                  proj['association'].toString().toLowerCase().contains('quantaforze')
+                      ? 'assets/images/quantaforze_logo.png'
+                      : proj['association'].toString().toLowerCase().contains('mits')
+                          ? 'assets/images/mits_logo.png'
+                          : 'assets/images/acadyk_logo.png',
+                  width: 18,
+                  height: 18,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.code, size: 12, color: Colors.black54),
+                ),
+              ),
             ),
             const SizedBox(width: 6),
             Expanded(

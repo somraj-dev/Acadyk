@@ -15,9 +15,10 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  
+
   bool _isEmailNotEmpty = false;
-  bool _usePassword = false;
+  bool _isPasswordNotEmpty = false;
+  bool _usePassword = true;
   bool _isSignUp = false;
   bool _isLoading = false;
 
@@ -26,6 +27,13 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  bool get _isButtonEnabled {
+    if (_usePassword) {
+      return _isEmailNotEmpty && _isPasswordNotEmpty;
+    }
+    return _isEmailNotEmpty;
   }
 
   Widget _buildHeaderLogos() {
@@ -91,8 +99,9 @@ class _LoginScreenState extends State<LoginScreen> {
       child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF374151),
-          side: const BorderSide(color: Color(0xFFD1D5DB), width: 1.2),
+          foregroundColor: const Color(0xFF1E293B),
+          backgroundColor: Colors.white,
+          side: const BorderSide(color: Color(0xFFD1D5DB), width: 1.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
@@ -109,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
               style: const TextStyle(
                 fontSize: 14.5,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1F2937),
+                color: Color(0xFF1E293B),
               ),
             ),
           ],
@@ -132,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 4.0),
+        const SizedBox(height: 5.0),
         Text.rich(
           const TextSpan(
             text: 'Made by ',
@@ -153,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 4.0),
+        const SizedBox(height: 5.0),
         Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -180,79 +189,144 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Future<void> _handlePasswordAction() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final messenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      if (_usePassword) {
+        if (_isSignUp) {
+          await authProvider.signUp(
+            email: email,
+            password: password,
+          );
+          if (!mounted) return;
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Registration successful! Please check your email for verification.')),
+          );
+          setState(() {
+            _isSignUp = false;
+          });
+        } else {
+          await authProvider.signIn(
+            email: email,
+            password: password,
+          );
+          if (!mounted) return;
+          try {
+            themeProvider.setThemeMode(ThemeMode.light);
+          } catch (_) {}
+        }
+      } else {
+        if (!mounted) return;
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('OTP login coming soon. Please use password or Google sign-in.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await authProvider.signInWithGoogle();
+      if (!mounted) return;
+      if (success) {
+        try {
+          themeProvider.setThemeMode(ThemeMode.light);
+        } catch (_) {}
+      } else {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Google Sign-In was cancelled or failed.')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleForgotPassword() async {
+    final email = _emailController.text.trim();
+    final messenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (email.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Please enter your email to reset password.')),
+      );
+      return;
+    }
+
+    try {
+      await authProvider.sendPasswordReset(email);
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Password reset link sent to your email!')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+      );
+    }
+  }
+
   Widget _buildActionButton() {
-    final bool isActive = _isEmailNotEmpty && (!_usePassword || _passwordController.text.trim().isNotEmpty);
+    final bool isActive = _isButtonEnabled;
+    final String buttonLabel = _usePassword
+        ? (_isSignUp ? 'Sign Up' : 'Login')
+        : 'Continue with OTP';
+
     return SizedBox(
       width: double.infinity,
       height: 48,
       child: ElevatedButton(
-        onPressed: (isActive && !_isLoading)
-            ? () async {
-                final email = _emailController.text.trim();
-                final password = _passwordController.text.trim();
-
-                setState(() {
-                  _isLoading = true;
-                });
-
-                try {
-                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                  if (_usePassword) {
-                    if (_isSignUp) {
-                      await authProvider.signUp(
-                        email: email,
-                        password: password,
-                      );
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Registration successful! Please check your email for verification.')),
-                        );
-                        setState(() {
-                          _isSignUp = false;
-                        });
-                      }
-                    } else {
-                      await authProvider.signIn(
-                        email: email,
-                        password: password,
-                      );
-                      if (mounted) {
-                        try {
-                          Provider.of<ThemeProvider>(context, listen: false).setThemeMode(ThemeMode.light);
-                        } catch (_) {}
-                      }
-                    }
-                  } else {
-                    // OTP login not yet implemented
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('OTP login coming soon. Please use password or Google sign-in.'),
-                        ),
-                      );
-                    }
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error: ${e.toString()}'),
-                        backgroundColor: Colors.redAccent,
-                      ),
-                    );
-                  }
-                } finally {
-                  if (mounted) {
-                    setState(() {
-                      _isLoading = false;
-                    });
-                  }
-                }
-              }
-            : null,
+        onPressed: (isActive && !_isLoading) ? _handlePasswordAction : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0F4C81),
-          disabledBackgroundColor: const Color(0xFFE5E7EB),
+          disabledBackgroundColor: const Color(0xFFE2E8F0),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
@@ -265,9 +339,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
               )
             : Text(
-                _usePassword ? (_isSignUp ? 'Sign Up' : 'Login') : 'Continue with OTP',
+                buttonLabel,
                 style: TextStyle(
-                  color: isActive ? Colors.white : const Color(0xFF9CA3AF),
+                  color: isActive ? Colors.white : const Color(0xFF94A3B8),
                   fontSize: 15.0,
                   fontWeight: FontWeight.w600,
                 ),
@@ -288,7 +362,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(
               horizontal: isCompact ? 16.0 : 24.0,
-              vertical: 16.0,
+              vertical: 20.0,
             ),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 440),
@@ -299,7 +373,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Center(
                     child: _buildHeaderLogos(),
                   ),
-                  const SizedBox(height: 22.0),
+                  const SizedBox(height: 28.0),
                   Text(
                     'Your Next Opportunity\nStarts Here',
                     style: TextStyle(
@@ -318,37 +392,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 1.35,
                     ),
                   ),
-                  const SizedBox(height: 28.0),
+                  const SizedBox(height: 24.0),
                   _buildSocialButton(
                     logo: const MitsDuLogo(size: 22.0),
                     text: 'Continue with MITS-DU',
-                    onTap: () async {
-                      setState(() { _isLoading = true; });
-                      try {
-                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                        final success = await authProvider.signInWithGoogle();
-                        if (mounted && success) {
-                          try {
-                            Provider.of<ThemeProvider>(context, listen: false).setThemeMode(ThemeMode.light);
-                          } catch (_) {}
-                        } else if (mounted && !success) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Google Sign-In was cancelled or failed.')),
-                          );
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: ${e.toString()}'),
-                              backgroundColor: Colors.redAccent,
-                            ),
-                          );
-                        }
-                      } finally {
-                        if (mounted) setState(() { _isLoading = false; });
-                      }
-                    },
+                    onTap: _handleGoogleSignIn,
                   ),
                   const SizedBox(height: 20.0),
 
@@ -371,6 +419,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20.0),
 
+                  // Email Label
                   Row(
                     children: const [
                       Text(
@@ -420,7 +469,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   if (_usePassword) ...[
-                    const SizedBox(height: 14.0),
+                    const SizedBox(height: 16.0),
+                    // Password Label
                     Row(
                       children: const [
                         Text(
@@ -446,7 +496,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       obscureText: true,
                       onChanged: (val) {
-                        setState(() {});
+                        setState(() {
+                          _isPasswordNotEmpty = val.trim().isNotEmpty;
+                        });
                       },
                       decoration: InputDecoration(
                         hintText: 'Enter Password',
@@ -468,7 +520,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
 
-                  const SizedBox(height: 6.0),
+                  const SizedBox(height: 8.0),
+                  // Login via OTP / Password link
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -486,43 +539,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         _usePassword ? 'Login via OTP' : 'Login via Password',
                         style: const TextStyle(
                           color: Color(0xFF0F4C81),
-                          fontSize: 13.0,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
-                  if (_usePassword) ...[
-                    const SizedBox(height: 10.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                  // Forgot Password & Sign Up links row
+                  const SizedBox(height: 12.0),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8.0,
+                      runSpacing: 4.0,
                       children: [
-                        if (!_isSignUp)
+                        if (_usePassword && !_isSignUp)
                           TextButton(
-                            onPressed: () async {
-                              final email = _emailController.text.trim();
-                              if (email.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please enter your email to reset password.')),
-                                );
-                                return;
-                              }
-                              try {
-                                final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                                await authProvider.sendPasswordReset(email);
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Password reset link sent to your email!')),
-                                  );
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-                                  );
-                                }
-                              }
-                            },
+                            onPressed: _handleForgotPassword,
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.zero,
                               minimumSize: Size.zero,
@@ -532,13 +568,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               'Forgot Password?',
                               style: TextStyle(
                                 color: Color(0xFF0F4C81),
-                                fontSize: 13.0,
+                                fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           )
                         else
-                          const SizedBox(),
+                          const SizedBox.shrink(),
                         TextButton(
                           onPressed: () {
                             setState(() {
@@ -554,51 +590,18 @@ class _LoginScreenState extends State<LoginScreen> {
                             _isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up",
                             style: const TextStyle(
                               color: Color(0xFF0F4C81),
-                              fontSize: 13.0,
+                              fontSize: 13.5,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ],
+                  ),
                   const SizedBox(height: 20.0),
 
                   _buildActionButton(),
-                  const SizedBox(height: 20.0),
-
-                  Text.rich(
-                    TextSpan(
-                      text: 'By signing in, you accept the ',
-                      style: const TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 11.5,
-                        height: 1.4,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: 'Terms of Service',
-                          style: const TextStyle(
-                            color: Color(0xFF0F4C81),
-                            fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                        const TextSpan(text: ' and acknowledge our '),
-                        TextSpan(
-                          text: 'Privacy Policy',
-                          style: const TextStyle(
-                            color: Color(0xFF0F4C81),
-                            fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                        const TextSpan(text: '.'),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24.0),
+                  const SizedBox(height: 32.0),
                   _buildFooter(),
                   if (kDebugMode) ...[
                     const SizedBox(height: 16.0),
