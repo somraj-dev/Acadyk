@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:acadyk/common/services/message_service.dart';
 import 'package:acadyk/common/services/auth_service.dart';
 import 'package:acadyk/common/widgets/acadyk_top_header_bar.dart';
+import 'package:acadyk/shared/widgets/skeleton/skeleton.dart';
 import 'direct_message_screen.dart';
 
 class MessageCenterScreen extends StatefulWidget {
@@ -13,11 +14,12 @@ class MessageCenterScreen extends StatefulWidget {
 
 class _MessageCenterScreenState extends State<MessageCenterScreen> {
   List<Map<String, dynamic>> _conversations = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _conversations = List.from(_mockConversations);
     _loadConversations();
   }
 
@@ -115,9 +117,11 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
   ];
 
   Future<void> _loadConversations() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (_conversations.isEmpty) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
     try {
       final data = await MessageService.getConversations();
       if (mounted) {
@@ -202,7 +206,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
             // Conversations List
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const MessageSkeleton()
                   : _conversations.isEmpty
                       ? const Center(
                           child: Text(

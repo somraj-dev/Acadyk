@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../../../shared/widgets/skeleton/skeleton.dart';
 
 class AppPermissionsScreen extends StatefulWidget {
   const AppPermissionsScreen({super.key});
@@ -9,7 +10,7 @@ class AppPermissionsScreen extends StatefulWidget {
 }
 
 class _AppPermissionsScreenState extends State<AppPermissionsScreen> {
-  bool _isLoading = true;
+  bool _isLoading = false;
 
   Map<Permission, PermissionStatus> _statuses = {
     Permission.camera: PermissionStatus.denied,
@@ -27,7 +28,6 @@ class _AppPermissionsScreenState extends State<AppPermissionsScreen> {
   }
 
   Future<void> _checkAllPermissions() async {
-    setState(() => _isLoading = true);
     final Map<Permission, PermissionStatus> newStatuses = {};
     for (final perm in _statuses.keys) {
       try {
@@ -126,7 +126,7 @@ class _AppPermissionsScreenState extends State<AppPermissionsScreen> {
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: primaryColor))
+            ? const SettingsListSkeleton()
             : Center(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 480),

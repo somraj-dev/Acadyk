@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:acadyk/common/services/notification_service.dart';
+import 'package:acadyk/shared/widgets/skeleton/skeleton.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -10,11 +11,12 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   List<Map<String, dynamic>> _notifications = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _notifications = List.from(_mockNotifications);
     _loadNotifications();
   }
 
@@ -87,9 +89,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
   ];
 
   Future<void> _loadNotifications() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (_notifications.isEmpty) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
     try {
       final data = await NotificationService.getNotifications();
       if (mounted) {
@@ -215,7 +219,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 // Notifications List
                 Expanded(
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const NotificationSkeleton()
                       : _notifications.isEmpty
                           ? const Center(
                               child: Text(

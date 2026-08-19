@@ -30,6 +30,7 @@ import '../../../../common/services/follow_service.dart';
 import '../../../chat/presentation/screens/message_center_screen.dart';
 import '../data/mock_feed_data.dart';
 import '../../../../common/widgets/acadyk_top_header_bar.dart';
+import '../../../../shared/widgets/skeleton/skeleton.dart';
 class HomeFeedScreen extends StatefulWidget {
   static final GlobalKey<ScaffoldState> mainScaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -74,11 +75,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   String? _replyingToName;
 
   List<Map<String, dynamic>> _feedPosts = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _feedPosts = PostService.getUserCreatedPosts();
     _pageController = PageController(initialPage: _activeTab == 4 ? 3 : (_activeTab == 3 ? 2 : _activeTab));
     ProfileManager.profileUpdateNotifier.addListener(_onProfileUpdated);
     PostService.feedChangeNotifier.addListener(_onFeedChanged);
@@ -189,20 +191,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                     physics: const AlwaysScrollableScrollPhysics(),
                                     children: [
                                       if (_isLoading)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 40),
-                                          alignment: Alignment.center,
-                                          child: Column(
-                                            children: [
-                                              const CircularProgressIndicator(),
-                                              const SizedBox(height: 16),
-                                              Text(
-                                                'Loading feed...',
-                                                style: TextStyle(color: textSub),
-                                              ),
-                                            ],
-                                          ),
-                                        )
+                                        const FeedSkeleton()
                                       else ...[
                                         if (_feedPosts.isNotEmpty)
                                           ..._feedPosts.map((post) => _buildMockPostCard(post)),

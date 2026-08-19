@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import '../services/profile_manager.dart';
+import '../services/profile_pins_manager.dart';
 import 'about_account_screen.dart';
 import 'your_account_screen.dart';
 import 'settings_edit_profile_screen.dart';
@@ -215,6 +216,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _loadProfileData();
     ProfileManager.profileUpdateNotifier.addListener(_onProfileUpdated);
+    ProfilePinsManager.pinsChangeNotifier.addListener(_onProfileUpdated);
     PostService.feedChangeNotifier.addListener(_onProfileUpdated);
     FollowService.followChangeNotifier.addListener(_onProfileUpdated);
   }
@@ -224,6 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _cancelBannerHoldTimer();
     _cancelAvatarHoldTimer();
     ProfileManager.profileUpdateNotifier.removeListener(_onProfileUpdated);
+    ProfilePinsManager.pinsChangeNotifier.removeListener(_onProfileUpdated);
     PostService.feedChangeNotifier.removeListener(_onProfileUpdated);
     FollowService.followChangeNotifier.removeListener(_onProfileUpdated);
     _scrollController.dispose();
@@ -1100,7 +1103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =============================================================
   List<Map<String, dynamic>> _getExperienceList() {
     if (widget.isOwnProfile) {
-      return ProfileManager.experiences;
+      return ProfilePinsManager.getPinnedExperiences();
     } else {
       final List<dynamic>? userExp = widget.userData?['experiences'] as List<dynamic>?;
       if (userExp != null && userExp.isNotEmpty) {
@@ -1120,12 +1123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Experience', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
-            ],
-          ),
+          Text('Experience (${experiences.length})', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
           const SizedBox(height: 16),
           if (experiences.isEmpty)
             const Padding(
@@ -1181,13 +1179,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildExperienceItem(Map<String, dynamic> exp) {
-    final String company = (exp['company'] ?? '').toString().toLowerCase();
-    final String? customLogo = exp['logo'];
-    final String? logoAsset = customLogo ?? (company.contains('quantaforze')
+    final String title = exp['title']?.toString() ?? '';
+    final String companyName = exp['company']?.toString() ?? exp['organization']?.toString() ?? '';
+    final String durationStr = exp['duration']?.toString() ?? '';
+    final String locationStr = exp['location']?.toString() ?? '';
+    final String? highlightStr = exp['highlight']?.toString();
+    final String companyLower = companyName.toLowerCase();
+    final String? customLogo = exp['logo']?.toString();
+    final String? logoAsset = customLogo ?? (companyLower.contains('quantaforze')
         ? 'assets/images/quantaforze_logo.png'
-        : company.contains('mits')
+        : companyLower.contains('mits')
             ? 'assets/images/mits_logo.png'
-            : company.contains('acadyk')
+            : companyLower.contains('acadyk')
                 ? 'assets/images/acadyk_logo.png'
                 : null);
 
@@ -1226,11 +1229,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(exp['title']!, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
-              Text(exp['company']!, style: const TextStyle(fontSize: 13, color: Color(0xFF191919))),
-              Text(exp['duration']!, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
-              Text(exp['location']!, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
-              if (exp['highlight'] != null) ...[
+              if (title.isNotEmpty)
+                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
+              if (companyName.isNotEmpty)
+                Text(companyName, style: const TextStyle(fontSize: 13, color: Color(0xFF191919))),
+              if (durationStr.isNotEmpty)
+                Text(durationStr, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
+              if (locationStr.isNotEmpty)
+                Text(locationStr, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
+              if (highlightStr != null && highlightStr.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -1238,7 +1245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        exp['highlight']!,
+                        highlightStr,
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
                       ),
                     ),
@@ -1254,19 +1261,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   List<Map<String, dynamic>> _getEducationList() {
     if (widget.isOwnProfile) {
-      if (ProfileManager.education.isNotEmpty) {
-        return ProfileManager.education;
-      }
-      if (ProfileManager.branch.isNotEmpty || ProfileManager.degree.isNotEmpty) {
-        return [
-          {
-            'school': 'Madhav Institute of Technology and Science, Gwalior',
-            'degree': '${ProfileManager.degree.isNotEmpty ? ProfileManager.degree : "Bachelor of Technology"}, ${ProfileManager.branch.isNotEmpty ? ProfileManager.branch : ""}',
-            'duration': '2025 – 2029',
-          }
-        ];
-      }
-      return [];
+      return ProfilePinsManager.getPinnedEducation();
     } else {
       final List<dynamic>? userEdu = widget.userData?['education'] as List<dynamic>?;
       if (userEdu != null && userEdu.isNotEmpty) {
@@ -1297,11 +1292,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: const [
-              Text('Education', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
-            ],
-          ),
+          Text('Education (${educations.length})', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
           const SizedBox(height: 16),
           if (educations.isEmpty)
             const Padding(
@@ -1347,17 +1338,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          educations[i]['school'] ?? 'Madhav Institute of Technology and Science, Gwalior',
+                          educations[i]['school']?.toString() ?? 'Madhav Institute of Technology and Science, Gwalior',
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
                         ),
                         if (educations[i]['degree'] != null && educations[i]['degree'].toString().isNotEmpty)
                           Text(
-                            educations[i]['degree']!,
+                            educations[i]['degree'].toString(),
                             style: const TextStyle(fontSize: 13, color: Color(0xFF191919)),
                           ),
                         if (educations[i]['duration'] != null && educations[i]['duration'].toString().isNotEmpty)
                           Text(
-                            educations[i]['duration']!,
+                            educations[i]['duration'].toString(),
                             style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E)),
                           ),
                       ],
@@ -1382,7 +1373,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =============================================================
   List<Map<String, dynamic>> _getProjectsList() {
     if (widget.isOwnProfile) {
-      return ProfileManager.projects;
+      return ProfilePinsManager.getPinnedProjects();
     } else {
       final List<dynamic>? userProjects = widget.userData?['projects'] as List<dynamic>?;
       if (userProjects != null && userProjects.isNotEmpty) {
@@ -1402,50 +1393,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Projects (${projects.length})', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
-            ],
-          ),
+          Text('Projects (${projects.length})', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
           const SizedBox(height: 16),
-          for (int i = 0; i < displayedProjects.length; i++) ...[
-            _buildProjectItem(i, displayedProjects[i]),
-            if (i < displayedProjects.length - 1) ...[
-              const SizedBox(height: 16),
-              const Divider(height: 1, color: Color(0xFFE0E0E0)),
-              const SizedBox(height: 16),
+          if (projects.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                'No projects added yet.',
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+              ),
+            )
+          else ...[
+            for (int i = 0; i < displayedProjects.length; i++) ...[
+              _buildProjectItem(i, displayedProjects[i]),
+              if (i < displayedProjects.length - 1) ...[
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                const SizedBox(height: 16),
+              ],
             ],
-          ],
-          if (projects.length > 2) ...[
-            const SizedBox(height: 16),
-            Center(
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _showAllProjects = !_showAllProjects;
-                  });
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _showAllProjects ? 'Show less' : 'Show all (${projects.length})',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        _showAllProjects ? Icons.keyboard_arrow_up : Icons.arrow_forward,
-                        size: 18,
-                        color: const Color(0xFF0A66C2),
-                      ),
-                    ],
+            if (projects.length > 2) ...[
+              const SizedBox(height: 16),
+              Center(
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _showAllProjects = !_showAllProjects;
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _showAllProjects ? 'Show less' : 'Show all (${projects.length})',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          _showAllProjects ? Icons.keyboard_arrow_up : Icons.arrow_forward,
+                          size: 18,
+                          color: const Color(0xFF0A66C2),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ],
       ),
@@ -1454,7 +1450,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProjectItem(int index, Map<String, dynamic> proj) {
     final bool isExpanded = _expandedProjectIndices.contains(index);
-    final String desc = proj['description'] as String;
+    final String desc = proj['description']?.toString() ?? '';
+    final String title = proj['title']?.toString() ?? '';
+    final String time = proj['time']?.toString() ?? proj['duration']?.toString() ?? '';
+    final String association = proj['association']?.toString() ?? proj['organization']?.toString() ?? '';
+    final String assocLower = association.toLowerCase();
 
     return InkWell(
       onTap: () {
@@ -1486,8 +1486,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.all(4),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(6),
-                    child: (proj['association'] != null &&
-                            proj['association'].toString().toLowerCase().contains('quantaforze'))
+                    child: assocLower.contains('quantaforze')
                         ? Image.asset(
                             'assets/images/quantaforze_logo.png',
                             width: 40,
@@ -1495,7 +1494,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             fit: BoxFit.cover,
                           )
                         : Image.asset(
-                            proj['association'].toString().toLowerCase().contains('mits')
+                            assocLower.contains('mits')
                                 ? 'assets/images/mits_logo.png'
                                 : 'assets/images/acadyk_logo.png',
                             width: 40,
@@ -1517,7 +1516,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: Text(proj['title'] ?? '', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
+                            child: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
                           ),
                           GestureDetector(
                             onTap: () {
@@ -1530,10 +1529,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ],
                       ),
-                      if (proj['time'] != null && proj['time'].toString().isNotEmpty)
-                        Text(proj['time']!, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
-                      if (proj['association'] != null && proj['association'].toString().isNotEmpty)
-                        Text(proj['association']!, style: const TextStyle(fontSize: 13, color: Color(0xFF191919))),
+                      if (time.isNotEmpty)
+                        Text(time, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
+                      if (association.isNotEmpty)
+                        Text(association, style: const TextStyle(fontSize: 13, color: Color(0xFF191919))),
                     ],
                   ),
                 ),
@@ -1666,25 +1665,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSkillItem(Map<String, String> skill) {
+    final String name = skill['name']?.toString() ?? '';
+    final String association = skill['association']?.toString() ?? '';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(skill['name']!, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(4)),
-              child: const Icon(Icons.check_circle_outline, size: 13, color: Colors.white),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(skill['association']!, style: const TextStyle(fontSize: 13, color: Color(0xFF191919))),
-            ),
-          ],
-        ),
+        if (name.isNotEmpty)
+          Text(name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
+        if (association.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(4)),
+                child: const Icon(Icons.check_circle_outline, size: 13, color: Colors.white),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(association, style: const TextStyle(fontSize: 13, color: Color(0xFF191919))),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -1694,7 +1699,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =============================================================
   List<Map<String, dynamic>> _getClubsList() {
     if (widget.isOwnProfile) {
-      return ProfileManager.clubs;
+      return ProfilePinsManager.getPinnedClubs();
     } else {
       final List<dynamic>? userClubs = widget.userData?['clubs'] as List<dynamic>?;
       if (userClubs != null && userClubs.isNotEmpty) {
@@ -1714,14 +1719,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Clubs & Organizations (${clubs.length})',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-              ),
-            ],
+          Text(
+            'Clubs & Organizations (${clubs.length})',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
           ),
           const SizedBox(height: 16),
           if (clubs.isEmpty)
@@ -1778,6 +1778,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildClubItem(Map<String, dynamic> club) {
+    final String name = club['name']?.toString() ?? club['title']?.toString() ?? '';
+    final String role = club['role']?.toString() ?? club['subtitle']?.toString() ?? '';
+    final String? org = club['organization']?.toString();
+    final String? duration = club['duration']?.toString();
+    final String? description = club['description']?.toString();
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1800,42 +1806,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                club['name'] as String,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF191919),
+              if (name.isNotEmpty)
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF191919),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                club['role'] as String,
-                style: const TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF334155),
+              if (role.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  role,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF334155),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                club['organization'] as String,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  color: Color(0xFF64748B),
+              ],
+              if (org != null && org.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  org,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
-              ),
-              Text(
-                club['duration'] as String,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF94A3B8),
+              ],
+              if (duration != null && duration.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  duration,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF94A3B8),
+                  ),
                 ),
-              ),
-              if (club['description'] != null) ...[
+              ],
+              if (description != null && description.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
-                  club['description'] as String,
+                  description,
                   style: const TextStyle(
                     fontSize: 13,
                     color: Color(0xFF191919),

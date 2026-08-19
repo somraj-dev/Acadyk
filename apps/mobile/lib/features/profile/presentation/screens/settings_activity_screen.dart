@@ -5,6 +5,7 @@ import 'settings_privacy_screen.dart';
 import 'settings_account_management_screen.dart';
 import 'settings_profile_visibility_screen.dart';
 import 'settings_social_permissions_screen.dart';
+import 'profile_pins_screen.dart';
 import 'in_app_web_view_screen.dart';
 
 class SettingsActivityScreen extends StatelessWidget {
@@ -54,7 +55,11 @@ class SettingsActivityScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (context) => const SettingsProfileVisibilityScreen()),
                   );
                 }),
-                _buildSettingsTile('Refine your recommendations'),
+                _buildSettingsTile('Profile Pins', onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const ProfilePinsScreen()),
+                  );
+                }),
                 _buildSettingsTile('Social permissions', onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const SettingsSocialPermissionsScreen()),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:acadyk/common/services/message_service.dart';
 import 'package:acadyk/common/services/auth_service.dart';
+import 'package:acadyk/shared/widgets/skeleton/skeleton.dart';
 
 class DirectMessageScreen extends StatefulWidget {
   final String name;
@@ -37,14 +38,17 @@ class _DirectMessageScreenState extends State<DirectMessageScreen> {
   void initState() {
     super.initState();
     _activeConversationId = widget.conversationId;
+    _messages = _getMockMessages();
     _initializeChat();
   }
 
   Future<void> _initializeChat() async {
     if (_activeConversationId == null && widget.targetUserId != null) {
-      setState(() {
-        _isLoading = true;
-      });
+      if (_messages.isEmpty) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
       final convId = await MessageService.createConversation(widget.targetUserId!);
       if (mounted) {
         setState(() {
@@ -187,7 +191,7 @@ class _DirectMessageScreenState extends State<DirectMessageScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ChatSkeleton()
           : Column(
               children: [
                 Expanded(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../common/services/notification_service.dart';
+import '../../../../shared/widgets/skeleton/skeleton.dart';
 
 class SettingsNotificationsScreen extends StatefulWidget {
   const SettingsNotificationsScreen({super.key});
@@ -18,7 +19,7 @@ class _SettingsNotificationsScreenState extends State<SettingsNotificationsScree
   bool _eventsEnabled = true;
   bool _messagesEnabled = true;
   bool _communitiesEnabled = true;
-  bool _isLoading = true;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -97,7 +98,7 @@ class _SettingsNotificationsScreenState extends State<SettingsNotificationsScree
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const SettingsListSkeleton()
             : Center(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 480),

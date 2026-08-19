@@ -8,6 +8,7 @@ import 'settings_profile_visibility_screen.dart';
 import 'settings_social_permissions_screen.dart';
 import 'settings_notifications_screen.dart';
 import 'settings_privacy_screen.dart';
+import 'profile_pins_screen.dart';
 import 'in_app_web_view_screen.dart';
 
 class YourAccountScreen extends StatelessWidget {
@@ -70,11 +71,16 @@ class YourAccountScreen extends StatelessWidget {
                   },
                 ),
 
-                // 3. Refine your recommendations
+                // 3. Profile Pins
                 _buildSettingsItem(
                   context,
-                  title: 'Refine your recommendations',
-                  onTap: () => _showSnackBar(context, 'Refine recommendations opened!'),
+                  title: 'Profile Pins',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfilePinsScreen()),
+                    );
+                  },
                 ),
 
                 // 4. Social permissions
