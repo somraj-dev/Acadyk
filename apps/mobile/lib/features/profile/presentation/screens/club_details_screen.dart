@@ -27,41 +27,41 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
 
     final String category = widget.clubData['category']?.toString() ??
         widget.clubData['tag']?.toString() ??
-        'Music';
+        'Student Chapter';
 
     final String location = widget.clubData['location']?.toString() ??
         widget.clubData['organization']?.toString() ??
-        'New York, USA';
+        'MITS Campus, Gwalior';
 
     final String time = widget.clubData['time']?.toString() ??
         widget.clubData['duration']?.toString() ??
-        'May 29 - 10:00 PM';
+        'Active Chapter';
 
-    final String memberCount = widget.clubData['memberCount']?.toString() ?? '8,000+';
+    final String memberCount = widget.clubData['memberCount']?.toString() ?? '450+ Members';
 
     final String aboutText = widget.clubData['description']?.toString() ??
         widget.clubData['about']?.toString() ??
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.';
+        'Official student chapter fostering collaborative learning, technical workshops, open source innovation, competitive programming, and campus hackathons.';
 
     final String organizerName = widget.clubData['organizerName']?.toString() ??
         widget.clubData['role']?.toString() ??
-        'SonicVibe Events';
+        'President & Founding Core Member';
 
     final String organizerRole = widget.clubData['organizerRole']?.toString() ??
         widget.clubData['subtitle']?.toString() ??
-        'Organize Team';
+        'Leadership & Core Team';
 
     final String address = widget.clubData['address']?.toString() ??
-        'Grand Symphony Arena, 452 Broadway Ave, Suite 100, New York';
+        'Madhav Institute of Technology & Science, Racecourse Road, Gwalior';
 
-    final String price = widget.clubData['price']?.toString() ?? '\$30.00';
-    final String priceUnit = widget.clubData['priceUnit']?.toString() ?? '/person';
+    final String price = widget.clubData['price']?.toString() ?? 'Free';
+    final String priceUnit = widget.clubData['priceUnit']?.toString() ?? '/open access';
 
     final String heroImage = widget.clubData['heroImage']?.toString() ??
         'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&auto=format&fit=crop&q=80';
 
-    const Color primaryOrange = Color(0xFFF97316);
-    const Color lightOrangeBg = Color(0xFFFFF7ED);
+    const Color primaryBlue = Color(0xFF0284C7); // Light Blue / Sky Blue
+    const Color lightBlueBg = Color(0xFFF0F9FF);
     const Color textDark = Color(0xFF0F172A);
     const Color textMuted = Color(0xFF64748B);
 
@@ -91,13 +91,13 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                           return Container(
                             decoration: const BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Color(0xFFF97316), Color(0xFFEA580C), Color(0xFF0F172A)],
+                                colors: [Color(0xFF0284C7), Color(0xFF0369A1), Color(0xFF0F172A)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
                             ),
                             child: const Center(
-                              child: Icon(Icons.music_note_rounded, size: 72, color: Colors.white38),
+                              child: Icon(Icons.groups_rounded, size: 72, color: Colors.white38),
                             ),
                           );
                         },
@@ -177,13 +177,14 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
-                            color: lightOrangeBg,
+                            color: lightBlueBg,
                             borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFBAE6FD)),
                           ),
                           child: Text(
                             category,
                             style: const TextStyle(
-                              color: primaryOrange,
+                              color: primaryBlue,
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.2,
@@ -208,7 +209,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                         // Location & Time Row
                         Row(
                           children: [
-                            const Icon(Icons.location_on, size: 18, color: primaryOrange),
+                            const Icon(Icons.location_on, size: 18, color: primaryBlue),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
@@ -218,7 +219,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                               ),
                             ),
                             const SizedBox(width: 14),
-                            const Icon(Icons.access_time_filled, size: 17, color: primaryOrange),
+                            const Icon(Icons.access_time_filled, size: 17, color: primaryBlue),
                             const SizedBox(width: 5),
                             Flexible(
                               child: Text(
@@ -264,7 +265,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                                           width: 36,
                                           height: 36,
                                           decoration: BoxDecoration(
-                                            color: primaryOrange,
+                                            color: primaryBlue,
                                             shape: BoxShape.circle,
                                             border: Border.all(color: Colors.white, width: 2),
                                           ),
@@ -291,7 +292,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                                 const Text(
                                   'View All',
                                   style: TextStyle(
-                                    color: primaryOrange,
+                                    color: primaryBlue,
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -336,7 +337,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                                     child: Text(
                                       _isReadMore ? ' Show less' : 'Read more',
                                       style: const TextStyle(
-                                        color: primaryOrange,
+                                        color: primaryBlue,
                                         fontWeight: FontWeight.w700,
                                         fontSize: 13.5,
                                       ),
@@ -364,13 +365,13 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                               child: Container(
                                 width: 48,
                                 height: 48,
-                                color: lightOrangeBg,
+                                color: lightBlueBg,
                                 child: Image.network(
                                   'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=120',
                                   fit: BoxFit.cover,
                                   errorBuilder: (ctx, err, stack) => const Icon(
                                     Icons.groups_rounded,
-                                    color: primaryOrange,
+                                    color: primaryBlue,
                                     size: 24,
                                   ),
                                 ),
@@ -451,7 +452,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                               child: const Text(
                                 'View on Map',
                                 style: TextStyle(
-                                  color: primaryOrange,
+                                  color: primaryBlue,
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -521,7 +522,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w900,
-                                color: primaryOrange,
+                                color: primaryBlue,
                               ),
                             ),
                             Text(
@@ -538,7 +539,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                     ),
                     const SizedBox(width: 24),
 
-                    // Prominent Rounded Orange CTA Button
+                    // Prominent Rounded Light Blue CTA Button
                     Expanded(
                       child: SizedBox(
                         height: 52,
@@ -557,7 +558,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _isJoined ? const Color(0xFF0F172A) : primaryOrange,
+                            backgroundColor: _isJoined ? const Color(0xFF0F172A) : primaryBlue,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -621,7 +622,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white, width: 2),
-          color: const Color(0xFFFED7AA),
+          color: const Color(0xFFBAE6FD),
         ),
         child: ClipOval(
           child: Image.network(
@@ -630,7 +631,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
             errorBuilder: (ctx, err, stack) => const Icon(
               Icons.person,
               size: 20,
-              color: Color(0xFFEA580C),
+              color: Color(0xFF0284C7),
             ),
           ),
         ),
@@ -648,11 +649,11 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
         width: 40,
         height: 40,
         decoration: const BoxDecoration(
-          color: Color(0xFFFFF7ED),
+          color: Color(0xFFF0F9FF),
           shape: BoxShape.circle,
         ),
         alignment: Alignment.center,
-        child: Icon(icon, color: const Color(0xFFF97316), size: 18),
+        child: Icon(icon, color: const Color(0xFF0284C7), size: 18),
       ),
     );
   }
