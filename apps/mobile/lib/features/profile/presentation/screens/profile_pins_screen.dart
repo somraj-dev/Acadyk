@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../services/profile_pins_manager.dart';
+import 'project_details.dart';
+import 'experience_details.dart';
 
 class ProfilePinsScreen extends StatefulWidget {
   const ProfilePinsScreen({super.key});
@@ -455,9 +457,53 @@ class _ProfilePinsScreenState extends State<ProfilePinsScreen> with SingleTicker
     );
   }
 
+  void _openProjectDetails(ProfilePinItem item) {
+    final Map<String, dynamic> projData = {
+      'title': item.title,
+      'companyName': item.title,
+      'subtitle': item.subtitle,
+      'association': item.organization ?? item.subtitle,
+      'organization': item.organization ?? item.subtitle,
+      'duration': item.duration ?? '',
+      'time': item.duration ?? '',
+      'location': item.location ?? 'Gwalior, MP',
+      'description': item.description ?? '',
+      'progress': item.description ?? '',
+      'techStack': item.tags.isNotEmpty ? item.tags.join(', ') : 'Flutter, Dart, Spring Boot',
+      'tags': item.tags,
+      'logoAsset': item.imageAsset,
+      'imageAsset': item.imageAsset,
+      'category': item.category.name,
+      'originStatus': item.statusLabel,
+      'status': item.statusLabel.toUpperCase(),
+      'batch': '2024–2026',
+      'isPinned': item.isPinned,
+      ...item.rawData,
+    };
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProjectDetailsScreen(projectData: projData),
+      ),
+    );
+  }
+
+  void _openExperienceDetails(ProfilePinItem item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ExperienceDetailsScreen(pinItem: item),
+      ),
+    );
+  }
+
   Widget _buildPinItemCard(ProfilePinItem item) {
     final statusColor = _getStatusColor(item.originStatus);
     final categoryLabel = _getCategoryLabel(item.category);
+    final bool isProject = item.category == PinCategory.project;
+    final bool isExperience = item.category == PinCategory.experience;
+    final bool isTappable = isProject || isExperience;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -465,180 +511,201 @@ class _ProfilePinsScreenState extends State<ProfilePinsScreen> with SingleTicker
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: item.isPinned ? const Color(0xFFBAE6FD) : const Color(0xFFE2E8F0),
-          width: item.isPinned ? 1.5 : 1,
+          color: const Color(0xFFE2E8F0),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: item.isPinned ? const Color(0xFF0284C7).withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Row: Icon, Badges, Title, and Switch Toggle
-            Row(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: isProject
+              ? () => _openProjectDetails(item)
+              : isExperience
+                  ? () => _openExperienceDetails(item)
+                  : null,
+          child: Padding(
+            padding: const EdgeInsets.all(14.0),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Icon / Logo
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: item.iconBg.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: item.iconBg.withValues(alpha: 0.25)),
-                  ),
-                  alignment: Alignment.center,
-                  child: item.imageAsset != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.asset(
-                            item.imageAsset!,
-                            width: 32,
-                            height: 32,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => Icon(item.icon, color: item.iconBg, size: 22),
-                          ),
-                        )
-                      : Icon(item.icon, color: item.iconBg, size: 22),
-                ),
-                const SizedBox(width: 12),
-                // Title and badges
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                // Top Row: Icon, Badges, Title, and Switch Toggle
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Icon / Logo
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: item.iconBg.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: item.iconBg.withValues(alpha: 0.25)),
+                      ),
+                      alignment: Alignment.center,
+                      child: item.imageAsset != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.asset(
+                                item.imageAsset!,
+                                width: 32,
+                                height: 32,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => Icon(item.icon, color: item.iconBg, size: 22),
+                              ),
+                            )
+                          : Icon(item.icon, color: item.iconBg, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    // Title and badges
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              categoryLabel.toUpperCase(),
-                              style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF475569), letterSpacing: 0.5),
-                            ),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  categoryLabel.toUpperCase(),
+                                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF475569), letterSpacing: 0.5),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  item.statusLabel,
+                                  style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: statusColor),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              item.statusLabel,
-                              style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: statusColor),
-                            ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  item.title,
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                ),
+                              ),
+                              if (isTappable) ...[
+                                const SizedBox(width: 4),
+                                const Icon(Icons.arrow_outward_rounded, size: 16, color: Color(0xFF0284C7)),
+                              ],
+                            ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.title,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    CupertinoSwitch(
+                      value: item.isPinned,
+                      activeTrackColor: const Color(0xFF0284C7),
+                      onChanged: (val) {
+                        if (val && !item.isPinned && ProfilePinsManager.pinnedCount >= ProfilePinsManager.maxPinsAllowed) {
+                          _showMaxPinsWarningDialog();
+                          return;
+                        }
+                        final success = ProfilePinsManager.setPin(item.id, val);
+                        if (!success && val) {
+                          _showMaxPinsWarningDialog();
+                        }
+                      },
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+
+                // Subtitle & Organization
+                if (item.subtitle.isNotEmpty)
+                  Text(
+                    item.subtitle,
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF334155), fontWeight: FontWeight.w500),
+                  ),
+
+                // Duration & Location Chips
+                if (item.duration != null || item.location != null) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      if (item.duration != null)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.schedule_rounded, size: 13, color: Color(0xFF64748B)),
+                            const SizedBox(width: 4),
+                            Text(item.duration!, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                          ],
+                        ),
+                      if (item.location != null)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
+                            const SizedBox(width: 3),
+                            Text(item.location!, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                          ],
+                        ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                CupertinoSwitch(
-                  value: item.isPinned,
-                  activeTrackColor: const Color(0xFF0284C7),
-                  onChanged: (val) {
-                    if (val && !item.isPinned && ProfilePinsManager.pinnedCount >= ProfilePinsManager.maxPinsAllowed) {
-                      _showMaxPinsWarningDialog();
-                      return;
-                    }
-                    final success = ProfilePinsManager.setPin(item.id, val);
-                    if (!success && val) {
-                      _showMaxPinsWarningDialog();
-                    }
-                  },
-                ),
+                ],
+
+                // Description preview
+                if (item.description != null && item.description!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    item.description!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.35),
+                  ),
+                ],
+
+                // Tags
+                if (item.tags.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: item.tags.map((tag) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Text(
+                          '#$tag',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.w500),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ],
             ),
-
-            const SizedBox(height: 8),
-
-            // Subtitle & Organization
-            if (item.subtitle.isNotEmpty)
-              Text(
-                item.subtitle,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF334155), fontWeight: FontWeight.w500),
-              ),
-
-            // Duration & Location Chips
-            if (item.duration != null || item.location != null) ...[
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  if (item.duration != null)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.schedule_rounded, size: 13, color: Color(0xFF64748B)),
-                        const SizedBox(width: 4),
-                        Text(item.duration!, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                      ],
-                    ),
-                  if (item.location != null)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
-                        const SizedBox(width: 3),
-                        Text(item.location!, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                      ],
-                    ),
-                ],
-              ),
-            ],
-
-            // Description preview
-            if (item.description != null && item.description!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                item.description!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.35),
-              ),
-            ],
-
-            // Tags
-            if (item.tags.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: item.tags.map((tag) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Text(
-                      '#$tag',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.w500),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );

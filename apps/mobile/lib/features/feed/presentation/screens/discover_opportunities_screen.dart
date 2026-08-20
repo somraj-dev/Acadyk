@@ -336,8 +336,6 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.verified, color: Colors.blue, size: 16),
                         ],
                       ),
                       const SizedBox(height: 2),

@@ -367,6 +367,19 @@ class ProfilePinsManager {
   static int countByCategory(PinCategory cat) => _items.where((item) => item.category == cat).length;
   static int pinnedByCategory(PinCategory cat) => _items.where((item) => item.category == cat && item.isPinned).length;
 
+  static bool isPinned(String id) {
+    final index = _items.indexWhere((item) => item.id == id);
+    if (index != -1) {
+      return _items[index].isPinned;
+    }
+    return false;
+  }
+
+  static ProfilePinItem? getItemById(String id) {
+    final index = _items.indexWhere((item) => item.id == id);
+    return index != -1 ? _items[index] : null;
+  }
+
   static bool togglePin(String id) {
     final index = _items.indexWhere((item) => item.id == id);
     if (index != -1) {

@@ -13,26 +13,26 @@ class _SettingsUpgradeScreenState extends State<SettingsUpgradeScreen> {
   int _selectedPlan = 0; // 0 for Monthly, 1 for Annual
 
   final List<Map<String, dynamic>> _premiumFeatures = [
-    {'icon': Icons.verified_outlined, 'title': 'Verified tick'},
-    {'icon': CupertinoIcons.compass, 'title': 'Enhanced Grok access'},
+    {'icon': CupertinoIcons.sparkles, 'title': 'Priority Feed Showcase'},
+    {'icon': CupertinoIcons.compass, 'title': 'Enhanced AI access'},
     {'icon': Icons.dashboard_customize_outlined, 'title': 'Create Custom Timelines', 'info': true},
     {'icon': Icons.analytics_outlined, 'title': 'Advanced analytics', 'info': true},
-    {'icon': Icons.star_outline, 'title': 'Less ads in your feeds'},
+    {'icon': Icons.star_outline, 'title': 'Ad-free experience'},
     {'icon': CupertinoIcons.chat_bubble_2, 'title': 'Boosted replies', 'info': true},
-    {'icon': Icons.article_outlined, 'title': 'Write Articles'},
-    {'icon': Icons.monetization_on_outlined, 'title': 'Get paid to post'},
+    {'icon': Icons.article_outlined, 'title': 'Publish Articles'},
+    {'icon': Icons.monetization_on_outlined, 'title': 'Creator rewards'},
     {'icon': Icons.add_circle_outline, 'title': 'Everything in Basic'},
   ];
 
   final List<Map<String, dynamic>> _premiumPlusFeatures = [
-    {'icon': Icons.verified, 'title': 'Gold/Silver Verified tick'},
-    {'icon': CupertinoIcons.compass_fill, 'title': 'Full Grok access'},
+    {'icon': CupertinoIcons.sparkles, 'title': 'Executive Campus Spotlight'},
+    {'icon': CupertinoIcons.compass_fill, 'title': 'Full AI Pro access'},
     {'icon': Icons.dashboard_customize, 'title': 'Unlimited Custom Timelines', 'info': true},
     {'icon': Icons.analytics, 'title': 'Deep analytics & insights', 'info': true},
-    {'icon': Icons.star, 'title': 'No ads in your feeds'},
+    {'icon': Icons.star, 'title': '100% Ad-free experience'},
     {'icon': CupertinoIcons.chat_bubble_2_fill, 'title': 'Max boosted replies', 'info': true},
-    {'icon': Icons.article, 'title': 'Write Articles & Newsletters'},
-    {'icon': Icons.monetization_on, 'title': 'Double paid to post rewards'},
+    {'icon': Icons.article, 'title': 'Publish Articles & Newsletters'},
+    {'icon': Icons.monetization_on, 'title': '2x Creator rewards'},
     {'icon': Icons.add_circle, 'title': 'Everything in Premium'},
   ];
 

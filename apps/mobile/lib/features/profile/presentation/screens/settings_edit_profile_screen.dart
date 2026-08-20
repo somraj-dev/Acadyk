@@ -5,6 +5,7 @@ import 'package:acadyk/common/services/profile_service.dart';
 import 'package:acadyk/common/services/storage_service.dart';
 import 'package:path/path.dart' as p;
 import '../services/profile_manager.dart';
+import 'add_cover_image_screen.dart';
 
 class SettingsEditProfileScreen extends StatefulWidget {
   const SettingsEditProfileScreen({super.key});
@@ -14,11 +15,9 @@ class SettingsEditProfileScreen extends StatefulWidget {
 }
 
 class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
-  late TextEditingController _nameCtrl;
   late TextEditingController _bioCtrl;
   late TextEditingController _locationCtrl;
   late TextEditingController _websiteCtrl;
-  late TextEditingController _dobCtrl;
 
   Uint8List? _pickedAvatarBytes;
   String? _pickedAvatarName;
@@ -33,11 +32,9 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: ProfileManager.name);
     _bioCtrl = TextEditingController(text: ProfileManager.bio);
     _locationCtrl = TextEditingController(text: ProfileManager.location);
     _websiteCtrl = TextEditingController(text: ProfileManager.website);
-    _dobCtrl = TextEditingController(text: ProfileManager.dateOfBirth);
 
     _avatarPath = ProfileManager.avatarUrl;
     _bannerPath = ProfileManager.bannerUrl;
@@ -47,22 +44,33 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
 
   @override
   void dispose() {
-    _nameCtrl.dispose();
     _bioCtrl.dispose();
     _locationCtrl.dispose();
     _websiteCtrl.dispose();
-    _dobCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _pickBannerImage() async {
-    final xfile = await StorageService.pickImageXFile();
-    if (xfile != null) {
-      final bytes = await xfile.readAsBytes();
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddCoverImageScreen(
+          currentBannerUrl: _bannerPath,
+          currentBannerBytes: _pickedBannerBytes,
+        ),
+      ),
+    );
+    if (result != null) {
       setState(() {
-        _pickedBannerBytes = bytes;
-        _pickedBannerName = xfile.name;
-        _bannerPath = xfile.path;
+        if (result['bytes'] != null) {
+          _pickedBannerBytes = result['bytes'] as Uint8List;
+          _pickedBannerName = result['name'] as String?;
+          _bannerPath = result['path'] as String?;
+        } else if (result['url'] != null) {
+          _bannerPath = result['url'] as String;
+          _pickedBannerBytes = null;
+          _pickedBannerName = null;
+        }
       });
     }
   }
@@ -114,7 +122,7 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
         }
 
         await ProfileService.updateProfile(user.id, {
-          'full_name': _nameCtrl.text.trim(),
+          'full_name': ProfileManager.name,
           'bio': _bioCtrl.text.trim(),
           'location': _locationCtrl.text.trim(),
           'website': _websiteCtrl.text.trim(),
@@ -127,11 +135,11 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
     }
 
     ProfileManager.updateProfile(
-      newName: _nameCtrl.text.trim(),
+      newName: ProfileManager.name,
       newBio: _bioCtrl.text.trim(),
       newLocation: _locationCtrl.text.trim(),
       newWebsite: _websiteCtrl.text.trim(),
-      newDateOfBirth: _dobCtrl.text.trim(),
+      newDateOfBirth: ProfileManager.dateOfBirth,
       newAvatar: finalAvatarUrl,
       newBanner: finalBannerUrl,
       newAvatarBytes: _pickedAvatarBytes,
@@ -333,26 +341,17 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildFormInputField(
-                      label: 'Name',
-                      controller: _nameCtrl,
-                    ),
-                    _buildFormInputField(
-                      label: 'Bio',
+                      label: 'Summary',
                       controller: _bioCtrl,
                       maxLines: null,
                     ),
                     _buildFormInputField(
-                      label: 'Location',
+                      label: 'HomeTown',
                       controller: _locationCtrl,
                     ),
                     _buildFormInputField(
                       label: 'Website',
                       controller: _websiteCtrl,
-                    ),
-                    _buildFormInputField(
-                      label: 'Date of birth',
-                      controller: _dobCtrl,
-                      subtitle: 'Month and day: Only you\nYear: Only you',
                     ),
                     const SizedBox(height: 32),
                   ],

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'dart:math';
 import '../services/profile_manager.dart';
 import '../services/profile_pins_manager.dart';
@@ -11,11 +12,16 @@ import 'settings_edit_profile_screen.dart';
 import 'edit_status_screen.dart';
 import 'connections_list_screen.dart';
 import 'project_details.dart';
+import 'experience_details.dart';
 import '../../../feed/presentation/screens/post_detail_screen.dart';
 import 'package:acadyk/common/services/auth_service.dart';
 import 'package:acadyk/common/services/profile_service.dart';
 import 'package:acadyk/common/services/post_service.dart';
 import 'package:acadyk/common/services/follow_service.dart';
+import 'package:acadyk/common/services/storage_service.dart';
+import 'package:path/path.dart' as p;
+import 'add_cover_image_screen.dart';
+import 'profile_showcase.dart';
 
 class ProfileScreen extends StatefulWidget {
   final bool isOwnProfile;
@@ -45,20 +51,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _profileLocation;
   String? _profilePhotoUrl;
   String? _coverPhotoUrl;
+  bool _isAudioPlaying = false;
 
   Timer? _bannerHoldTimer;
   Timer? _avatarHoldTimer;
   bool _avatarHoldTriggered = false;
+  bool _bannerHoldTriggered = false;
 
   void _startBannerHoldTimer() {
     _bannerHoldTimer?.cancel();
     _bannerHoldTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
-        _showImagePreviewDialog(
-          title: 'Cover Photo',
-          imageWidget: _buildBannerFullImageWidget(),
-          isAvatar: false,
-        );
+        if (widget.isOwnProfile) {
+          _showBannerOptionsBottomSheet();
+        } else {
+          _showImagePreviewDialog(
+            title: 'Cover Photo',
+            imageWidget: _buildBannerFullImageWidget(),
+            isAvatar: false,
+          );
+        }
       }
     });
   }
@@ -74,17 +86,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _avatarHoldTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
         _avatarHoldTriggered = true;
-        _showImagePreviewDialog(
-          title: 'Profile Photo',
-          imageWidget: _buildAvatarFullImageWidget(
-            photoUrl: _profilePhotoUrl,
-            avatarString: avatar,
-            initials: initials,
-            bgColorHex: bgColorHex,
-            isMITS: isMITS,
-          ),
-          isAvatar: true,
-        );
+        if (widget.isOwnProfile) {
+          _showAvatarOptionsBottomSheet(avatar, initials, bgColorHex, isMITS);
+        } else {
+          _showImagePreviewDialog(
+            title: 'Profile Photo',
+            imageWidget: _buildAvatarFullImageWidget(
+              photoUrl: _profilePhotoUrl,
+              avatarString: avatar,
+              initials: initials,
+              bgColorHex: bgColorHex,
+              isMITS: isMITS,
+            ),
+            isAvatar: true,
+          );
+        }
       }
     });
   }
@@ -92,6 +108,371 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _cancelAvatarHoldTimer() {
     _avatarHoldTimer?.cancel();
     _avatarHoldTimer = null;
+  }
+
+  void _showAvatarOptionsBottomSheet(String avatar, String initials, int bgColorHex, bool isMITS) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top Drag Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E1E),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Add / Change profile photo
+                _buildBottomSheetOption(
+                  icon: Icons.camera_alt_outlined,
+                  title: 'Add profile photo',
+                  onTap: () async {
+                    Navigator.of(ctx).pop();
+                    await _pickAndUpdateAvatar();
+                  },
+                ),
+
+                // Add frame
+                _buildBottomSheetOption(
+                  icon: Icons.crop_original_outlined,
+                  title: 'Add frame',
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _showFramePickerBottomSheet();
+                  },
+                ),
+
+                // View profile photo
+                _buildBottomSheetOption(
+                  icon: Icons.visibility_outlined,
+                  title: 'View profile photo',
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _showImagePreviewDialog(
+                      title: 'Profile Photo',
+                      imageWidget: _buildAvatarFullImageWidget(
+                        photoUrl: _profilePhotoUrl,
+                        avatarString: avatar,
+                        initials: initials,
+                        bgColorHex: bgColorHex,
+                        isMITS: isMITS,
+                      ),
+                      isAvatar: true,
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showBannerOptionsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top Drag Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E1E),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Add / Change cover photo
+                _buildBottomSheetOption(
+                  icon: Icons.camera_alt_outlined,
+                  title: 'Add cover photo',
+                  onTap: () async {
+                    Navigator.of(ctx).pop();
+                    await _pickAndUpdateBanner();
+                  },
+                ),
+
+                // View cover photo
+                _buildBottomSheetOption(
+                  icon: Icons.visibility_outlined,
+                  title: 'View cover photo',
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _showImagePreviewDialog(
+                      title: 'Cover Photo',
+                      imageWidget: _buildBannerFullImageWidget(),
+                      isAvatar: false,
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showFramePickerBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext ctx) {
+        final currentFrame = ProfileManager.selectedFrame;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E1E),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Profile Frames',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E1E1E),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildFrameOptionTile(
+                  ctx: ctx,
+                  frameName: 'Original (No Frame)',
+                  value: 'None',
+                  isSelected: currentFrame == 'None',
+                  color: Colors.grey,
+                ),
+                _buildFrameOptionTile(
+                  ctx: ctx,
+                  frameName: '#OpenToWork (Job Opportunities)',
+                  value: '#OpenToWork',
+                  isSelected: currentFrame == '#OpenToWork',
+                  color: const Color(0xFF059669),
+                ),
+                _buildFrameOptionTile(
+                  ctx: ctx,
+                  frameName: 'Student @ MITS',
+                  value: 'Student @ MITS',
+                  isSelected: currentFrame == 'Student @ MITS',
+                  color: const Color(0xFF0284C7),
+                ),
+                _buildFrameOptionTile(
+                  ctx: ctx,
+                  frameName: '#Hiring (Talent & Collaborators)',
+                  value: '#Hiring',
+                  isSelected: currentFrame == '#Hiring',
+                  color: const Color(0xFF7C3AED),
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFrameOptionTile({
+    required BuildContext ctx,
+    required String frameName,
+    required String value,
+    required bool isSelected,
+    required Color color,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      leading: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          border: Border.all(color: color, width: 2),
+          shape: BoxShape.circle,
+        ),
+      ),
+      title: Text(
+        frameName,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+          color: isSelected ? const Color(0xFF0F4C81) : const Color(0xFF1E1E1E),
+        ),
+      ),
+      trailing: isSelected
+          ? const Icon(Icons.check_circle_rounded, color: Color(0xFF0F4C81), size: 22)
+          : null,
+      onTap: () {
+        Navigator.of(ctx).pop();
+        ProfileManager.setSelectedFrame(value);
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(value == 'None' ? 'Profile frame removed.' : 'Applied $value frame!'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndUpdateAvatar() async {
+    final xfile = await StorageService.pickImageXFile();
+    if (xfile != null) {
+      final bytes = await xfile.readAsBytes();
+      String finalAvatarUrl = xfile.path;
+
+      final user = AuthService.currentUser;
+      if (user != null) {
+        try {
+          final uploaded = await StorageService.uploadProfilePhotoBytes(
+            user.id,
+            bytes,
+            extension: p.extension(xfile.name),
+          );
+          if (uploaded != null && uploaded.isNotEmpty) {
+            finalAvatarUrl = uploaded;
+          }
+          await ProfileService.updateProfile(user.id, {
+            'profile_photo_url': finalAvatarUrl,
+          });
+        } catch (e) {
+          debugPrint('[ProfileScreen] Error uploading avatar: $e');
+        }
+      }
+
+      ProfileManager.updateProfile(
+        newName: ProfileManager.name,
+        newBio: ProfileManager.bio,
+        newLocation: ProfileManager.location,
+        newWebsite: ProfileManager.website,
+        newDateOfBirth: ProfileManager.dateOfBirth,
+        newAvatar: finalAvatarUrl,
+        newAvatarBytes: bytes,
+      );
+
+      if (mounted) {
+        setState(() {
+          _profilePhotoUrl = finalAvatarUrl;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile photo updated successfully!'),
+            backgroundColor: Color(0xFF10B981),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickAndUpdateBanner() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddCoverImageScreen(
+          currentBannerUrl: _coverPhotoUrl,
+          currentBannerBytes: ProfileManager.bannerBytes,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      final bytes = result['bytes'] as Uint8List?;
+      final name = result['name'] as String?;
+      final path = result['path'] as String?;
+      final url = result['url'] as String?;
+
+      String finalBannerUrl = url ?? path ?? '';
+
+      final user = AuthService.currentUser;
+      if (user != null) {
+        try {
+          if (bytes != null) {
+            final uploaded = await StorageService.uploadCoverPhotoBytes(
+              user.id,
+              bytes,
+              extension: name != null ? p.extension(name) : '.jpg',
+            );
+            if (uploaded != null && uploaded.isNotEmpty) {
+              finalBannerUrl = uploaded;
+            }
+          }
+          await ProfileService.updateProfile(user.id, {
+            'cover_photo_url': finalBannerUrl,
+          });
+        } catch (e) {
+          debugPrint('[ProfileScreen] Error uploading banner: $e');
+        }
+      }
+
+      ProfileManager.updateProfile(
+        newName: ProfileManager.name,
+        newBio: ProfileManager.bio,
+        newLocation: ProfileManager.location,
+        newWebsite: ProfileManager.website,
+        newDateOfBirth: ProfileManager.dateOfBirth,
+        newBanner: finalBannerUrl,
+        newBannerBytes: bytes,
+      );
+
+      if (mounted) {
+        setState(() {
+          _coverPhotoUrl = finalBannerUrl;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cover image updated successfully!'),
+            backgroundColor: Color(0xFF10B981),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   void _showStatusDetailsDialog({
@@ -438,14 +819,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
               clipBehavior: Clip.none,
               children: [
                 // Banner Image
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: (_) => _startBannerHoldTimer(),
-                  onTapUp: (_) => _cancelBannerHoldTimer(),
-                  onTapCancel: () => _cancelBannerHoldTimer(),
-                  onPanDown: (_) => _startBannerHoldTimer(),
-                  onPanEnd: (_) => _cancelBannerHoldTimer(),
-                  onPanCancel: () => _cancelBannerHoldTimer(),
+                Listener(
+                  onPointerDown: (_) {
+                    _bannerHoldTriggered = false;
+                    _bannerHoldTimer?.cancel();
+                    _bannerHoldTimer = Timer(const Duration(seconds: 3), () {
+                      _bannerHoldTriggered = true;
+                      if (mounted) {
+                        if (widget.isOwnProfile) {
+                          _showBannerOptionsBottomSheet();
+                        } else {
+                          _showImagePreviewDialog(
+                            title: 'Cover Photo',
+                            imageWidget: _buildBannerFullImageWidget(),
+                            isAvatar: false,
+                          );
+                        }
+                      }
+                    });
+                  },
+                  onPointerUp: (_) {
+                    _bannerHoldTimer?.cancel();
+                    if (!_bannerHoldTriggered) {
+                      // Immediate click / tap on banner: preview cover image
+                      _showImagePreviewDialog(
+                        title: 'Cover Photo',
+                        imageWidget: _buildBannerFullImageWidget(),
+                        isAvatar: false,
+                      );
+                    }
+                  },
+                  onPointerCancel: (_) {
+                    _bannerHoldTimer?.cancel();
+                  },
                   child: Stack(
                     children: [
                       _buildBannerImageWidget(),
@@ -487,6 +893,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ? (UserStatusState.emoji ?? '🎓')
                           : (widget.userData?['statusEmoji'] ?? '🎓');
 
+                      final String activeFrame = widget.isOwnProfile ? ProfileManager.selectedFrame : 'None';
+                      Color frameBorderColor = Colors.white;
+                      if (hasActiveStatus) {
+                        frameBorderColor = const Color(0xFFEF4444);
+                      } else if (activeFrame == '#OpenToWork') {
+                        frameBorderColor = const Color(0xFF059669);
+                      } else if (activeFrame == 'Student @ MITS') {
+                        frameBorderColor = const Color(0xFF0284C7);
+                      } else if (activeFrame == '#Hiring') {
+                        frameBorderColor = const Color(0xFF7C3AED);
+                      }
+
                       return Stack(
                         clipBehavior: Clip.none,
                         children: [
@@ -496,28 +914,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(26),
                               border: Border.all(
-                                color: hasActiveStatus ? const Color(0xFFEF4444) : Colors.white,
-                                width: hasActiveStatus ? 3.5 : 4.0,
+                                color: frameBorderColor,
+                                width: (hasActiveStatus || activeFrame != 'None') ? 3.5 : 4.0,
                               ),
                               boxShadow: [
                                 BoxShadow(
                                   color: hasActiveStatus
                                       ? const Color(0xFFEF4444).withValues(alpha: 0.38)
-                                      : Colors.black.withValues(alpha: 0.12),
-                                  blurRadius: hasActiveStatus ? 12 : 10,
+                                      : activeFrame != 'None'
+                                          ? frameBorderColor.withValues(alpha: 0.3)
+                                          : Colors.black.withValues(alpha: 0.12),
+                                  blurRadius: (hasActiveStatus || activeFrame != 'None') ? 12 : 10,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTapDown: (_) {
+                            child: Listener(
+                              onPointerDown: (_) {
                                 _avatarHoldTriggered = false;
-                                _startAvatarHoldTimer(avatar, initials, bgColorHex, isMITS);
+                                _avatarHoldTimer?.cancel();
+                                _avatarHoldTimer = Timer(const Duration(seconds: 3), () {
+                                  _avatarHoldTriggered = true;
+                                  if (mounted) {
+                                    if (widget.isOwnProfile) {
+                                      _showAvatarOptionsBottomSheet(avatar, initials, bgColorHex, isMITS);
+                                    } else {
+                                      _showImagePreviewDialog(
+                                        title: 'Profile Photo',
+                                        imageWidget: _buildAvatarFullImageWidget(
+                                          photoUrl: _profilePhotoUrl,
+                                          avatarString: avatar,
+                                          initials: initials,
+                                          bgColorHex: bgColorHex,
+                                          isMITS: isMITS,
+                                        ),
+                                        isAvatar: true,
+                                      );
+                                    }
+                                  }
+                                });
                               },
-                              onTapUp: (_) {
-                                _cancelAvatarHoldTimer();
+                              onPointerUp: (_) {
+                                _avatarHoldTimer?.cancel();
                                 if (!_avatarHoldTriggered) {
+                                  // Immediate click / tap on avatar: open Set Status screen
                                   if (widget.isOwnProfile) {
                                     Navigator.push(
                                       context,
@@ -533,23 +973,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         expiration: widget.userData?['statusExpiration'],
                                       );
                                     } else {
-                                      _showStatusDetailsDialog(
-                                        name: name,
-                                        emoji: '🎓',
-                                        text: widget.userData?['headline'] ?? bio,
-                                        isBusy: false,
+                                      _showImagePreviewDialog(
+                                        title: 'Profile Photo',
+                                        imageWidget: _buildAvatarFullImageWidget(
+                                          photoUrl: _profilePhotoUrl,
+                                          avatarString: avatar,
+                                          initials: initials,
+                                          bgColorHex: bgColorHex,
+                                          isMITS: isMITS,
+                                        ),
+                                        isAvatar: true,
                                       );
                                     }
                                   }
                                 }
                               },
-                              onTapCancel: () => _cancelAvatarHoldTimer(),
-                              onPanDown: (_) {
-                                _avatarHoldTriggered = false;
-                                _startAvatarHoldTimer(avatar, initials, bgColorHex, isMITS);
+                              onPointerCancel: (_) {
+                                _avatarHoldTimer?.cancel();
                               },
-                              onPanEnd: (_) => _cancelAvatarHoldTimer(),
-                              onPanCancel: () => _cancelAvatarHoldTimer(),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(22),
                                 child: _buildAvatarImageWidget(
@@ -718,6 +1159,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ],
+
+                // Showcase Banners & Add Button below Bio & above Followers/Following
+                const SizedBox(height: 12),
+                _buildProfileShowcaseRow(name),
                 const SizedBox(height: 16),
 
                 // Stats Row: Following & Followers
@@ -802,6 +1247,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // Profile Showcase Banners Row (Pill capsules matching bright theme design)
+  Widget _buildProfileShowcaseRow(String name) {
+    final banners = widget.isOwnProfile
+        ? ProfileManager.showcaseBanners
+        : (widget.userData?['showcaseBanners'] as List<Map<String, String>>? ?? []);
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      child: Row(
+        children: [
+          // 1. Active Showcases (Mentor, Coordinator, Club, Social, Custom)
+          for (final banner in banners) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFFE2E8F0),
+                  width: 1.0,
+                ),
+              ),
+              child: Text(
+                banner['title'] ?? '',
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+
+          // 2. + Add Button (Opens ProfileShowcaseScreen)
+          if (widget.isOwnProfile)
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileShowcaseScreen()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0),
+                    width: 1.0,
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      CupertinoIcons.plus,
+                      size: 13,
+                      color: Color(0xFF0F172A),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Add',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -1194,68 +1721,89 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ? 'assets/images/acadyk_logo.png'
                 : null);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ExperienceDetailsScreen(experienceData: exp),
           ),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.all(4),
-          child: logoAsset != null
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.asset(
-                    logoAsset,
-                    width: 40,
-                    height: 40,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(
-                      Icons.business_center,
-                      size: 22,
-                      color: Color(0xFF191919),
-                    ),
-                  ),
-                )
-              : const Icon(Icons.business_center, size: 22, color: Color(0xFF191919)),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (title.isNotEmpty)
-                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
-              if (companyName.isNotEmpty)
-                Text(companyName, style: const TextStyle(fontSize: 13, color: Color(0xFF191919))),
-              if (durationStr.isNotEmpty)
-                Text(durationStr, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
-              if (locationStr.isNotEmpty)
-                Text(locationStr, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
-              if (highlightStr != null && highlightStr.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.diamond, size: 14, color: Color(0xFF0A66C2)),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        highlightStr,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
+        );
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              alignment: Alignment.center,
+              padding: const EdgeInsets.all(4),
+              child: logoAsset != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.asset(
+                        logoAsset,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.business_center,
+                          size: 22,
+                          color: Color(0xFF191919),
+                        ),
                       ),
+                    )
+                  : const Icon(Icons.business_center, size: 22, color: Color(0xFF191919)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_outward, size: 16, color: Color(0xFF5E5E5E)),
+                    ],
+                  ),
+                  if (companyName.isNotEmpty)
+                    Text(companyName, style: const TextStyle(fontSize: 13, color: Color(0xFF191919))),
+                  if (durationStr.isNotEmpty)
+                    Text(durationStr, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
+                  if (locationStr.isNotEmpty)
+                    Text(locationStr, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
+                  if (highlightStr != null && highlightStr.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.diamond, size: 14, color: Color(0xFF0A66C2)),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            highlightStr,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                ),
-              ],
-            ],
-          ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -2219,10 +2767,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       builder: (context) => AboutAccountScreen(
                         accountData: {
                           'name': currentMemberName,
+                          'username': widget.userData?['username'] ?? (widget.isOwnProfile ? ProfileManager.username : ''),
+                          'email': widget.isOwnProfile
+                              ? (ProfileManager.email.isNotEmpty ? ProfileManager.email : (AuthService.currentUser?.email ?? ''))
+                              : (widget.userData?['email'] ?? widget.userData?['collegeEmail'] ?? ''),
                           'avatarUrl': currentMemberAvatar,
-                          'dateJoined': '2026',
-                          'location': widget.isOwnProfile ? (ProfileManager.location.isNotEmpty ? ProfileManager.location : 'Campus') : (widget.userData?['location'] ?? 'Campus'),
-                          'sharedFollowers': 0,
+                          'avatarBytes': widget.isOwnProfile ? ProfileManager.avatarBytes : null,
+                          'branch': widget.isOwnProfile
+                              ? (ProfileManager.branch.isNotEmpty ? ProfileManager.branch : 'Computer Science & Engineering')
+                              : (widget.userData?['branch'] ?? widget.userData?['department'] ?? 'Computer Science & Engineering'),
+                          'department': widget.isOwnProfile
+                              ? (ProfileManager.degree.isNotEmpty ? ProfileManager.degree : 'Information Technology')
+                              : (widget.userData?['department'] ?? 'Engineering & Technology'),
+                          'academicSession': widget.userData?['academicSession'] ?? (widget.isOwnProfile ? ProfileManager.academicSession : '2022 – 2026'),
+                          'mentorName': widget.userData?['mentorName'] ?? widget.userData?['mentorFaculty'] ?? ProfileManager.mentorFaculty,
+                          'estYear': widget.userData?['estYear'] ?? ProfileManager.estYear,
+                          'isOfficial': widget.userData?['isOfficial'] == true ||
+                              (widget.userData?['role'] == 'official') ||
+                              (currentMemberName.toLowerCase().contains('mits gwalior') || currentMemberName.toLowerCase().contains('madhav institute')),
                         },
                       ),
                     ),

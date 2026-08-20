@@ -221,8 +221,6 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                             letterSpacing: -0.5,
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        const Icon(Icons.verified, color: primaryColor, size: 18),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -406,19 +404,13 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Y Combinator',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14.0,
-                                          color: Color(0xFF191919),
-                                        ),
-                                      ),
-                                      SizedBox(width: 4),
-                                      Icon(Icons.verified, size: 14, color: Color(0xFF5E5E5E)),
-                                    ],
+                                  Text(
+                                    'Y Combinator',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14.0,
+                                      color: Color(0xFF191919),
+                                    ),
                                   ),
                                   Text(
                                     '21h • Edited',

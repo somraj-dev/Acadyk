@@ -134,12 +134,17 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                       bottom: BorderSide(color: Color(0xFFE5E5E0), width: 1),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      _buildTabItem('Company', 0),
-                      _buildTabItem('Jobs', 1, count: isCustom ? (custom['jobsCount'] ?? 0) : 0),
-                      _buildTabItem('News', 2),
-                    ],
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTabItem('Company', 0),
+                        _buildTabItem('Jobs', 1, count: isCustom ? (custom['jobsCount'] ?? 0) : 0),
+                        _buildTabItem('News', 2),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -149,15 +154,18 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   children: [
                     const Icon(Icons.link, size: 18, color: Color(0xFF7A7A76)),
                     const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () {},
-                      child: Text(
-                        urlText,
-                        style: const TextStyle(
-                          color: linkColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          decoration: TextDecoration.underline,
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {},
+                        child: Text(
+                          urlText,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: linkColor,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
                       ),
                     ),
@@ -317,14 +325,28 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                       // Mini Logo + Name
                       Row(
                         children: [
-                          _buildAirbnbLogo(size: 24, color: const Color(0xFFFF5A5F)),
+                          if (logoAsset != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.asset(
+                                logoAsset,
+                                width: 24,
+                                height: 24,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => _buildAirbnbLogo(size: 24, color: const Color(0xFFFF5A5F)),
+                              ),
+                            )
+                          else
+                            _buildAirbnbLogo(size: 24, color: const Color(0xFFFF5A5F)),
                           const SizedBox(width: 8),
-                          Text(
-                            companyName,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: textColor,
+                          Expanded(
+                            child: Text(
+                              companyName,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: textColor,
+                              ),
                             ),
                           ),
                         ],
@@ -493,6 +515,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
               : null,
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               label,
@@ -570,18 +593,21 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E1E1E),
+                        Flexible(
+                          child: Text(
+                            name,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E1E1E),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         _buildXLogo(size: 14, color: const Color(0xFF1E1E1E)),
                         const SizedBox(width: 8),
-                        _buildLinkedInLogo(size: 15),
+                        _buildLinkedInLogo(size: 16),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -655,30 +681,36 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
             color: Color(0xFF7A7A76),
           ),
         ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (hasStatusDot) ...[
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF00B074),
-                  shape: BoxShape.circle,
+        const SizedBox(width: 12),
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (hasStatusDot) ...[
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF00B074),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Flexible(
+                child: Text(
+                  value,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isLink ? const Color(0xFF0066CC) : const Color(0xFF1E1E1E),
+                    decoration: isLink ? TextDecoration.underline : null,
+                  ),
                 ),
               ),
-              const SizedBox(width: 6),
             ],
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: isLink ? const Color(0xFF0066CC) : const Color(0xFF1E1E1E),
-                decoration: isLink ? TextDecoration.underline : null,
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );

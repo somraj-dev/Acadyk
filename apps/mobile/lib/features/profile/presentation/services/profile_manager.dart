@@ -31,7 +31,51 @@ class ProfileManager {
   static List<Map<String, dynamic>> clubs = [];
   static List<Map<String, dynamic>> education = [];
 
+  static String selectedFrame = 'None';
+  static String academicSession = '2022 – 2026';
+  static String mentorFaculty = 'Dr. R. K. Shrivastava (Faculty Mentor)';
+  static String estYear = '1957';
+  static String profileTrackTitle = '';
+  static String profileTrackArtist = '';
+  static List<Map<String, String>> showcaseBanners = [];
+
   static final ValueNotifier<bool> profileUpdateNotifier = ValueNotifier<bool>(false);
+
+  static void setProfileTrack(String title, String artist) {
+    profileTrackTitle = title;
+    profileTrackArtist = artist;
+    if (title.isNotEmpty) {
+      addShowcaseBanner({
+        'type': 'music',
+        'title': '$title $artist'.trim(),
+        'icon': 'music',
+        'subtitle': 'Profile Track',
+      });
+    } else {
+      removeShowcaseBanner('music');
+    }
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
+
+  static void addShowcaseBanner(Map<String, String> banner) {
+    showcaseBanners.removeWhere((b) => b['type'] == banner['type']);
+    showcaseBanners.add(banner);
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
+
+  static void removeShowcaseBanner(String type) {
+    showcaseBanners.removeWhere((b) => b['type'] == type);
+    if (type == 'music') {
+      profileTrackTitle = '';
+      profileTrackArtist = '';
+    }
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
+
+  static void setSelectedFrame(String frame) {
+    selectedFrame = frame;
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
 
   static void setVerified(bool value) {
     isVerified = value;

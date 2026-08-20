@@ -228,7 +228,7 @@ class _ConnectionRowState extends State<_ConnectionRow> {
               children: [
                 Row(
                   children: [
-                    Flexible(
+                    Expanded(
                       child: Text(
                         widget.item['name'],
                         overflow: TextOverflow.ellipsis,
@@ -239,10 +239,6 @@ class _ConnectionRowState extends State<_ConnectionRow> {
                         ),
                       ),
                     ),
-                    if (widget.item['verified'] == true) ...[
-                      const SizedBox(width: 4),
-                      const Icon(Icons.verified, size: 16, color: Color(0xFF1DA1F2)),
-                    ],
                   ],
                 ),
                 Text(

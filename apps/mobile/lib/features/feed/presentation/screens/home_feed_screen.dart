@@ -317,19 +317,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Y Combinator',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.0,
-                                color: textMain,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            PremiumBadge(type: 'gold'),
-                          ],
+                        Text(
+                          'Y Combinator',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.0,
+                            color: textMain,
+                          ),
                         ),
                         Text(
                           'Startup Supporters',
@@ -532,19 +526,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              'TIME',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.0,
-                                color: textMain,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const PremiumBadge(type: 'silver'),
-                          ],
+                        Text(
+                          'TIME',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.0,
+                            color: textMain,
+                          ),
                         ),
                         Text(
                           '2,484,746 followers',
@@ -741,9 +729,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const PremiumBadge(type: 'bronze'),
-                          const SizedBox(width: 4),
-
                           Text('• 1st', style: TextStyle(color: textSub, fontSize: 12)),
                         ],
                       ),
@@ -3006,25 +2991,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                isCollab ? '$authorName × $collabName' : authorName,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13.5,
-                                  color: textMain,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (isVerified) ...[
-                              const SizedBox(width: 4),
-                              PremiumBadge(type: badgeType),
-                            ],
-                          ],
+                        Text(
+                          isCollab ? '$authorName × $collabName' : authorName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.5,
+                            color: textMain,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           authorSubtitle,
@@ -4321,243 +4296,7 @@ class _RepostScreenState extends State<RepostScreen> {
   }
 }
 
-class PremiumBadge extends StatelessWidget {
-  final String type; // 'gold', 'silver', 'bronze'
-  final double size;
 
-  const PremiumBadge({
-    super.key,
-    required this.type,
-    this.size = 18,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    Color outerColor;
-    Color innerColor;
-    Color crownColor;
-    List<Color> gradientColors;
-
-    if (type == 'gold') {
-      outerColor = const Color(0xFFFFB300);
-      innerColor = const Color(0xFFFFD54F);
-      crownColor = const Color(0xFFE65100);
-      gradientColors = [
-        const Color(0xFFFFD700),
-        const Color(0xFFFFA000),
-      ];
-    } else if (type == 'silver') {
-      outerColor = const Color(0xFF78909C);
-      innerColor = const Color(0xFFB0BEC5);
-      crownColor = const Color(0xFF37474F);
-      gradientColors = [
-        const Color(0xFFECEFF1),
-        const Color(0xFF90A4AE),
-      ];
-    } else { // bronze
-      outerColor = const Color(0xFF8D6E63);
-      innerColor = const Color(0xFFBCAAA4);
-      crownColor = const Color(0xFF4E342E);
-      gradientColors = [
-        const Color(0xFFD7CCC8),
-        const Color(0xFF8D6E63),
-      ];
-    }
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: outerColor.withValues(alpha: 0.3),
-            blurRadius: 4,
-            spreadRadius: 0.5,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: CustomPaint(
-        painter: _HexagonBadgePainter(
-          outerColor: outerColor,
-          innerColor: innerColor,
-          crownColor: crownColor,
-          gradientColors: gradientColors,
-        ),
-      ),
-    );
-  }
-}
-
-class _HexagonBadgePainter extends CustomPainter {
-  final Color outerColor;
-  final Color innerColor;
-  final Color crownColor;
-  final List<Color> gradientColors;
-
-  const _HexagonBadgePainter({
-    required this.outerColor,
-    required this.innerColor,
-    required this.crownColor,
-    required this.gradientColors,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final w = size.width;
-    final h = size.height;
-    final radius = size.width / 2;
-
-    // Draw base shadow
-    final shadowPath = _getHexagonPath(center, radius);
-    canvas.drawShadow(shadowPath, Colors.black.withValues(alpha: 0.15), 2.0, true);
-
-    // 1. Outer Hexagon (Bevel Edge)
-    final outerPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          outerColor.withValues(alpha: 0.5),
-          crownColor.withValues(alpha: 0.3),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h))
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(shadowPath, outerPaint);
-
-    // 2. Middle Hexagon (Main body)
-    final midHexagonPath = _getHexagonPath(center, radius * 0.9);
-    final midPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: gradientColors,
-      ).createShader(Rect.fromLTWH(0, 0, w, h))
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(midHexagonPath, midPaint);
-
-    // 3. Inner Hexagon (Well defined border inset)
-    final innerHexagonPath = _getHexagonPath(center, radius * 0.76);
-    final innerBorderPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.25)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    canvas.drawPath(innerHexagonPath, innerBorderPaint);
-
-    // Inner background
-    final innerPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          gradientColors[0].withValues(alpha: 0.8),
-          gradientColors[1].withValues(alpha: 0.95),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h))
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(innerHexagonPath, innerPaint);
-
-    // 4. Glossy Highlight Overlay (Glass Reflection Effect)
-    final glossPath = Path();
-    glossPath.moveTo(w * 0.1, h * 0.5);
-    glossPath.lineTo(w * 0.5, h * 0.1);
-    glossPath.lineTo(w * 0.9, h * 0.5);
-    glossPath.arcToPoint(Offset(w * 0.1, h * 0.5), radius: Radius.circular(radius * 0.8), clockwise: false);
-    glossPath.close();
-
-    final glossPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Colors.white.withValues(alpha: 0.45),
-          Colors.white.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h))
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(glossPath, glossPaint);
-
-    // 5. Stylized Detailed Crown and V inside
-    final crownPath = Path();
-    crownPath.moveTo(w * 0.30, h * 0.62);
-    crownPath.lineTo(w * 0.24, h * 0.44); // left tip
-    crownPath.lineTo(w * 0.38, h * 0.50);
-    crownPath.lineTo(w * 0.50, h * 0.38); // center tip
-    crownPath.lineTo(w * 0.62, h * 0.50);
-    crownPath.lineTo(w * 0.76, h * 0.44); // right tip
-    crownPath.lineTo(w * 0.70, h * 0.62);
-    crownPath.close();
-
-    final crownPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Colors.white.withValues(alpha: 0.95),
-          Colors.white.withValues(alpha: 0.7),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h))
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(crownPath, crownPaint);
-
-    // Crown Base Band
-    final bandPath = Path();
-    bandPath.moveTo(w * 0.32, h * 0.65);
-    bandPath.lineTo(w * 0.68, h * 0.65);
-    bandPath.lineTo(w * 0.66, h * 0.68);
-    bandPath.lineTo(w * 0.34, h * 0.68);
-    bandPath.close();
-    canvas.drawPath(bandPath, crownPaint);
-
-    // Draw 'V' text inside
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'V',
-        style: TextStyle(
-          color: crownColor,
-          fontSize: size.width * 0.22,
-          fontWeight: FontWeight.w900,
-          fontFamily: 'Roboto',
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height * 0.38),
-    );
-
-    // Tips
-    final tipPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(w * 0.24, h * 0.44), w * 0.045, tipPaint);
-    canvas.drawCircle(Offset(w * 0.50, h * 0.38), w * 0.045, tipPaint);
-    canvas.drawCircle(Offset(w * 0.76, h * 0.44), w * 0.045, tipPaint);
-  }
-
-  Path _getHexagonPath(Offset center, double radius) {
-    final path = Path();
-    for (int i = 0; i < 6; i++) {
-      final angle = (i * 60 - 30) * (3.1415926535 / 180);
-      final x = center.dx + radius * cos(angle);
-      final y = center.dy + radius * sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 class ReportPostScreen extends StatefulWidget {
   const ReportPostScreen({super.key});
