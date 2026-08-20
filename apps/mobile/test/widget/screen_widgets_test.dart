@@ -15,6 +15,7 @@ import 'package:acadyk/features/profile/presentation/screens/about_account_scree
 import 'package:acadyk/features/profile/presentation/screens/profile_screen.dart';
 import 'package:acadyk/features/profile/presentation/screens/profile_showcase.dart';
 import 'package:acadyk/features/profile/presentation/screens/club_details_screen.dart';
+import 'package:acadyk/features/profile/presentation/screens/club_members_screen.dart';
 
 void main() {
   Widget createTestWidget(Widget child) {
@@ -230,6 +231,25 @@ void main() {
       expect(find.text('Total Price'), findsOneWidget);
       expect(find.text('\$30.00'), findsOneWidget);
       expect(find.text('Book Now'), findsOneWidget);
+    });
+
+    testWidgets('ClubMembersScreen renders directory search, role filters, and member cards', (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget(
+        const ClubMembersScreen(
+          clubTitle: 'MITS Coding & Open Source Club',
+          memberCount: '450+ Members',
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(ClubMembersScreen), findsOneWidget);
+      expect(find.text('MITS Coding & Open Source Club Members'), findsOneWidget);
+      expect(find.text('Directory'), findsOneWidget);
+      expect(find.text('Invite & Join'), findsOneWidget);
+      expect(find.text('Somraj Lodhi'), findsOneWidget);
+      expect(find.text('Dr. R. K. Shrivastava'), findsOneWidget);
+      expect(find.text('Core Team'), findsWidgets);
+      expect(find.text('Faculty Mentors'), findsWidgets);
     });
   });
 }

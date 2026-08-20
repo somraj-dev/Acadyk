@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'club_members_screen.dart';
 
 class ClubDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> clubData;
@@ -231,66 +232,73 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                         const SizedBox(height: 20),
 
                         // Attendees / Members Stack Row
-                        Row(
-                          children: [
-                            SizedBox(
-                              width: 104,
-                              height: 36,
-                              child: Stack(
-                                children: [
-                                  _buildAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100', 0),
-                                  _buildAvatar('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', 20),
-                                  _buildAvatar('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', 40),
-                                  Positioned(
-                                    left: 60,
-                                    child: Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        color: primaryOrange,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white, width: 2),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: const Text(
-                                        '+',
-                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              memberCount,
-                              style: const TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w700,
-                                color: textDark,
-                              ),
-                            ),
-                            const Spacer(),
-                            GestureDetector(
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Viewing all chapter members & invite roster'),
-                                    backgroundColor: Color(0xFF0F172A),
-                                    duration: Duration(seconds: 1),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'View All / Invite',
-                                style: TextStyle(
-                                  color: primaryOrange,
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ClubMembersScreen(
+                                  clubTitle: title,
+                                  category: category,
+                                  memberCount: memberCount,
                                 ),
                               ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 104,
+                                  height: 36,
+                                  child: Stack(
+                                    children: [
+                                      _buildAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100', 0),
+                                      _buildAvatar('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', 20),
+                                      _buildAvatar('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', 40),
+                                      Positioned(
+                                        left: 60,
+                                        child: Container(
+                                          width: 36,
+                                          height: 36,
+                                          decoration: BoxDecoration(
+                                            color: primaryOrange,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: Colors.white, width: 2),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: const Text(
+                                            '+',
+                                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  memberCount,
+                                  style: const TextStyle(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: textDark,
+                                  ),
+                                ),
+                                const Spacer(),
+                                const Text(
+                                  'View All / Invite',
+                                  style: TextStyle(
+                                    color: primaryOrange,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                         const SizedBox(height: 24),
 
