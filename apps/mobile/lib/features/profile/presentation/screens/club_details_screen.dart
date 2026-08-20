@@ -289,7 +289,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                                 ),
                                 const Spacer(),
                                 const Text(
-                                  'View All / Invite',
+                                  'View All',
                                   style: TextStyle(
                                     color: primaryOrange,
                                     fontSize: 13.5,
