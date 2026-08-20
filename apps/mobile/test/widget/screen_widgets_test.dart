@@ -233,23 +233,28 @@ void main() {
       expect(find.text('Book Now'), findsOneWidget);
     });
 
-    testWidgets('ClubMembersScreen renders directory search, role filters, and member cards', (WidgetTester tester) async {
+    testWidgets('ClubMembersScreen renders replica members list with handles, bios, and Following buttons', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(
         const ClubMembersScreen(
-          clubTitle: 'MITS Coding & Open Source Club',
+          clubTitle: 'Google Developer Groups',
           memberCount: '450+ Members',
         ),
       ));
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.byType(ClubMembersScreen), findsOneWidget);
-      expect(find.text('MITS Coding & Open Source Club Members'), findsOneWidget);
-      expect(find.text('Directory'), findsOneWidget);
+      expect(find.text('Google Developer Groups Members'), findsOneWidget);
+      expect(find.text('Members'), findsOneWidget);
       expect(find.text('Invite & Join'), findsOneWidget);
-      expect(find.text('Somraj Lodhi'), findsOneWidget);
-      expect(find.text('Dr. R. K. Shrivastava'), findsOneWidget);
-      expect(find.text('Core Team'), findsWidgets);
-      expect(find.text('Faculty Mentors'), findsWidgets);
+      expect(find.text('Google Developer Groups'), findsWidgets);
+      expect(find.text('@GDGMITS'), findsOneWidget);
+      expect(find.text('Student Development Cell'), findsOneWidget);
+      expect(find.text('@SDCMITS'), findsOneWidget);
+      expect(find.text('ACM Student Chapter'), findsOneWidget);
+      expect(find.text('@ACMMITS'), findsOneWidget);
+      expect(find.text('Alina Sprongole'), findsOneWidget);
+      expect(find.text('@AlinaSprongole'), findsOneWidget);
+      expect(find.text('Following'), findsWidgets);
     });
   });
 }
