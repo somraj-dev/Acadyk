@@ -597,19 +597,9 @@ class _ProfilePinsScreenState extends State<ProfilePinsScreen> with SingleTicker
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  item.title,
-                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                                ),
-                              ),
-                              if (isTappable) ...[
-                                const SizedBox(width: 4),
-                                const Icon(Icons.arrow_outward_rounded, size: 16, color: Color(0xFF0284C7)),
-                              ],
-                            ],
+                          Text(
+                            item.title,
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
                         ],
                       ),

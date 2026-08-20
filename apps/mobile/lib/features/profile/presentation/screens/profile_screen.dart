@@ -1768,15 +1768,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.arrow_outward, size: 16, color: Color(0xFF5E5E5E)),
-                    ],
-                  ),
+                  Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
                   if (companyName.isNotEmpty)
                     Text(companyName, style: const TextStyle(fontSize: 13, color: Color(0xFF191919))),
                   if (durationStr.isNotEmpty)
@@ -2061,22 +2053,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => ProjectDetailsScreen(projectData: proj)),
-                              );
-                            },
-                            child: const Icon(Icons.arrow_outward, size: 18, color: Color(0xFF5E5E5E)),
-                          ),
-                        ],
-                      ),
+                      Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
                       if (time.isNotEmpty)
                         Text(time, style: const TextStyle(fontSize: 13, color: Color(0xFF5E5E5E))),
                       if (association.isNotEmpty)
