@@ -2,6 +2,9 @@ version: '3.8'
 
 services:
   acadyk-api:
+    build:
+      context: ./backend/acadyk-api
+      dockerfile: Dockerfile
     image: ${DOCKER_REGISTRY:-ghcr.io/somraj-dev}/acadyk-api:${IMAGE_TAG:-latest}
     container_name: acadyk-prod-api
     restart: always
@@ -17,7 +20,7 @@ services:
       ELASTICSEARCH_URIS: ${PROD_ES_URIS}
       AWS_S3_BUCKET: ${PROD_S3_BUCKET}
       AWS_REGION: ${PROD_AWS_REGION:-us-east-1}
-      CORS_ALLOWED_ORIGINS: ${PROD_CORS_ORIGINS:-https://acadyk.com,https://app.acadyk.com}
+      CORS_ALLOWED_ORIGINS: ${PROD_CORS_ORIGINS:-https://acadyk.com,https://app.acadyk.com,http://localhost:3000,http://127.0.0.1:3000}
       SENTRY_DSN: ${PROD_SENTRY_DSN:-}
     ports:
       - "8080:8080"

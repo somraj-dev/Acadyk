@@ -51,7 +51,13 @@ class SecurityConfig(
         val envOrigins = System.getenv("CORS_ALLOWED_ORIGINS")?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
         val configuration = CorsConfiguration().apply {
             if (!envOrigins.isNullOrEmpty()) {
-                allowedOrigins = envOrigins
+                val (wildcards, exacts) = envOrigins.partition { it.contains("*") }
+                if (exacts.isNotEmpty()) {
+                    allowedOrigins = exacts
+                }
+                if (wildcards.isNotEmpty()) {
+                    allowedOriginPatterns = wildcards
+                }
             } else {
                 allowedOriginPatterns = listOf("*")
                 allowedOrigins = null
