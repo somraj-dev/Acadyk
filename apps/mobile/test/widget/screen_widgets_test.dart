@@ -231,6 +231,10 @@ void main() {
       expect(find.text('Total Price'), findsOneWidget);
       expect(find.text('\$30.00'), findsOneWidget);
       expect(find.text('Book Now'), findsOneWidget);
+      expect(find.text('Event Photos & Moments'), findsOneWidget);
+      expect(find.text('Organized Events'), findsOneWidget);
+      expect(find.text('Achievements & Milestones'), findsOneWidget);
+      expect(find.text('Domains & Tech Stack'), findsOneWidget);
     });
 
     testWidgets('ClubMembersScreen renders replica members list and opens ProfileScreen on tap', (WidgetTester tester) async {
