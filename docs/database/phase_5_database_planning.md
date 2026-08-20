@@ -2,7 +2,7 @@
 
 This blueprint designs the PostgreSQL relational schema, entity relationships, database index optimizations, multi-tenancy context passing in Go, and backup procedures.
 
----
+----------
 
 ## 📊 Entity Relationship Diagram (ERD)
 
