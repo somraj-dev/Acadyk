@@ -233,7 +233,7 @@ void main() {
       expect(find.text('Book Now'), findsOneWidget);
     });
 
-    testWidgets('ClubMembersScreen renders replica members list with handles, bios, and Following buttons', (WidgetTester tester) async {
+    testWidgets('ClubMembersScreen renders replica members list without handles and with bios and Following buttons', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(
         const ClubMembersScreen(
           clubTitle: 'Google Developer Groups',
@@ -247,13 +247,11 @@ void main() {
       expect(find.text('Members'), findsOneWidget);
       expect(find.text('Invite & Join'), findsOneWidget);
       expect(find.text('Google Developer Groups'), findsWidgets);
-      expect(find.text('@GDGMITS'), findsOneWidget);
       expect(find.text('Student Development Cell'), findsOneWidget);
-      expect(find.text('@SDCMITS'), findsOneWidget);
       expect(find.text('ACM Student Chapter'), findsOneWidget);
-      expect(find.text('@ACMMITS'), findsOneWidget);
       expect(find.text('Alina Sprongole'), findsOneWidget);
-      expect(find.text('@AlinaSprongole'), findsOneWidget);
+      expect(find.text('@GDGMITS'), findsNothing);
+      expect(find.text('@SDCMITS'), findsNothing);
       expect(find.text('Following'), findsWidgets);
     });
   });

@@ -679,14 +679,6 @@ class _MemberRowItem extends StatelessWidget {
                     fontSize: 15,
                   ),
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  item['handle'] as String,
-                  style: const TextStyle(
-                    color: textSecondary,
-                    fontSize: 13.5,
-                  ),
-                ),
                 if ((item['bio'] as String?)?.isNotEmpty ?? false) ...[
                   const SizedBox(height: 4),
                   Text(
