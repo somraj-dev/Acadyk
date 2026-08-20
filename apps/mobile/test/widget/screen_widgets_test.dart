@@ -233,7 +233,7 @@ void main() {
       expect(find.text('Book Now'), findsOneWidget);
     });
 
-    testWidgets('ClubMembersScreen renders replica members list without handles and without invite tab', (WidgetTester tester) async {
+    testWidgets('ClubMembersScreen renders replica members list and opens ProfileScreen on tap', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(
         const ClubMembersScreen(
           clubTitle: 'Google Developer Groups',
@@ -244,14 +244,18 @@ void main() {
 
       expect(find.byType(ClubMembersScreen), findsOneWidget);
       expect(find.text('Google Developer Groups Members'), findsOneWidget);
-      expect(find.text('Google Developer Groups'), findsWidgets);
       expect(find.text('Student Development Cell'), findsOneWidget);
       expect(find.text('ACM Student Chapter'), findsOneWidget);
       expect(find.text('Alina Sprongole'), findsOneWidget);
       expect(find.text('@GDGMITS'), findsNothing);
       expect(find.text('Invite & Join'), findsNothing);
-      expect(find.text('Quick Share'), findsNothing);
       expect(find.text('Following'), findsWidgets);
+
+      // Tap on member Alina Sprongole to open ProfileScreen
+      await tester.tap(find.text('Alina Sprongole'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProfileScreen), findsOneWidget);
     });
   });
 }

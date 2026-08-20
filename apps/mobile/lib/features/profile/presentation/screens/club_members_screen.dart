@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'profile_screen.dart';
 
 class ClubMembersScreen extends StatefulWidget {
   final String clubTitle;
@@ -263,59 +264,71 @@ class _MemberRowItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left: User avatar
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFFFED7AA),
-            ),
-            child: ClipOval(
-              child: Image.network(
-                item['avatarUrl'] as String? ?? '',
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Center(
-                  child: Text(
-                    (item['name'] as String).substring(0, 1),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: textColor,
+          // Tappable Left & Center (Avatar + Details -> ProfileScreen)
+          Expanded(
+            child: InkWell(
+              onTap: () => _openUserProfile(context),
+              borderRadius: BorderRadius.circular(8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left: User avatar
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFFED7AA),
+                    ),
+                    child: ClipOval(
+                      child: Image.network(
+                        item['avatarUrl'] as String? ?? '',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Center(
+                          child: Text(
+                            (item['name'] as String).substring(0, 1),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
+                  const SizedBox(width: 12),
 
-          // Center: User Details (Name & Bio)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item['name'] as String,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                if ((item['bio'] as String?)?.isNotEmpty ?? false) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    item['bio'] as String,
-                    style: const TextStyle(
-                      color: textColor,
-                      fontSize: 13.5,
-                      height: 1.3,
+                  // Center: User Details (Name & Bio)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item['name'] as String,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: textColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                        if ((item['bio'] as String?)?.isNotEmpty ?? false) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            item['bio'] as String,
+                            style: const TextStyle(
+                              color: textColor,
+                              fontSize: 13.5,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -340,6 +353,37 @@ class _MemberRowItem extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _openUserProfile(BuildContext context) {
+    final bool isOwn = item['name'] == 'Somraj Lodhi';
+    final Map<String, dynamic> userData = {
+      'name': item['name'],
+      'fullName': item['name'],
+      'username': (item['handle'] as String? ?? '').replaceAll('@', ''),
+      'handle': item['handle'] ?? '@${(item['name'] as String).replaceAll(' ', '').toLowerCase()}',
+      'avatar': item['avatarUrl'],
+      'avatarUrl': item['avatarUrl'],
+      'bio': item['bio'],
+      'headline': item['bio'],
+      'role': item['bio'],
+      'branch': 'Computer Science & Engineering',
+      'department': 'Information Technology',
+      'academicSession': '2022 – 2026',
+      'isFollowing': item['isFollowing'] == true,
+      'followersCount': 842,
+      'followingCount': 310,
+    };
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileScreen(
+          isOwnProfile: isOwn,
+          userData: userData,
+        ),
       ),
     );
   }
