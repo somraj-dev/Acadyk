@@ -33,4 +33,5 @@ class DomainEventPublisher(
     fun publishEventRegistered(event: EventRegisteredEvent) = publish(event, "acadyk.events", event.targetEventId)
     fun publishMessageSent(event: MessageSentEvent) = publish(event, "acadyk.chat", event.conversationId)
     fun publishNotificationCreated(event: NotificationCreatedEvent) = publish(event, "acadyk.notifications", event.recipientId)
+    fun publishFollowEvent(event: FollowEvent) = publish(event, "acadyk.follows", event.followingId)
 }

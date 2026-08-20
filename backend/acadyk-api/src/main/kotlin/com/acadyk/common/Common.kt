@@ -72,6 +72,7 @@ class ResourceNotFoundException(message: String) : RuntimeException(message)
 class BadRequestException(message: String) : RuntimeException(message)
 class UnauthorizedException(message: String) : RuntimeException(message)
 class ForbiddenException(message: String) : RuntimeException(message)
+class ConflictException(message: String) : RuntimeException(message)
 
 fun String.toUUID(): UUID = try {
     UUID.fromString(this)
@@ -98,6 +99,11 @@ class GlobalExceptionHandler {
     @ExceptionHandler(BadRequestException::class)
     fun handleBadRequest(e: BadRequestException): ResponseEntity<ApiResponse<Unit>> {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.message ?: "Bad request"))
+    }
+
+    @ExceptionHandler(ConflictException::class)
+    fun handleConflict(e: ConflictException): ResponseEntity<ApiResponse<Unit>> {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(e.message ?: "Resource conflict"))
     }
 
     @ExceptionHandler(IllegalArgumentException::class)

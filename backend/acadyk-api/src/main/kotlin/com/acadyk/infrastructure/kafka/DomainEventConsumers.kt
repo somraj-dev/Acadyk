@@ -242,4 +242,43 @@ class DomainEventConsumers(
             logger.debug("ApplicationSubmitted event consumed: $message")
         }
     }
+
+    @KafkaListener(topics = ["acadyk.follows"], groupId = "acadyk-follow-notifications")
+    fun handleFollowCreated(message: String) {
+        try {
+            val event = objectMapper.readValue(message, FollowEvent::class.java)
+            if (event.followerId != event.followingId) {
+                val following = event.followingId.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
+                val follower = event.followerId.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
+                if (following != null) {
+                    val notif = notificationRepository.save(
+                        NotificationEntity(
+                            recipient = following,
+                            actor = follower,
+                            type = "follow",
+                            title = "New follower",
+                            body = "${event.followerName} started following you",
+                            actionUrl = "/profile/${event.followerId}",
+                            entityType = "profile",
+                            entityId = event.followerId.toUUIDOrNull()
+                        )
+                    )
+
+                    val prefs = notificationPreferenceRepository.findByProfileId(following.id).orElse(null)
+                    val canSendPush = prefs == null || (prefs.pushEnabled && prefs.connectionRequests)
+
+                    if (canSendPush) {
+                        fcmService.sendPushNotification(
+                            recipientId = following.id,
+                            title = notif.title,
+                            body = notif.body,
+                            dataPayload = mapOf("profileId" to event.followerId, "type" to "follow")
+                        )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            logger.debug("FollowCreated event consumed: $message")
+        }
+    }
 }

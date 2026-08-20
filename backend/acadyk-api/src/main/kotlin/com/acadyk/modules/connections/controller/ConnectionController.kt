@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = ["*"])
 class ConnectionController(private val connectionService: ConnectionService) {
 
     @PostMapping("/connections/requests")
@@ -39,6 +38,28 @@ class ConnectionController(private val connectionService: ConnectionService) {
     fun toggleFollow(@PathVariable userId: String): ResponseEntity<ApiResponse<FollowStatusResponse>> {
         val result = connectionService.toggleFollow(userId)
         return ResponseEntity.ok(ApiResponse.success(result))
+    }
+
+    @PostMapping("/users/{userId}/follow")
+    fun followUser(@PathVariable userId: String): ResponseEntity<ApiResponse<FollowStatusResponse>> {
+        val result = connectionService.follow(userId)
+        return ResponseEntity.ok(ApiResponse.success(result, "Followed user successfully"))
+    }
+
+    @DeleteMapping("/users/{userId}/follow")
+    fun unfollowUser(@PathVariable userId: String): ResponseEntity<ApiResponse<FollowStatusResponse>> {
+        val result = connectionService.unfollow(userId)
+        return ResponseEntity.ok(ApiResponse.success(result, "Unfollowed user successfully"))
+    }
+
+    @GetMapping("/users/{userId}/followers")
+    fun getUserFollowers(@PathVariable userId: String): ResponseEntity<ApiResponse<List<ProfileResponse>>> {
+        return ResponseEntity.ok(ApiResponse.success(connectionService.getFollowers(userId)))
+    }
+
+    @GetMapping("/users/{userId}/following")
+    fun getUserFollowing(@PathVariable userId: String): ResponseEntity<ApiResponse<List<ProfileResponse>>> {
+        return ResponseEntity.ok(ApiResponse.success(connectionService.getFollowing(userId)))
     }
 
     @GetMapping("/profiles/{userId}/followers")

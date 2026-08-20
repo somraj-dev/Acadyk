@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/posts/{postId}/comments")
-@CrossOrigin(origins = ["*"])
 class CommentController(private val commentService: CommentService) {
 
     @GetMapping
@@ -33,5 +32,14 @@ class CommentController(private val commentService: CommentService) {
         val comment = commentService.addComment(postId, request)
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success(comment, "Comment posted successfully"))
+    }
+
+    @DeleteMapping("/{commentId}")
+    fun deleteComment(
+        @PathVariable postId: String,
+        @PathVariable commentId: String
+    ): ResponseEntity<ApiResponse<Unit>> {
+        commentService.deleteComment(postId, commentId)
+        return ResponseEntity.ok(ApiResponse.success(Unit, "Comment deleted successfully"))
     }
 }

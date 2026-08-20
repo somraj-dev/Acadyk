@@ -25,10 +25,8 @@ data class UserEntity(
     var firebaseUid: String,
 
     @Column(nullable = false, unique = true)
-    @JdbcTypeCode(SqlTypes.OTHER)
     var email: String,
 
-    @JdbcTypeCode(SqlTypes.OTHER)
     @Column(name = "college_email", unique = true)
     var collegeEmail: String? = null,
 
@@ -42,9 +40,9 @@ data class UserEntity(
     @Column(name = "joining_year")
     var joiningYear: Int? = null,
 
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "role", nullable = false, columnDefinition = "user_role_enum")
     var role: Role = Role.STUDENT,
 
     @Enumerated(EnumType.STRING)
@@ -71,6 +69,41 @@ data class UserEntity(
 
     @Column(name = "last_sign_in_at")
     var lastSignInAt: Instant? = null,
+
+    var department: String? = null,
+    var phone: String? = null,
+
+    @Column(name = "employee_id")
+    var employeeId: String? = null,
+
+    @Column(name = "father_name")
+    var fatherName: String? = null,
+
+    @Column(name = "father_mobile")
+    var fatherMobile: String? = null,
+
+    @Column(name = "current_address")
+    var currentAddress: String? = null,
+
+    @Column(name = "date_of_birth")
+    var dateOfBirth: java.time.LocalDate? = null,
+
+    @Column(name = "admission_date")
+    var admissionDate: java.time.LocalDate? = null,
+
+    @Column(name = "registration_date")
+    var registrationDate: java.time.LocalDate? = null,
+
+    var designation: String? = null,
+
+    @Column(name = "suspension_reason")
+    var suspensionReason: String? = null,
+
+    @Column(name = "suspended_at")
+    var suspendedAt: Instant? = null,
+
+    @Column(name = "suspended_by")
+    var suspendedBy: String? = null,
 
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant = Instant.now(),

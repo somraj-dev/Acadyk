@@ -21,10 +21,13 @@ import org.springframework.data.domain.PageRequest
 import java.util.Optional
 import java.util.UUID
 
+import com.acadyk.modules.reactions.repository.PostReactionRepository
+
 class PostServiceTest {
 
     private lateinit var postRepository: PostRepository
     private lateinit var postMediaRepository: PostMediaRepository
+    private lateinit var postReactionRepository: PostReactionRepository
     private lateinit var profileRepository: ProfileRepository
     private lateinit var postMapper: PostMapper
     private lateinit var currentUserProvider: CurrentUserProvider
@@ -44,6 +47,7 @@ class PostServiceTest {
     fun setUp() {
         postRepository = mock(PostRepository::class.java)
         postMediaRepository = mock(PostMediaRepository::class.java)
+        postReactionRepository = mock(PostReactionRepository::class.java)
         profileRepository = mock(ProfileRepository::class.java)
         postMapper = PostMapper()
         currentUserProvider = mock(CurrentUserProvider::class.java)
@@ -55,6 +59,7 @@ class PostServiceTest {
         postService = PostService(
             postRepository = postRepository,
             postMediaRepository = postMediaRepository,
+            postReactionRepository = postReactionRepository,
             profileRepository = profileRepository,
             postMapper = postMapper,
             currentUserProvider = currentUserProvider,
@@ -110,5 +115,38 @@ class PostServiceTest {
 
         assertNotNull(result)
         assertEquals(1, result.content.size)
+    }
+
+    @Test
+    fun `updatePost updates post content and evicts cache`() {
+        val postId = UUID.randomUUID()
+        val author = ProfileEntity(id = testUserId, username = "somraj", email = "somraj@acadyk.com", fullName = "Somraj")
+        val post = PostEntity(id = postId, author = author, content = "Old Content")
+
+        `when`(postRepository.findByIdAndDeletedAtIsNull(postId)).thenReturn(Optional.of(post))
+        `when`(postRepository.save(anyNonNull())).thenAnswer { it.arguments[0] }
+
+        val request = com.acadyk.modules.posts.dto.UpdatePostRequest(content = "Updated Content")
+        val result = postService.updatePost(postId, request)
+
+        assertNotNull(result)
+        assertEquals("Updated Content", result.content)
+        verify(postRepository, times(1)).save(anyNonNull())
+        verify(redisCacheService, times(1)).evictPattern("feed:")
+    }
+
+    @Test
+    fun `deletePost soft deletes post when author matches`() {
+        val postId = UUID.randomUUID()
+        val author = ProfileEntity(id = testUserId, username = "somraj", email = "somraj@acadyk.com", fullName = "Somraj")
+        val post = PostEntity(id = postId, author = author, content = "To Delete")
+
+        `when`(postRepository.findByIdAndDeletedAtIsNull(postId)).thenReturn(Optional.of(post))
+
+        postService.deletePost(postId)
+
+        assertNotNull(post.deletedAt)
+        verify(postRepository, times(1)).save(post)
+        verify(redisCacheService, times(1)).evictPattern("feed:")
     }
 }

@@ -15,6 +15,15 @@ data class CreatePostRequest(
     val mediaUrls: List<String>? = null
 )
 
+data class UpdatePostRequest(
+    @field:Size(max = 5000, message = "Post content cannot exceed 5000 characters")
+    val content: String? = null,
+    val postType: String? = null,
+    val visibility: String? = null,
+    val imageUrl: String? = null,
+    val mediaUrls: List<String>? = null
+)
+
 data class PostAuthorDto(
     val id: String,
     val username: String,

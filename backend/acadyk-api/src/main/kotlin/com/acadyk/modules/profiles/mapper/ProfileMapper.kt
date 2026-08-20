@@ -7,7 +7,12 @@ import org.springframework.stereotype.Component
 @Component
 class ProfileMapper {
 
-    fun toResponse(entity: ProfileEntity): ProfileResponse {
+    fun toResponse(
+        entity: ProfileEntity,
+        postCount: Int = 0,
+        isFollowing: Boolean = false,
+        isFollowedBy: Boolean = false
+    ): ProfileResponse {
         return ProfileResponse(
             id = entity.id.toString(),
             username = entity.username,
@@ -27,6 +32,9 @@ class ProfileMapper {
             followersCount = entity.followersCount,
             followingCount = entity.followingCount,
             connectionsCount = entity.connectionsCount,
+            postCount = postCount,
+            isFollowing = isFollowing,
+            isFollowedBy = isFollowedBy,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt
         )

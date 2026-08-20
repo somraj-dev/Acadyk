@@ -54,7 +54,12 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
 
     // Testing
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+        exclude(module = "mockito-core")
+    }
+    testImplementation("org.mockito:mockito-core:5.14.2")
+    testImplementation("net.bytebuddy:byte-buddy:1.15.11")
+    testImplementation("net.bytebuddy:byte-buddy-agent:1.15.11")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.kafka:spring-kafka-test")
     testImplementation("com.h2database:h2")
@@ -68,4 +73,9 @@ kotlin {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    jvmArgs(
+        "-XX:+EnableDynamicAgentLoading",
+        "-Dnet.bytebuddy.experimental=true",
+        "-Djdk.attach.allowAttachSelf=true"
+    )
 }

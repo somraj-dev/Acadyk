@@ -18,6 +18,9 @@ import org.mockito.Mockito.*
 import java.util.Optional
 import java.util.UUID
 
+import com.acadyk.modules.connections.repository.FollowRepository
+import com.acadyk.modules.posts.repository.PostRepository
+
 class ProfileServiceTest {
 
     private lateinit var profileRepository: ProfileRepository
@@ -25,6 +28,8 @@ class ProfileServiceTest {
     private lateinit var experienceRepository: ExperienceRepository
     private lateinit var certificateRepository: CertificateRepository
     private lateinit var resumeRepository: ResumeRepository
+    private lateinit var postRepository: PostRepository
+    private lateinit var followRepository: FollowRepository
     private lateinit var profileMapper: ProfileMapper
     private lateinit var currentUserProvider: CurrentUserProvider
     private lateinit var profileService: ProfileService
@@ -44,6 +49,8 @@ class ProfileServiceTest {
         experienceRepository = mock(ExperienceRepository::class.java)
         certificateRepository = mock(CertificateRepository::class.java)
         resumeRepository = mock(ResumeRepository::class.java)
+        postRepository = mock(PostRepository::class.java)
+        followRepository = mock(FollowRepository::class.java)
         profileMapper = ProfileMapper()
         currentUserProvider = mock(CurrentUserProvider::class.java)
 
@@ -56,6 +63,8 @@ class ProfileServiceTest {
             experienceRepository = experienceRepository,
             certificateRepository = certificateRepository,
             resumeRepository = resumeRepository,
+            postRepository = postRepository,
+            followRepository = followRepository,
             profileMapper = profileMapper,
             currentUserProvider = currentUserProvider
         )

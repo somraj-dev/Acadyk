@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/startups")
-@CrossOrigin(origins = ["*"])
 class StartupController(private val startupService: StartupService) {
 
     @GetMapping

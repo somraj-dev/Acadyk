@@ -5,6 +5,7 @@ import com.acadyk.common.ResourceNotFoundException
 import com.acadyk.common.toUUID
 import com.acadyk.infrastructure.kafka.ConnectionCreatedEvent
 import com.acadyk.infrastructure.kafka.DomainEventPublisher
+import com.acadyk.infrastructure.kafka.FollowEvent
 import com.acadyk.modules.connections.dto.ConnectionRequestResponse
 import com.acadyk.modules.connections.dto.FollowStatusResponse
 import com.acadyk.modules.connections.dto.SendConnectionRequest
@@ -97,6 +98,70 @@ class ConnectionService(
 
     fun removeConnection(connectionId: String) = removeConnection(connectionId.toUUID())
 
+    fun follow(targetUserId: UUID): FollowStatusResponse {
+        val currentUserId = currentUserProvider.getCurrentUserId()
+        if (currentUserId == targetUserId) {
+            throw BadRequestException("Users cannot follow themselves")
+        }
+
+        val existing = followRepository.findByFollowerIdAndFollowingId(currentUserId, targetUserId)
+        if (existing.isPresent) {
+            return FollowStatusResponse(targetUserId.toString(), true)
+        }
+
+        val targetUser = profileRepository.findById(targetUserId)
+            .orElseThrow { ResourceNotFoundException("Target profile not found") }
+        val currentUser = profileRepository.findById(currentUserId)
+            .orElseThrow { ResourceNotFoundException("Current profile not found") }
+
+        followRepository.save(FollowEntity(follower = currentUser, following = targetUser))
+        currentUser.followingCount += 1
+        targetUser.followersCount += 1
+
+        profileRepository.save(currentUser)
+        profileRepository.save(targetUser)
+
+        domainEventPublisher.publishFollowEvent(
+            FollowEvent(
+                followerId = currentUser.id.toString(),
+                followerName = currentUser.fullName,
+                followingId = targetUser.id.toString()
+            )
+        )
+
+        return FollowStatusResponse(targetUserId.toString(), true)
+    }
+
+    fun follow(targetUserId: String): FollowStatusResponse = follow(targetUserId.toUUID())
+
+    fun unfollow(targetUserId: UUID): FollowStatusResponse {
+        val currentUserId = currentUserProvider.getCurrentUserId()
+        if (currentUserId == targetUserId) {
+            throw BadRequestException("Users cannot unfollow themselves")
+        }
+
+        val existing = followRepository.findByFollowerIdAndFollowingId(currentUserId, targetUserId)
+        if (existing.isEmpty) {
+            return FollowStatusResponse(targetUserId.toString(), false)
+        }
+
+        val targetUser = profileRepository.findById(targetUserId)
+            .orElseThrow { ResourceNotFoundException("Target profile not found") }
+        val currentUser = profileRepository.findById(currentUserId)
+            .orElseThrow { ResourceNotFoundException("Current profile not found") }
+
+        followRepository.delete(existing.get())
+        currentUser.followingCount = maxOf(0, currentUser.followingCount - 1)
+        targetUser.followersCount = maxOf(0, targetUser.followersCount - 1)
+
+        profileRepository.save(currentUser)
+        profileRepository.save(targetUser)
+
+        return FollowStatusResponse(targetUserId.toString(), false)
+    }
+
+    fun unfollow(targetUserId: String): FollowStatusResponse = unfollow(targetUserId.toUUID())
+
     fun toggleFollow(targetUserId: UUID): FollowStatusResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
         if (currentUserId == targetUserId) {
@@ -104,30 +169,11 @@ class ConnectionService(
         }
 
         val existing = followRepository.findByFollowerIdAndFollowingId(currentUserId, targetUserId)
-
-        val targetUser = profileRepository.findById(targetUserId)
-            .orElseThrow { ResourceNotFoundException("Target profile not found") }
-        val currentUser = profileRepository.findById(currentUserId)
-            .orElseThrow { ResourceNotFoundException("Current profile not found") }
-
-        val isFollowing: Boolean
-
-        if (existing.isPresent) {
-            followRepository.delete(existing.get())
-            currentUser.followingCount = maxOf(0, currentUser.followingCount - 1)
-            targetUser.followersCount = maxOf(0, targetUser.followersCount - 1)
-            isFollowing = false
+        return if (existing.isPresent) {
+            unfollow(targetUserId)
         } else {
-            followRepository.save(FollowEntity(follower = currentUser, following = targetUser))
-            currentUser.followingCount += 1
-            targetUser.followersCount += 1
-            isFollowing = true
+            follow(targetUserId)
         }
-
-        profileRepository.save(currentUser)
-        profileRepository.save(targetUser)
-
-        return FollowStatusResponse(targetUserId.toString(), isFollowing)
     }
 
     fun toggleFollow(targetUserId: String): FollowStatusResponse = toggleFollow(targetUserId.toUUID())

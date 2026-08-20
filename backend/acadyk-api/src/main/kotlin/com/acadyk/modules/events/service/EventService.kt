@@ -124,4 +124,34 @@ class EventService(
     }
 
     fun registerForEvent(eventId: String): Boolean = registerForEvent(eventId.toUUID())
+
+    fun updateEvent(id: String, request: com.acadyk.modules.events.dto.UpdateEventRequest): EventResponse {
+        val event = eventRepository.findByIdAndDeletedAtIsNull(id.toUUID())
+            .orElseThrow { ResourceNotFoundException("Event with id $id not found") }
+
+        request.title?.let {
+            event.title = it
+            event.slug = it.lowercase().replace("\\s+".toRegex(), "-") + "-" + System.currentTimeMillis().toString().takeLast(4)
+        }
+        request.description?.let { event.description = it }
+        request.eventType?.let { event.eventType = it }
+        request.location?.let { event.location = it }
+        request.isVirtual?.let { event.isVirtual = it }
+        request.meetingLink?.let { event.meetingLink = it }
+        request.startTime?.let { event.startTime = it }
+        request.endTime?.let { event.endTime = it }
+        request.bannerUrl?.let { event.bannerUrl = it }
+        request.maxAttendees?.let { event.maxAttendees = it }
+        event.updatedAt = Instant.now()
+        val saved = eventRepository.save(event)
+        return eventMapper.toResponse(saved, false)
+    }
+
+    fun deleteEvent(id: String) {
+        val event = eventRepository.findByIdAndDeletedAtIsNull(id.toUUID())
+            .orElseThrow { ResourceNotFoundException("Event with id $id not found") }
+        event.deletedAt = Instant.now()
+        event.updatedAt = Instant.now()
+        eventRepository.save(event)
+    }
 }

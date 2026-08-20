@@ -11,6 +11,8 @@ import java.util.UUID
 @Repository
 interface ProfileRepository : JpaRepository<ProfileEntity, UUID> {
     fun findByUsername(username: String): Optional<ProfileEntity>
+    fun findByUserId(userId: UUID): Optional<ProfileEntity>
+    fun findByUserIdAndDeletedAtIsNull(userId: UUID): Optional<ProfileEntity>
     fun findByFullNameContainingIgnoreCaseAndDeletedAtIsNull(name: String, pageable: Pageable): Page<ProfileEntity>
     fun findByFullNameContainingIgnoreCaseAndDeletedAtIsNull(name: String): List<ProfileEntity>
     fun findByIdAndDeletedAtIsNull(id: UUID): Optional<ProfileEntity>

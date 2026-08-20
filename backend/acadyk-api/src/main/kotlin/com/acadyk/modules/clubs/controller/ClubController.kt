@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/clubs")
-@CrossOrigin(origins = ["*"])
 class ClubController(private val clubService: ClubService) {
 
     @GetMapping

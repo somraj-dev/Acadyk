@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/leaderboard")
-@CrossOrigin(origins = ["*"])
 class LeaderboardController(private val leaderboardService: LeaderboardService) {
 
     @GetMapping

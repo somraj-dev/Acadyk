@@ -15,7 +15,6 @@ void main() {
       (MethodCall methodCall) async => null,
     );
   });
-
   group('Provider & State Management Tests', () {
     test('AuthProvider initializes in unauthenticated state and manages state transitions', () {
       final authProvider = AuthProvider();

@@ -11,6 +11,10 @@ import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.*
 
+import com.acadyk.common.PageResponse
+import com.acadyk.common.toUUID
+import com.acadyk.modules.profiles.service.ProfileService
+
 data class UserIdentityResponse(
     val userId: String,
     val firebaseUid: String,
@@ -28,14 +32,21 @@ data class UserIdentityResponse(
 class UserService(
     private val userRepository: UserRepository,
     private val profileRepository: ProfileRepository,
+    private val profileService: ProfileService,
     private val profileMapper: ProfileMapper,
     private val currentUserProvider: CurrentUserProvider
 ) {
     fun getCurrentUserProfile(): ProfileResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
-        val profile = profileRepository.findById(currentUserId)
-            .orElseThrow { ResourceNotFoundException("User profile not found") }
-        return profileMapper.toResponse(profile)
+        return profileService.getProfileById(currentUserId)
+    }
+
+    fun getUserById(userId: String): ProfileResponse {
+        return profileService.getProfileById(userId.toUUID())
+    }
+
+    fun searchUsers(query: String, page: Int, size: Int): PageResponse<ProfileResponse> {
+        return profileService.searchProfiles(query.trim(), page, size)
     }
 
     fun getCurrentUserIdentity(): UserIdentityResponse {
@@ -44,8 +55,7 @@ class UserService(
             .or { userRepository.findByFirebaseUid(currentUserId.toString()) }
             .orElseThrow { ResourceNotFoundException("User identity not found") }
 
-        val profile = profileRepository.findById(user.id)
-            .orElseGet { profileRepository.findById(currentUserId).orElseThrow { ResourceNotFoundException("Profile not found") } }
+        val profile = profileService.getProfileById(user.id)
 
         return UserIdentityResponse(
             userId = user.id.toString(),
@@ -57,14 +67,13 @@ class UserService(
             joiningYear = user.joiningYear,
             accountStatus = user.accountStatus.name,
             profileCompleted = user.profileCompleted,
-            profile = profileMapper.toResponse(profile)
+            profile = profile
         )
     }
 }
 
 @RestController
 @RequestMapping("/api/v1/users")
-@CrossOrigin(origins = ["*"])
 class UserController(private val userService: UserService) {
 
     @GetMapping("/me")
@@ -77,5 +86,21 @@ class UserController(private val userService: UserService) {
     fun getIdentity(): ResponseEntity<ApiResponse<UserIdentityResponse>> {
         val identity = userService.getCurrentUserIdentity()
         return ResponseEntity.ok(ApiResponse.success(identity))
+    }
+
+    @GetMapping("/{userId}")
+    fun getUserById(@PathVariable userId: String): ResponseEntity<ApiResponse<ProfileResponse>> {
+        val profile = userService.getUserById(userId)
+        return ResponseEntity.ok(ApiResponse.success(profile))
+    }
+
+    @GetMapping("/search")
+    fun searchUsers(
+        @RequestParam(name = "q", defaultValue = "") query: String,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ): ResponseEntity<ApiResponse<PageResponse<ProfileResponse>>> {
+        val result = userService.searchUsers(query, page, size)
+        return ResponseEntity.ok(ApiResponse.success(result))
     }
 }

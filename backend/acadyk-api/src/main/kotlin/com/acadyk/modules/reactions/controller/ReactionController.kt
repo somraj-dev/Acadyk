@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = ["*"])
 class ReactionController(private val reactionService: ReactionService) {
 
     @PostMapping("/posts/{postId}/reactions")
@@ -19,6 +18,14 @@ class ReactionController(private val reactionService: ReactionService) {
     ): ResponseEntity<ApiResponse<ToggleReactionResponse>> {
         val result = reactionService.togglePostReaction(postId, type)
         return ResponseEntity.ok(ApiResponse.success(result))
+    }
+
+    @DeleteMapping("/posts/{postId}/reactions")
+    fun deletePostReaction(
+        @PathVariable postId: String
+    ): ResponseEntity<ApiResponse<ToggleReactionResponse>> {
+        val result = reactionService.removePostReaction(postId)
+        return ResponseEntity.ok(ApiResponse.success(result, "Reaction removed"))
     }
 
     @PostMapping("/posts/{postId}/like")

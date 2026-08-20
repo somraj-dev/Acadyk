@@ -24,7 +24,6 @@ data class ClubEntity(
     var name: String,
 
     @Column(nullable = false, unique = true)
-    @JdbcTypeCode(SqlTypes.OTHER)
     var slug: String,
 
     @Column(columnDefinition = "TEXT")

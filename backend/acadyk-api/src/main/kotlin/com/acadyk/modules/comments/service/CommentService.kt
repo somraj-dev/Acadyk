@@ -1,5 +1,6 @@
 package com.acadyk.modules.comments.service
 
+import com.acadyk.common.ForbiddenException
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
 import com.acadyk.common.toUUID
@@ -17,6 +18,7 @@ import com.acadyk.security.CurrentUserProvider
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.util.UUID
 
 @Service
@@ -76,4 +78,25 @@ class CommentService(
 
     fun addComment(postId: String, request: AddCommentRequest): CommentResponse =
         addComment(postId.toUUID(), request)
+
+    fun deleteComment(postId: UUID, commentId: UUID) {
+        val currentUserId = currentUserProvider.getCurrentUserId()
+        val comment = commentRepository.findByIdAndDeletedAtIsNull(commentId)
+            .orElseThrow { ResourceNotFoundException("Comment with id $commentId not found") }
+
+        if (comment.author.id != currentUserId) {
+            throw ForbiddenException("You do not have permission to delete this comment")
+        }
+
+        comment.deletedAt = Instant.now()
+        commentRepository.save(comment)
+
+        val post = postRepository.findByIdAndDeletedAtIsNull(postId).orElse(null)
+        if (post != null) {
+            post.commentsCount = maxOf(0, post.commentsCount - 1)
+            postRepository.save(post)
+        }
+    }
+
+    fun deleteComment(postId: String, commentId: String) = deleteComment(postId.toUUID(), commentId.toUUID())
 }

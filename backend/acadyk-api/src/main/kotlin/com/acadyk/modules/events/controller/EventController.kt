@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/events")
-@CrossOrigin(origins = ["*"])
 class EventController(private val eventService: EventService) {
 
     @GetMapping
@@ -42,5 +41,20 @@ class EventController(private val eventService: EventService) {
     fun register(@PathVariable id: String): ResponseEntity<ApiResponse<Map<String, Boolean>>> {
         val success = eventService.registerForEvent(id)
         return ResponseEntity.ok(ApiResponse.success(mapOf("registered" to success)))
+    }
+
+    @PutMapping("/{id}")
+    fun updateEvent(
+        @PathVariable id: String,
+        @RequestBody request: com.acadyk.modules.events.dto.UpdateEventRequest
+    ): ResponseEntity<ApiResponse<EventResponse>> {
+        val event = eventService.updateEvent(id, request)
+        return ResponseEntity.ok(ApiResponse.success(event, "Event updated successfully"))
+    }
+
+    @DeleteMapping("/{id}")
+    fun deleteEvent(@PathVariable id: String): ResponseEntity<ApiResponse<Unit>> {
+        eventService.deleteEvent(id)
+        return ResponseEntity.ok(ApiResponse.success(Unit, "Event deleted successfully"))
     }
 }

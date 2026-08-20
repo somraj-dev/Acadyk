@@ -13,14 +13,23 @@ interface UserRepository : JpaRepository<UserEntity, UUID> {
     fun findByEmail(email: String): Optional<UserEntity>
     fun findByCollegeEmail(collegeEmail: String): Optional<UserEntity>
     fun findByEnrollmentNumber(enrollmentNumber: String): Optional<UserEntity>
+    fun findByEmployeeId(employeeId: String): Optional<UserEntity>
     fun existsByFirebaseUid(firebaseUid: String): Boolean
     fun existsByEmail(email: String): Boolean
     fun existsByCollegeEmail(collegeEmail: String): Boolean
     fun existsByEnrollmentNumber(enrollmentNumber: String): Boolean
+    fun existsByEmployeeId(employeeId: String): Boolean
+
+    fun findAllByDeletedAtIsNullOrderByCreatedAtDesc(): List<UserEntity>
+    fun countByDeletedAtIsNull(): Long
+    fun countByRoleAndDeletedAtIsNull(role: com.acadyk.security.Role): Long
+    fun countByAccountStatusAndDeletedAtIsNull(accountStatus: com.acadyk.modules.users.entity.AccountStatus): Long
+    fun countByCreatedAtAfterAndDeletedAtIsNull(after: java.time.Instant): Long
 }
 
 @Repository
 interface AuthAuditLogRepository : JpaRepository<AuthAuditLogEntity, UUID> {
+    fun findAllByOrderByCreatedAtDesc(): List<AuthAuditLogEntity>
     fun findAllByFirebaseUidOrderByCreatedAtDesc(firebaseUid: String): List<AuthAuditLogEntity>
     fun findAllByEmailOrderByCreatedAtDesc(email: String): List<AuthAuditLogEntity>
 }

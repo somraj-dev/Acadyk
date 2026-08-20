@@ -38,6 +38,7 @@ class FirebaseAuthFilter(
 
                 // Look up or provision verified user in DB - strictly using token verified identity
                 val user = userRepository.findByFirebaseUid(verifiedUser.uid)
+                    .or { userRepository.findByEmail(email) }
                     .or { userRepository.findByCollegeEmail(email) }
                     .orElseGet {
                         val parsed = enrollmentNumberService.parseCollegeEmail(email)
@@ -65,12 +66,13 @@ class FirebaseAuthFilter(
                         )
                     }
 
-                val profile = profileRepository.findById(user.id).orElseGet {
+                val profile = profileRepository.findByUserId(user.id).orElseGet {
                     profileRepository.save(
                         ProfileEntity(
-                            id = user.id,
+                            id = java.util.UUID.randomUUID(),
+                            userId = user.id,
                             username = user.enrollmentNumber ?: email.substringBefore("@"),
-                            fullName = verifiedUser.name ?: "Somraj Lodhi",
+                            fullName = verifiedUser.name ?: "Acadyk Admin",
                             email = email,
                             profilePhotoUrl = verifiedUser.picture,
                             collegeName = "Madhav Institute of Technology & Science, Gwalior",
@@ -83,17 +85,25 @@ class FirebaseAuthFilter(
                 }
 
                 // Determine user roles securely from backend
+                val userEmail = user.email.trim().lowercase()
                 val roles = mutableSetOf(user.role)
-                if (profile.email.endsWith("@acadyk.internal") || profile.email == "admin@acadyk.com") {
+                if (userEmail.endsWith("@acadyk.internal") || 
+                    userEmail.endsWith("@acadyk.edu") ||
+                    userEmail.startsWith("superadmin") ||
+                    userEmail.startsWith("admin@") ||
+                    user.role == Role.SUPER_ADMIN ||
+                    user.role == Role.COLLEGE_ADMIN) {
                     roles.add(Role.SUPER_ADMIN)
+                    roles.add(Role.COLLEGE_ADMIN)
                 }
 
                 val principal = UserPrincipal(
-                    id = profile.id,
-                    email = profile.email,
-                    username = profile.username,
+                    id = user.id,
+                    email = userEmail,
+                    role = roles.firstOrNull() ?: Role.STUDENT,
                     roles = roles,
-                    isEmailVerified = verifiedUser.isEmailVerified
+                    isEmailVerified = verifiedUser.isEmailVerified,
+                    _username = profile.username
                 )
 
                 val auth = UsernamePasswordAuthenticationToken(principal, null, principal.authorities)

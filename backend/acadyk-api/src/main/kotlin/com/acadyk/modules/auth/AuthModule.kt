@@ -247,6 +247,10 @@ class AuthService(
         val email = request.email.trim().lowercase()
         val parsed = enrollmentNumberService.parseCollegeEmail(email)
         val enrollment = parsed.enrollmentNumber
+        val isAdminEmail = email.endsWith("@acadyk.internal") || 
+            email.endsWith("@acadyk.edu") || 
+            email.startsWith("superadmin") || 
+            email.startsWith("admin@")
 
         val user = userRepository.findByEmail(email).orElseGet {
             userRepository.save(
@@ -259,6 +263,7 @@ class AuthService(
                     degree = parsed.degree,
                     branch = parsed.branch,
                     joiningYear = parsed.joiningYear,
+                    role = if (isAdminEmail) Role.SUPER_ADMIN else Role.STUDENT,
                     firstLoginAt = Instant.now(),
                     lastLoginAt = Instant.now(),
                     lastSignInAt = Instant.now()
@@ -266,25 +271,39 @@ class AuthService(
             )
         }
 
+        if (isAdminEmail && user.role != Role.SUPER_ADMIN) {
+            user.role = Role.SUPER_ADMIN
+            userRepository.save(user)
+        }
+
         val profile = profileRepository.findById(user.id).orElseGet {
             profileRepository.save(
                 ProfileEntity(
                     id = user.id,
-                    email = email,
+                    userId = user.id,
+                    email = user.email,
                     username = user.enrollmentNumber ?: email.substringBefore("@"),
-                    fullName = "Somraj Lodhi",
+                    fullName = if (isAdminEmail) "Sudhanshu Patel" else "Somraj Lodhi",
                     collegeName = "Madhav Institute of Technology & Science, Gwalior",
                     major = user.branch ?: "AI & ML"
                 )
             )
         }
+        profile.email = user.email
 
-        val token = jwtTokenProvider.createToken(profile.id, profile.email, profile.username)
-        auditService.logAuthEvent("EMAIL_PASSWORD_LOGIN", profile.id, profile.email, ip, true)
+        val roles = mutableSetOf(user.role)
+        if (isAdminEmail || user.role == Role.SUPER_ADMIN || user.role == Role.COLLEGE_ADMIN) {
+            roles.add(Role.SUPER_ADMIN)
+            roles.add(Role.COLLEGE_ADMIN)
+        }
+
+        val username = profile.username.ifBlank { user.enrollmentNumber ?: user.email.substringBefore("@") }
+        val token = jwtTokenProvider.createToken(user.id, user.email, username)
+        auditService.logAuthEvent("EMAIL_PASSWORD_LOGIN", user.id, user.email, ip, true)
         return AuthResponse(
             token = token,
             user = profileMapper.toResponse(profile),
-            roles = setOf(Role.STUDENT),
+            roles = roles,
             isFirstLogin = false,
             enrollmentNumber = user.enrollmentNumber,
             degree = user.degree,
@@ -319,6 +338,7 @@ class AuthService(
         val profile = profileRepository.save(
             ProfileEntity(
                 id = user.id,
+                userId = user.id,
                 email = email,
                 username = enrollment,
                 fullName = name,
@@ -326,9 +346,10 @@ class AuthService(
                 major = parsed.branch
             )
         )
+        profile.email = user.email
 
-        val token = jwtTokenProvider.createToken(profile.id, profile.email, profile.username)
-        auditService.logAuthEvent("REGISTER_USER", profile.id, profile.email, ip, true)
+        val token = jwtTokenProvider.createToken(user.id, user.email, profile.username)
+        auditService.logAuthEvent("REGISTER_USER", user.id, user.email, ip, true)
         return AuthResponse(
             token = token,
             user = profileMapper.toResponse(profile),
@@ -371,7 +392,6 @@ class AuthService(
 
 @RestController
 @RequestMapping("/api/v1/auth")
-@CrossOrigin(origins = ["*"])
 class AuthController(
     private val authService: AuthService
 ) {

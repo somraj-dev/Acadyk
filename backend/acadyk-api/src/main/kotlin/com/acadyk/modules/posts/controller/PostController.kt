@@ -4,6 +4,7 @@ import com.acadyk.common.ApiResponse
 import com.acadyk.common.PageResponse
 import com.acadyk.modules.posts.dto.CreatePostRequest
 import com.acadyk.modules.posts.dto.PostResponse
+import com.acadyk.modules.posts.dto.UpdatePostRequest
 import com.acadyk.modules.posts.service.PostService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/posts")
-@CrossOrigin(origins = ["*"])
 class PostController(private val postService: PostService) {
 
     @GetMapping
@@ -35,6 +35,15 @@ class PostController(private val postService: PostService) {
         val post = postService.createPost(request)
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success(post, "Post published successfully"))
+    }
+
+    @PutMapping("/{id}")
+    fun updatePost(
+        @PathVariable id: String,
+        @Valid @RequestBody request: UpdatePostRequest
+    ): ResponseEntity<ApiResponse<PostResponse>> {
+        val post = postService.updatePost(id, request)
+        return ResponseEntity.ok(ApiResponse.success(post, "Post updated successfully"))
     }
 
     @DeleteMapping("/{id}")

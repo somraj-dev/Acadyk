@@ -642,11 +642,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ProfileManager.loadFromProfileData(data);
           }
           setState(() {
-            _profileName = data['full_name'] ?? data['fullName'] ?? _profileName;
+            _profileName = data['fullName'] ?? data['full_name'] ?? _profileName;
             _profileBio = data['bio'] ?? _profileBio;
             _profileLocation = data['location'] ?? _profileLocation;
-            _profilePhotoUrl = data['profile_photo_url'] ?? data['profilePhotoUrl'] ?? _profilePhotoUrl;
-            _coverPhotoUrl = data['cover_photo_url'] ?? data['coverPhotoUrl'] ?? _coverPhotoUrl;
+            _profilePhotoUrl = data['profilePhotoUrl'] ?? data['profile_photo_url'] ?? _profilePhotoUrl;
+            _coverPhotoUrl = data['coverPhotoUrl'] ?? data['cover_photo_url'] ?? _coverPhotoUrl;
+            if (!widget.isOwnProfile) {
+              final isFol = data['isFollowing'] ?? data['is_following'];
+              if (isFol is bool) {
+                _isFollowing = isFol;
+              }
+            }
           });
         }
       }
@@ -1101,6 +1107,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 else
                   GestureDetector(
                     onTap: () {
+                      final targetId = widget.userData?['id']?.toString();
+                      if (targetId != null) {
+                        FollowService.toggleFollow(targetId, _isFollowing);
+                      }
                       setState(() {
                         _isFollowing = !_isFollowing;
                       });

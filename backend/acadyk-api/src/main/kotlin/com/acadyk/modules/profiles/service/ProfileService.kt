@@ -3,6 +3,8 @@ package com.acadyk.modules.profiles.service
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
 import com.acadyk.common.toUUID
+import com.acadyk.modules.connections.repository.FollowRepository
+import com.acadyk.modules.posts.repository.PostRepository
 import com.acadyk.modules.profiles.dto.*
 import com.acadyk.modules.profiles.entity.*
 import com.acadyk.modules.profiles.mapper.ProfileMapper
@@ -22,6 +24,8 @@ class ProfileService(
     private val experienceRepository: ExperienceRepository,
     private val certificateRepository: CertificateRepository,
     private val resumeRepository: ResumeRepository,
+    private val postRepository: PostRepository,
+    private val followRepository: FollowRepository,
     private val profileMapper: ProfileMapper,
     private val currentUserProvider: CurrentUserProvider
 ) {
@@ -30,7 +34,27 @@ class ProfileService(
     fun getProfileById(id: UUID): ProfileResponse {
         val profile = profileRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Profile with id $id not found") }
-        return profileMapper.toResponse(profile)
+
+        val postCount = postRepository.countByAuthorIdAndDeletedAtIsNull(id).toInt()
+
+        var isFollowing = false
+        var isFollowedBy = false
+        try {
+            val currentUserId = currentUserProvider.getCurrentUserId()
+            if (currentUserId != id) {
+                isFollowing = followRepository.existsByFollowerIdAndFollowingId(currentUserId, id)
+                isFollowedBy = followRepository.existsByFollowerIdAndFollowingId(id, currentUserId)
+            }
+        } catch (_: Exception) {
+            // Unauthenticated or background context
+        }
+
+        return profileMapper.toResponse(
+            entity = profile,
+            postCount = postCount,
+            isFollowing = isFollowing,
+            isFollowedBy = isFollowedBy
+        )
     }
 
     @Transactional(readOnly = true)

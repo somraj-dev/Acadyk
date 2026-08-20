@@ -13,7 +13,6 @@ import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("/api/v1/files")
-@CrossOrigin(origins = ["*"])
 class FileController(private val fileService: FileService) {
 
     @PostMapping("/presigned-upload-url")

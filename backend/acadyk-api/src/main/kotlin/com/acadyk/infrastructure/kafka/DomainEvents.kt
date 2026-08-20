@@ -123,3 +123,13 @@ data class NotificationCreatedEvent(
     val body: String,
     val type: String
 ) : DomainEvent
+
+data class FollowEvent(
+    override val eventId: String = UUID.randomUUID().toString(),
+    override val eventType: String = "FollowCreated",
+    override val timestamp: Instant = Instant.now(),
+    val followerId: String,
+    val followerName: String,
+    val followingId: String
+) : DomainEvent
+

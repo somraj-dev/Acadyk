@@ -14,7 +14,9 @@ data class ProfileEntity(
     @Id
     val id: UUID = UUID.randomUUID(),
 
-    @JdbcTypeCode(SqlTypes.OTHER)
+    @Column(name = "user_id", nullable = false, unique = true)
+    var userId: UUID = id,
+
     @Column(nullable = false, unique = true)
     var username: String,
 

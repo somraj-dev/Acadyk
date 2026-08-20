@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../../core/network/api_client.dart';
 import '../../features/profile/presentation/services/profile_manager.dart';
@@ -303,6 +304,66 @@ class PostService {
 
     notifyFeedChanged();
     return newComment;
+  }
+
+  /// Delete a comment
+  static Future<void> deleteComment(String postId, String commentId) async {
+    if (_postComments.containsKey(postId)) {
+      _postComments[postId]!.removeWhere((c) => c['id']?.toString() == commentId);
+    }
+
+    for (int i = 0; i < _inMemoryPosts.length; i++) {
+      if (_inMemoryPosts[i]['id']?.toString() == postId) {
+        final currentCount = _inMemoryPosts[i]['comments'] as int? ?? 0;
+        _inMemoryPosts[i]['comments'] = max(0, currentCount - 1);
+        break;
+      }
+    }
+
+    try {
+      await ApiClient.delete('/posts/$postId/comments/$commentId');
+    } catch (e) {
+      debugPrint('[PostService] Error deleting comment on backend: $e');
+    }
+
+    notifyFeedChanged();
+  }
+
+  /// Update a post
+  static Future<Map<String, dynamic>?> updatePost(
+    String postId, {
+    String? content,
+    String? postType,
+    String? imageUrl,
+  }) async {
+    for (int i = 0; i < _inMemoryPosts.length; i++) {
+      if (_inMemoryPosts[i]['id']?.toString() == postId) {
+        if (content != null) _inMemoryPosts[i]['content'] = content;
+        if (postType != null) _inMemoryPosts[i]['postType'] = postType;
+        if (imageUrl != null) _inMemoryPosts[i]['imageUrl'] = imageUrl;
+        break;
+      }
+    }
+
+    try {
+      final response = await ApiClient.put('/posts/$postId', data: {
+        if (content != null) 'content': content,
+        if (postType != null) 'postType': postType,
+        if (imageUrl != null) 'imageUrl': imageUrl,
+      });
+
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          return resData['data'] as Map<String, dynamic>?;
+        }
+      }
+    } catch (e) {
+      debugPrint('[PostService] Error updating post on backend: $e');
+    }
+
+    notifyFeedChanged();
+    return null;
   }
 
   /// Toggle bookmark on a post

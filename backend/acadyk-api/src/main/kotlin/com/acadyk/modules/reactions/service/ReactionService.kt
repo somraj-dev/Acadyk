@@ -69,6 +69,23 @@ class ReactionService(
     fun togglePostReaction(postId: String, reactionType: String = "like"): ToggleReactionResponse =
         togglePostReaction(postId.toUUID(), reactionType)
 
+    fun removePostReaction(postId: UUID): ToggleReactionResponse {
+        val currentUserId = currentUserProvider.getCurrentUserId()
+        val post = postRepository.findByIdAndDeletedAtIsNull(postId)
+            .orElseThrow { ResourceNotFoundException("Post with id $postId not found") }
+
+        val existing = postReactionRepository.findByPostIdAndUserId(postId, currentUserId)
+        if (existing.isPresent) {
+            postReactionRepository.delete(existing.get())
+            post.likesCount = maxOf(0, post.likesCount - 1)
+            postRepository.save(post)
+        }
+
+        return ToggleReactionResponse(postId.toString(), false, "like", post.likesCount)
+    }
+
+    fun removePostReaction(postId: String): ToggleReactionResponse = removePostReaction(postId.toUUID())
+
     fun toggleCommentReaction(commentId: UUID, reactionType: String = "like"): ToggleReactionResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
         val comment = commentRepository.findByIdAndDeletedAtIsNull(commentId)

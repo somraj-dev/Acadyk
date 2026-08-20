@@ -3,7 +3,32 @@ import '../../core/network/api_client.dart';
 class ProfileService {
   static Future<Map<String, dynamic>?> getMyProfile() async {
     try {
-      final response = await ApiClient.get('/me/profile');
+      final response = await ApiClient.get('/users/me');
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          return resData['data'] as Map<String, dynamic>?;
+        }
+        return response.data as Map<String, dynamic>?;
+      }
+    } catch (_) {
+      try {
+        final fallback = await ApiClient.get('/me/profile');
+        if (fallback.statusCode == 200) {
+          final resData = fallback.data;
+          if (resData is Map && resData.containsKey('data')) {
+            return resData['data'] as Map<String, dynamic>?;
+          }
+          return fallback.data as Map<String, dynamic>?;
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  static Future<Map<String, dynamic>?> getUserIdentity() async {
+    try {
+      final response = await ApiClient.get('/users/identity');
       if (response.statusCode == 200) {
         final resData = response.data;
         if (resData is Map && resData.containsKey('data')) {
@@ -12,14 +37,14 @@ class ProfileService {
         return response.data as Map<String, dynamic>?;
       }
     } catch (e) {
-      // debug info
+      print('Error getting user identity: $e');
     }
     return null;
   }
 
   static Future<Map<String, dynamic>?> getProfile(String userId) async {
     try {
-      final response = await ApiClient.get('/profiles/$userId');
+      final response = await ApiClient.get('/users/$userId');
       if (response.statusCode == 200) {
         final resData = response.data;
         if (resData is Map && resData.containsKey('data')) {
@@ -28,7 +53,18 @@ class ProfileService {
         return response.data as Map<String, dynamic>?;
       }
     } catch (e) {
-      // debug info
+      // Fallback to /profiles/$userId
+      try {
+        final fallback = await ApiClient.get('/profiles/$userId');
+        if (fallback.statusCode == 200) {
+          final resData = fallback.data;
+          if (resData is Map && resData.containsKey('data')) {
+            return resData['data'] as Map<String, dynamic>?;
+          }
+          return fallback.data as Map<String, dynamic>?;
+        }
+      } catch (_) {}
+      print('Error getting profile: $e');
     }
     return null;
   }

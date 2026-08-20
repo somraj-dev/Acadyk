@@ -18,6 +18,19 @@ data class CreateEventRequest(
     val maxAttendees: Int? = null
 )
 
+data class UpdateEventRequest(
+    val title: String? = null,
+    val description: String? = null,
+    val eventType: String? = null,
+    val location: String? = null,
+    val isVirtual: Boolean? = null,
+    val meetingLink: String? = null,
+    val startTime: Instant? = null,
+    val endTime: Instant? = null,
+    val bannerUrl: String? = null,
+    val maxAttendees: Int? = null
+)
+
 data class EventResponse(
     val id: String,
     val title: String,

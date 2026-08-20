@@ -13,6 +13,7 @@ import java.util.UUID
 interface PostRepository : JpaRepository<PostEntity, UUID> {
     fun findAllByDeletedAtIsNullOrderByCreatedAtDesc(pageable: Pageable): Page<PostEntity>
     fun findAllByAuthorIdAndDeletedAtIsNullOrderByCreatedAtDesc(authorId: UUID, pageable: Pageable): Page<PostEntity>
+    fun countByAuthorIdAndDeletedAtIsNull(authorId: UUID): Long
     fun findByIdAndDeletedAtIsNull(id: UUID): Optional<PostEntity>
 }
 

@@ -40,11 +40,14 @@ data class ProfileResponse(
     val statusEmoji: String?,
     val statusText: String?,
     val isPrivate: Boolean,
-    val followersCount: Int,
-    val followingCount: Int,
-    val connectionsCount: Int,
-    val createdAt: Instant,
-    val updatedAt: Instant
+    val followersCount: Int = 0,
+    val followingCount: Int = 0,
+    val connectionsCount: Int = 0,
+    val postCount: Int = 0,
+    val isFollowing: Boolean = false,
+    val isFollowedBy: Boolean = false,
+    val createdAt: Instant = Instant.now(),
+    val updatedAt: Instant = Instant.now()
 )
 
 data class EducationDto(

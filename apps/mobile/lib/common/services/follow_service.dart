@@ -27,12 +27,10 @@ class FollowService {
     return false;
   }
 
-  static Future<bool> toggleFollow(String targetUserId, bool currentFollowState) async {
-    final newState = !currentFollowState;
-    setFollowState(targetUserId, newState);
-
+  static Future<bool> follow(String targetUserId) async {
+    setFollowState(targetUserId, true);
     try {
-      final response = await ApiClient.post('/profiles/$targetUserId/follow');
+      final response = await ApiClient.post('/users/$targetUserId/follow');
       if (response.statusCode == 200) {
         final resData = response.data;
         if (resData is Map && resData.containsKey('data')) {
@@ -44,9 +42,38 @@ class FollowService {
         }
       }
     } catch (e) {
-      debugPrint('[FollowService] Error toggling follow on backend: $e');
+      debugPrint('[FollowService] Error following on backend: $e');
     }
-    return newState;
+    return true;
+  }
+
+  static Future<bool> unfollow(String targetUserId) async {
+    setFollowState(targetUserId, false);
+    try {
+      final response = await ApiClient.delete('/users/$targetUserId/follow');
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          final serverState = resData['data']?['isFollowing'];
+          if (serverState is bool) {
+            setFollowState(targetUserId, serverState);
+            return serverState;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[FollowService] Error unfollowing on backend: $e');
+    }
+    return false;
+  }
+
+  static Future<bool> toggleFollow(String targetUserId, bool currentFollowState) async {
+    final newState = !currentFollowState;
+    if (newState) {
+      return follow(targetUserId);
+    } else {
+      return unfollow(targetUserId);
+    }
   }
 
   static Future<List<Map<String, dynamic>>> getFollowers(String userId) async {
