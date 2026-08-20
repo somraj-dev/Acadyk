@@ -2316,9 +2316,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildClubItem(Map<String, dynamic> club) {
     final String name = club['name']?.toString() ?? club['title']?.toString() ?? '';
     final String role = club['role']?.toString() ?? club['subtitle']?.toString() ?? '';
+    final String handle = club['handle']?.toString() ??
+        '@${name.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toLowerCase()}';
     final String? org = club['organization']?.toString();
     final String? duration = club['duration']?.toString();
     final String? description = club['description']?.toString();
+    final String? avatarUrl = club['avatarUrl']?.toString();
 
     return InkWell(
       onTap: () {
@@ -2340,83 +2343,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 'address': 'Madhav Institute of Technology & Science, Racecourse Road, Gwalior',
                 'price': 'Free',
                 'priceUnit': '/open access',
+                ...club,
               },
             ),
           ),
         );
       },
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Circular Avatar Photo
             Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: club['iconBg'] as Color? ?? const Color(0xFF0F4C81),
-                borderRadius: BorderRadius.circular(10),
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFF1F5F9),
               ),
-              alignment: Alignment.center,
-              child: Icon(
-                club['icon'] as IconData? ?? Icons.groups_rounded,
-                size: 24,
-                color: Colors.white,
+              child: ClipOval(
+                child: avatarUrl != null && avatarUrl.isNotEmpty
+                    ? Image.network(
+                        avatarUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _buildClubFallbackIcon(club),
+                      )
+                    : _buildClubFallbackIcon(club),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
+
+            // Middle Column: Title, @Handle, and Description
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (name.isNotEmpty)
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF191919),
-                      ),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF191919),
                     ),
-                  if (role.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      role,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF334155),
-                      ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    handle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF64748B),
                     ),
-                  ],
-                  if (org != null && org.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      org,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                  if (duration != null && duration.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      duration,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
+                  ),
                   if (description != null && description.isNotEmpty) ...[
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       description,
                       style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF191919),
+                        fontSize: 12.5,
+                        color: Color(0xFF334155),
                         height: 1.35,
                       ),
                     ),
@@ -2424,8 +2410,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+            const SizedBox(width: 10),
+
+            // Right Following / Follow Button
+            StatefulBuilder(
+              builder: (context, setBtnState) {
+                final bool following = club['isFollowing'] as bool? ?? true;
+                return GestureDetector(
+                  onTap: () {
+                    setBtnState(() {
+                      club['isFollowing'] = !following;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(!following ? 'Following $name' : 'Unfollowed $name'),
+                        backgroundColor: const Color(0xFF0F172A),
+                        duration: const Duration(seconds: 1),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: following ? const Color(0xFF262626) : const Color(0xFF0A66C2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      following ? 'Following' : 'Follow',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildClubFallbackIcon(Map<String, dynamic> club) {
+    return Container(
+      color: club['iconBg'] as Color? ?? const Color(0xFF0F4C81),
+      alignment: Alignment.center,
+      child: Icon(
+        club['icon'] as IconData? ?? Icons.groups_rounded,
+        size: 24,
+        color: Colors.white,
       ),
     );
   }
