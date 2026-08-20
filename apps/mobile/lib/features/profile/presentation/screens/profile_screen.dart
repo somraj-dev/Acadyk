@@ -22,6 +22,7 @@ import 'package:acadyk/common/services/storage_service.dart';
 import 'package:path/path.dart' as p;
 import 'add_cover_image_screen.dart';
 import 'profile_showcase.dart';
+import 'club_details_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final bool isOwnProfile;
@@ -2319,83 +2320,113 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final String? duration = club['duration']?.toString();
     final String? description = club['description']?.toString();
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: club['iconBg'] as Color? ?? const Color(0xFF0F4C81),
-            borderRadius: BorderRadius.circular(10),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ClubDetailsScreen(
+              clubData: {
+                'title': name,
+                'name': name,
+                'category': 'Student Chapter',
+                'location': org ?? 'MITS Campus, Gwalior',
+                'time': duration ?? 'Active Chapter',
+                'description': description ?? 'Official student chapter fostering collaborative learning, technical workshops, open source innovation, and campus hackathons.',
+                'organizerName': role.isNotEmpty ? role : 'Core Student Committee',
+                'organizerRole': 'Leadership & Core Team',
+                'memberCount': '450+ Members',
+                'heroImage': 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&auto=format&fit=crop&q=80',
+                'address': 'Madhav Institute of Technology & Science, Racecourse Road, Gwalior',
+                'price': 'Free',
+                'priceUnit': '/open access',
+              },
+            ),
           ),
-          alignment: Alignment.center,
-          child: Icon(
-            club['icon'] as IconData? ?? Icons.groups_rounded,
-            size: 24,
-            color: Colors.white,
-          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: club['iconBg'] as Color? ?? const Color(0xFF0F4C81),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                club['icon'] as IconData? ?? Icons.groups_rounded,
+                size: 24,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (name.isNotEmpty)
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF191919),
+                      ),
+                    ),
+                  if (role.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      role,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF334155),
+                      ),
+                    ),
+                  ],
+                  if (org != null && org.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      org,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                  if (duration != null && duration.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      duration,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ],
+                  if (description != null && description.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF191919),
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (name.isNotEmpty)
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF191919),
-                  ),
-                ),
-              if (role.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text(
-                  role,
-                  style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF334155),
-                  ),
-                ),
-              ],
-              if (org != null && org.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text(
-                  org,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-              if (duration != null && duration.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text(
-                  duration,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF94A3B8),
-                  ),
-                ),
-              ],
-              if (description != null && description.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF191919),
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 

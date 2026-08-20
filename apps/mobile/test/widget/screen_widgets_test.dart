@@ -14,6 +14,7 @@ import 'package:acadyk/features/profile/presentation/screens/add_cover_image_scr
 import 'package:acadyk/features/profile/presentation/screens/about_account_screen.dart';
 import 'package:acadyk/features/profile/presentation/screens/profile_screen.dart';
 import 'package:acadyk/features/profile/presentation/screens/profile_showcase.dart';
+import 'package:acadyk/features/profile/presentation/screens/club_details_screen.dart';
 
 void main() {
   Widget createTestWidget(Widget child) {
@@ -194,6 +195,41 @@ void main() {
       expect(find.text('WhatsApp / Social'), findsOneWidget);
       expect(find.text('Fill in the blank'), findsOneWidget);
       expect(find.text('Music'), findsNothing);
+    });
+
+    testWidgets('ClubDetailsScreen renders 1:1 replica with title, attendee stack, organizer, address, and CTA button', (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget(
+        const ClubDetailsScreen(
+          clubData: {
+            'title': 'Acoustic Serenade Showcase',
+            'category': 'Music',
+            'location': 'New York, USA',
+            'time': 'May 29 - 10:00 PM',
+            'memberCount': '8,000+',
+            'description': 'Live acoustic performance showcasing student musicians, indie bands, and instrumentalists.',
+            'organizerName': 'SonicVibe Events',
+            'organizerRole': 'Organize Team',
+            'address': 'Grand Symphony Arena, 452 Broadway Ave, Suite 100, New York',
+            'price': '\$30.00',
+            'priceUnit': '/person',
+          },
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(ClubDetailsScreen), findsOneWidget);
+      expect(find.text('Acoustic Serenade Showcase'), findsOneWidget);
+      expect(find.text('Music'), findsOneWidget);
+      expect(find.text('New York, USA'), findsOneWidget);
+      expect(find.text('May 29 - 10:00 PM'), findsOneWidget);
+      expect(find.text('8,000+'), findsOneWidget);
+      expect(find.text('About Event'), findsOneWidget);
+      expect(find.text('Organizer'), findsOneWidget);
+      expect(find.text('SonicVibe Events'), findsOneWidget);
+      expect(find.text('Address'), findsOneWidget);
+      expect(find.text('Total Price'), findsOneWidget);
+      expect(find.text('\$30.00'), findsOneWidget);
+      expect(find.text('Book Now'), findsOneWidget);
     });
   });
 }

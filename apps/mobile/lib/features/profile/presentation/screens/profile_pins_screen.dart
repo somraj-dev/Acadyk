@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import '../services/profile_pins_manager.dart';
 import 'project_details.dart';
 import 'experience_details.dart';
+import 'club_details_screen.dart';
 
 class ProfilePinsScreen extends StatefulWidget {
   const ProfilePinsScreen({super.key});
@@ -498,12 +499,39 @@ class _ProfilePinsScreenState extends State<ProfilePinsScreen> with SingleTicker
     );
   }
 
+  void _openClubDetails(ProfilePinItem item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ClubDetailsScreen(
+          clubData: {
+            'title': item.title,
+            'name': item.title,
+            'category': 'Student Chapter',
+            'location': item.organization ?? item.subtitle ?? 'MITS Campus, Gwalior',
+            'time': item.duration ?? 'Active Chapter',
+            'description': item.description ?? 'Official student chapter fostering technical workshops, open source innovation, and campus hackathons.',
+            'organizerName': item.subtitle ?? 'Core Student Committee',
+            'organizerRole': 'Leadership & Core Team',
+            'memberCount': '450+ Members',
+            'heroImage': 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&auto=format&fit=crop&q=80',
+            'address': 'Madhav Institute of Technology & Science, Racecourse Road, Gwalior',
+            'price': 'Free',
+            'priceUnit': '/open access',
+            ...item.rawData,
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildPinItemCard(ProfilePinItem item) {
     final statusColor = _getStatusColor(item.originStatus);
     final categoryLabel = _getCategoryLabel(item.category);
     final bool isProject = item.category == PinCategory.project;
     final bool isExperience = item.category == PinCategory.experience;
-    final bool isTappable = isProject || isExperience;
+    final bool isClub = item.category == PinCategory.club;
+    final bool isTappable = isProject || isExperience || isClub;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -530,7 +558,9 @@ class _ProfilePinsScreenState extends State<ProfilePinsScreen> with SingleTicker
               ? () => _openProjectDetails(item)
               : isExperience
                   ? () => _openExperienceDetails(item)
-                  : null,
+                  : isClub
+                      ? () => _openClubDetails(item)
+                      : null,
           child: Padding(
             padding: const EdgeInsets.all(14.0),
             child: Column(
