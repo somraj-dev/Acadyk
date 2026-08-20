@@ -2255,7 +2255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Clubs & Organizations (${clubs.length})',
+            'Clubs & Student Chapters (${clubs.length})',
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
           ),
           const SizedBox(height: 16),
@@ -2263,7 +2263,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8.0),
               child: Text(
-                'No clubs or organizations added yet.',
+                'No clubs or student chapters added yet.',
                 style: TextStyle(fontSize: 14, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
               ),
             )

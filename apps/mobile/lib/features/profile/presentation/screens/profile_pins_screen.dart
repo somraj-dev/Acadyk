@@ -349,7 +349,7 @@ class _ProfilePinsScreenState extends State<ProfilePinsScreen> with SingleTicker
       {'label': 'Projects', 'cat': PinCategory.project, 'count': ProfilePinsManager.countByCategory(PinCategory.project)},
       {'label': 'Experience', 'cat': PinCategory.experience, 'count': ProfilePinsManager.countByCategory(PinCategory.experience)},
       {'label': 'Education', 'cat': PinCategory.education, 'count': ProfilePinsManager.countByCategory(PinCategory.education)},
-      {'label': 'Clubs & Orgs', 'cat': PinCategory.club, 'count': ProfilePinsManager.countByCategory(PinCategory.club)},
+      {'label': 'Clubs & Chapters', 'cat': PinCategory.club, 'count': ProfilePinsManager.countByCategory(PinCategory.club)},
     ];
 
     return Container(
