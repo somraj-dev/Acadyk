@@ -271,19 +271,30 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           }
                         },
                       ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _canPost ? const Color(0xFF1D9BF0) : const Color(0xFF1D9BF0).withValues(alpha: 0.5),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 9),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        ),
-                        onPressed: _canPost ? _onPostSubmit : null,
-                        child: const Text(
-                          'Post',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _canPost ? const Color(0xFF1D9BF0) : const Color(0xFF1D9BF0).withValues(alpha: 0.5),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 9),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                            ),
+                            onPressed: _canPost ? _onPostSubmit : null,
+                            child: const Text(
+                              'Post',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            icon: Icon(Icons.more_vert, color: _textColor, size: 24),
+                            tooltip: 'Visibility settings',
+                            onPressed: _openVisibilityPicker,
+                          ),
+                        ],
                       ),
                     ],
                   ),
