@@ -38,7 +38,9 @@ class PostService {
     final authorName = ProfileManager.name.isNotEmpty
         ? ProfileManager.name
         : (AuthService.currentUser?.fullName ?? 'Acadyk Member');
-    final authorAvatar = ProfileManager.avatarUrl;
+    final authorAvatar = ProfileManager.avatarUrl.isNotEmpty
+        ? ProfileManager.avatarUrl
+        : 'assets/images/somraj_avatar.jpg';
     final authorBio = ProfileManager.bio;
     final authorHandle = ProfileManager.username.isNotEmpty
         ? ProfileManager.username

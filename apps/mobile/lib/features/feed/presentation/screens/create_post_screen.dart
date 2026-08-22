@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:acadyk/common/services/storage_service.dart';
 import 'package:acadyk/common/services/post_service.dart';
+import 'package:acadyk/common/services/auth_service.dart';
 import 'package:acadyk/features/profile/presentation/services/profile_manager.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -45,10 +46,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void initState() {
     super.initState();
     _textController.addListener(() => setState(() {}));
+    ProfileManager.profileUpdateNotifier.addListener(_onProfileUpdated);
+  }
+
+  void _onProfileUpdated() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    ProfileManager.profileUpdateNotifier.removeListener(_onProfileUpdated);
     _textController.dispose();
     for (final c in _pollControllers) {
       c.dispose();
@@ -229,9 +236,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = ProfileManager.avatarUrl;
-    final name = ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Acadyk Member';
-    final initials = name.substring(0, min(2, name.length)).toUpperCase();
+    final String avatarUrl = ProfileManager.avatarUrl.isNotEmpty
+        ? ProfileManager.avatarUrl
+        : 'assets/images/somraj_avatar.jpg';
+    final name = ProfileManager.name.isNotEmpty
+        ? ProfileManager.name
+        : (AuthService.currentUser?.fullName != null && AuthService.currentUser!.fullName!.isNotEmpty
+            ? AuthService.currentUser!.fullName!
+            : 'Acadyk Member');
+    final initials = name.isNotEmpty ? name.substring(0, min(2, name.length)).toUpperCase() : 'U';
 
     return Scaffold(
       backgroundColor: _bgColor,
@@ -485,13 +498,21 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   // -------------------------------------------------------------
 
   Widget _buildUserAvatar(String avatarUrl, String initials) {
-    if (avatarUrl.isNotEmpty) {
+    if (ProfileManager.avatarBytes != null) {
       return CircleAvatar(
         radius: 20,
         backgroundColor: const Color(0xFF0F4C81),
-        backgroundImage: avatarUrl.startsWith('http')
-            ? NetworkImage(avatarUrl) as ImageProvider
-            : AssetImage(avatarUrl) as ImageProvider,
+        backgroundImage: MemoryImage(ProfileManager.avatarBytes!),
+      );
+    }
+    if (avatarUrl.isNotEmpty) {
+      final ImageProvider provider = avatarUrl.startsWith('http')
+          ? NetworkImage(avatarUrl)
+          : AssetImage(avatarUrl) as ImageProvider;
+      return CircleAvatar(
+        radius: 20,
+        backgroundColor: const Color(0xFF0F4C81),
+        backgroundImage: provider,
       );
     }
     return Container(
