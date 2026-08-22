@@ -1,16 +1,22 @@
 import '../../core/network/api_client.dart';
 
 class SearchService {
-  /// Search user profiles (powered by Elasticsearch backend)
+  /// Search user profiles (powered by PostgreSQL backend with pg_trgm)
   static Future<List<Map<String, dynamic>>> searchProfiles(String query) async {
+    final cleanQuery = query.trim();
+    if (cleanQuery.isEmpty) return [];
+
     try {
-      final response = await ApiClient.get('/search/profiles', queryParameters: {'q': query});
+      final response = await ApiClient.get('/search/profiles', queryParameters: {'q': cleanQuery});
       if (response.statusCode == 200) {
         final resData = response.data;
         if (resData is Map && resData.containsKey('data')) {
           final payload = resData['data'];
           if (payload is Map && payload.containsKey('content') && payload['content'] is List) {
             return List<Map<String, dynamic>>.from(payload['content']);
+          }
+          if (payload is Map && payload.containsKey('profiles') && payload['profiles'] is List) {
+            return List<Map<String, dynamic>>.from(payload['profiles']);
           }
           if (payload is List) {
             return List<Map<String, dynamic>>.from(payload);
@@ -20,7 +26,22 @@ class SearchService {
         }
       }
     } catch (e) {
-      print('Error searching profiles: $e');
+      // Fallback to /search?type=profile&q=
+      try {
+        final fallback = await ApiClient.get('/search', queryParameters: {'q': cleanQuery, 'type': 'profile'});
+        if (fallback.statusCode == 200) {
+          final resData = fallback.data;
+          if (resData is Map && resData.containsKey('data')) {
+            final payload = resData['data'];
+            if (payload is Map && payload.containsKey('profiles') && payload['profiles'] is List) {
+              return List<Map<String, dynamic>>.from(payload['profiles']);
+            }
+            if (payload is Map && payload.containsKey('content') && payload['content'] is List) {
+              return List<Map<String, dynamic>>.from(payload['content']);
+            }
+          }
+        }
+      } catch (_) {}
     }
     return [];
   }
@@ -80,7 +101,7 @@ class SearchService {
 
   /// Get search history
   static Future<List<String>> getSearchHistory() async {
-    return ['Flutter', 'Spring Boot', 'Machine Learning', 'Stanford'];
+    return [];
   }
 
   /// Save query to search history

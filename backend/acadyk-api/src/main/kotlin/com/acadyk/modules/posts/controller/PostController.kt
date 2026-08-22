@@ -17,10 +17,25 @@ class PostController(private val postService: PostService) {
 
     @GetMapping
     fun getPosts(
+        @RequestParam(required = false) authorId: String?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int
     ): ResponseEntity<ApiResponse<PageResponse<PostResponse>>> {
-        val result = postService.getPosts(page, size)
+        val result = if (authorId != null && authorId.isNotBlank()) {
+            postService.getPostsByUserId(authorId, page, size)
+        } else {
+            postService.getPosts(page, size)
+        }
+        return ResponseEntity.ok(ApiResponse.success(result))
+    }
+
+    @GetMapping("/user/{userId}")
+    fun getPostsByUserId(
+        @PathVariable userId: String,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ): ResponseEntity<ApiResponse<PageResponse<PostResponse>>> {
+        val result = postService.getPostsByUserId(userId, page, size)
         return ResponseEntity.ok(ApiResponse.success(result))
     }
 

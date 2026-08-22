@@ -40,6 +40,12 @@ class ConnectionController(private val connectionService: ConnectionService) {
         return ResponseEntity.ok(ApiResponse.success(result))
     }
 
+    @DeleteMapping("/profiles/{userId}/follow")
+    fun unfollowProfile(@PathVariable userId: String): ResponseEntity<ApiResponse<FollowStatusResponse>> {
+        val result = connectionService.unfollow(userId)
+        return ResponseEntity.ok(ApiResponse.success(result, "Unfollowed user successfully"))
+    }
+
     @PostMapping("/users/{userId}/follow")
     fun followUser(@PathVariable userId: String): ResponseEntity<ApiResponse<FollowStatusResponse>> {
         val result = connectionService.follow(userId)

@@ -4,6 +4,7 @@ import '../../../../common/services/profile_service.dart';
 import '../../../../common/services/auth_service.dart';
 
 class ProfileManager {
+  static String id = '';
   static String name = '';
   static String username = '';
   static String email = '';
@@ -206,6 +207,8 @@ class ProfileManager {
 
   /// Populate all profile fields from a backend profile response map.
   static void loadFromProfileData(Map<String, dynamic> data) {
+    if (data['id'] != null && data['id'].toString().isNotEmpty) id = data['id'].toString();
+    if (data['userId'] != null && data['userId'].toString().isNotEmpty && id.isEmpty) id = data['userId'].toString();
     if (data['full_name'] != null && data['full_name'].toString().isNotEmpty) name = data['full_name'].toString();
     if (data['fullName'] != null && data['fullName'].toString().isNotEmpty) name = data['fullName'].toString();
     if (data['username'] != null && data['username'].toString().isNotEmpty) username = data['username'].toString();
@@ -270,6 +273,7 @@ class ProfileManager {
 
   /// Reset all profile fields to empty defaults (called on sign-out).
   static void resetToDefaults() {
+    id = '';
     name = '';
     username = '';
     email = '';

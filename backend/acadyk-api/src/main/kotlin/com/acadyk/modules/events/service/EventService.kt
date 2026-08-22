@@ -1,6 +1,7 @@
 package com.acadyk.modules.events.service
 
 import com.acadyk.common.BadRequestException
+import com.acadyk.common.ForbiddenException
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
 import com.acadyk.common.toUUID
@@ -126,8 +127,13 @@ class EventService(
     fun registerForEvent(eventId: String): Boolean = registerForEvent(eventId.toUUID())
 
     fun updateEvent(id: String, request: com.acadyk.modules.events.dto.UpdateEventRequest): EventResponse {
+        val currentUserId = currentUserProvider.getCurrentUserId()
         val event = eventRepository.findByIdAndDeletedAtIsNull(id.toUUID())
             .orElseThrow { ResourceNotFoundException("Event with id $id not found") }
+
+        if (event.organizer?.id != currentUserId && !currentUserProvider.hasAnyRole("SUPER_ADMIN", "COLLEGE_ADMIN")) {
+            throw ForbiddenException("You do not have permission to modify this event")
+        }
 
         request.title?.let {
             event.title = it
@@ -148,8 +154,14 @@ class EventService(
     }
 
     fun deleteEvent(id: String) {
+        val currentUserId = currentUserProvider.getCurrentUserId()
         val event = eventRepository.findByIdAndDeletedAtIsNull(id.toUUID())
             .orElseThrow { ResourceNotFoundException("Event with id $id not found") }
+
+        if (event.organizer?.id != currentUserId && !currentUserProvider.hasAnyRole("SUPER_ADMIN", "COLLEGE_ADMIN")) {
+            throw ForbiddenException("You do not have permission to delete this event")
+        }
+
         event.deletedAt = Instant.now()
         event.updatedAt = Instant.now()
         eventRepository.save(event)

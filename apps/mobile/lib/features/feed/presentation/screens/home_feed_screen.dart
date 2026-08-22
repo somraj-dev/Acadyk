@@ -8,20 +8,14 @@ import 'dart:ui' as ui;
 import 'package:acadyk/common/services/post_service.dart';
 import 'discover_opportunities_screen.dart';
 import 'select_opportunity_screen.dart';
-import 'company_profile_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../profile/presentation/screens/edit_status_screen.dart';
-import '../../../profile/presentation/screens/story_view_screen.dart';
-
-
 import '../../../profile/presentation/screens/about_account_screen.dart';
 import '../../../profile/presentation/screens/my_courses_screen.dart';
-import 'post_detail_screen.dart';
 import 'startup_gallery_screen.dart';
 import 'exhibition_screen.dart';
 import 'clubs_screen.dart';
 import 'create_post_screen.dart';
-import '../../../notifications/presentation/screens/notification_screen.dart';
 import '../../../community/presentation/screens/discover_communities_screen.dart';
 import '../../../profile/presentation/screens/space_screen.dart';
 import '../../../profile/presentation/screens/feedback_form_screen.dart';
@@ -29,8 +23,8 @@ import '../../../profile/presentation/screens/student_id_card_screen.dart';
 import '../../../profile/presentation/services/profile_manager.dart';
 import '../../../../common/services/auth_service.dart';
 import '../../../../common/services/follow_service.dart';
+import '../../../../common/services/search_service.dart';
 import '../../../chat/presentation/screens/message_center_screen.dart';
-import '../data/mock_feed_data.dart';
 import '../../../../common/widgets/acadyk_top_header_bar.dart';
 import '../../../../shared/widgets/skeleton/skeleton.dart';
 class HomeFeedScreen extends StatefulWidget {
@@ -83,6 +77,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   void initState() {
     super.initState();
     _feedPosts = PostService.getUserCreatedPosts();
+    _isLoading = _feedPosts.isEmpty;
     _pageController = PageController(initialPage: _activeTab == 4 ? 3 : (_activeTab == 3 ? 2 : _activeTab));
     ProfileManager.profileUpdateNotifier.addListener(_onProfileUpdated);
     PostService.feedChangeNotifier.addListener(_onFeedChanged);
@@ -189,24 +184,23 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                       });
                                     }
                                   },
-                                   child: ListView(
-                                     physics: const AlwaysScrollableScrollPhysics(),
-                                     children: [
-                                       // Live Twitter-style Posting Progress Card
-                                       _buildPostingProgressCard(),
+                                  child: ListView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      // Live Twitter-style Posting Progress Card
+                                      _buildPostingProgressCard(),
 
-                                       if (_isLoading)
-                                         const FeedSkeleton()
-                                       else ...[
-                                         if (_feedPosts.isNotEmpty)
-                                           ..._feedPosts.map((post) => _buildMockPostCard(post)),
-                                         // Mock posts from MITS Gwalior
-                                         ...MockFeedData.mockPosts.map((post) => _buildMockPostCard(post)),
-                                       ],
+                                      if (_isLoading)
+                                        const FeedSkeleton()
+                                      else if (_feedPosts.isEmpty)
+                                        _buildEmptyFeedState()
+                                      else ...[
+                                        ..._feedPosts.map((post) => _buildPostCard(post)),
+                                      ],
 
-                                       const SizedBox(height: 16.0),
-                                     ],
-                                   ),
+                                      const SizedBox(height: 16.0),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -236,1119 +230,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       ),
     );
   }
-
-  // -------------------------------------------------------------
-  // CARD BUILDERS
-  // -------------------------------------------------------------
-
-  // Post 1: Y Combinator
-  Widget _buildYCPostCard() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-            
-    return Container(
-      color: cardBg,
-      margin: const EdgeInsets.only(bottom: 8.0),
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Row(
-              children: [
-                // YC Profile square logo (with red status ring)
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const StoryViewScreen(
-                          name: 'ycombinator',
-                          avatarAsset: '',
-                          avatarText: 'Y',
-                          avatarBgColor: Color(0xFFFF6600),
-                          statusEmoji: '🚀',
-                          statusText: 'W26 Batch Open',
-                          statusSubtitle: 'Y Combinator winter batch applications are officially open. Submit your application today!',
-                          dateText: 'September 16th, 2026',
-                          isCompany: true,
-                          bannerColor: Color(0xFFFF6600),
-                        ),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(2.0),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0xFFEF4444), // Solid red ring
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(1.5),
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                      ),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFF6600), // YC Orange
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          'Y',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const CompanyProfileScreen(companyName: 'Y Combinator'),
-                      ));
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Y Combinator',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.0,
-                            color: textMain,
-                          ),
-                        ),
-                        Text(
-                          'Startup Supporters',
-                          style: TextStyle(color: textSub, fontSize: 11.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                 _buildFollowButton('ycombinator'),
-                 const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _showPostOptionsBottomSheet(
-                    context: context,
-                    postId: 'warp_post',
-                    authorName: 'Y Combinator',
-                    authorHeadline: 'W26 Batch Open',
-                    authorAvatar: 'Y',
-                    postText: 'Warp has raised \$60 million in Series B funding to automate payroll, HR, tax compliance, and employee onboarding.',
-                    postImage: 'assets/images/warp_team.jpg',
-                    accountData: {
-                      'name': 'Y Combinator',
-                      'avatarText': 'Y',
-                      'avatarColor': const Color(0xFFFF6600),
-                      'dateJoined': 'March 2005',
-                      'location': 'United States',
-                      'sharedFollowers': 24,
-                    },
-                  ),
-                  child: Icon(Icons.more_vert, color: textSub),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Content Text (tappable to open detail)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
-                children: [
-                  TextSpan(
-                    text: 'Warp',
-                    style: const TextStyle(
-                      color: Color(0xFF0A66C2),
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
-                    ),
-                    recognizer: TapGestureRecognizer()
-                      ..onTap = () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const CompanyProfileScreen(companyName: 'Warp'),
-                          ),
-                        );
-                      },
-                  ),
-                  const TextSpan(
-                    text: ' has raised \$60 million in Series B funding to automate payroll, HR, tax compliance, and employee onboarding. ',
-                  ),
-                  TextSpan(
-                    text: '...more',
-                    style: TextStyle(
-                      color: textMain,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    recognizer: TapGestureRecognizer()
-                      ..onTap = () {
-                        Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) => const PostDetailScreen(
-                            authorName: 'Christian Pickett',
-                            authorHeadline: 'Co-founder @ Orthogonal (YC W26)',
-                            authorAvatar: 'assets/images/dharmik_avatar.jpg',
-                            timeAgo: '1d',
-                            postText: '',
-                            connectionDegree: '3rd+',
-                          ),
-                        ));
-                      },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Image (Warp team)
-          InstagrammableImage(
-            onDoubleTap: () {
-              final isLiked = _likedPosts['warp_post'] ?? false;
-              final likesCount = _likesCountOverride['warp_post'] ?? 537;
-              setState(() {
-                if (!isLiked) {
-                  _likedPosts['warp_post'] = true;
-                  _likesCountOverride['warp_post'] = likesCount + 1;
-                }
-              });
-            },
-            child: Image.asset(
-              'assets/images/warp_team.jpg',
-              fit: BoxFit.cover,
-              width: double.infinity,
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Action/Engagement row
-          _buildPostActionRow(
-            postId: 'warp_post',
-            defaultLikes: 537,
-            defaultComments: 51,
-          ),
-          if (_commentsExpanded['warp_post'] == true) ...[
-            _buildCommentsSection('warp_post'),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // Post 2: TIME
-  Widget _buildTIMEPostCard() {
-    return Container(
-      color: cardBg,
-      margin: const EdgeInsets.only(bottom: 8.0),
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Row(
-              children: [
-                // TIME red square logo (with red status ring)
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const StoryViewScreen(
-                          name: 'TIME',
-                          avatarAsset: '',
-                          avatarText: 'TIME',
-                          avatarBgColor: Color(0xFFE50914),
-                          statusEmoji: '📰',
-                          statusText: 'AI Special Issue',
-                          statusSubtitle: 'TIME\'s new special report covering the state of Artificial Intelligence is out now.',
-                          dateText: 'September 16th, 2026',
-                          isCompany: true,
-                          bannerColor: Color(0xFFE50914),
-                        ),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(2.0),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0xFFEF4444), // Solid red ring
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(1.5),
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                      ),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE50914), // TIME Red
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          'TIME',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 8.5,
-                            fontFamily: 'serif',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const ProfileScreen(isOwnProfile: false),
-                      ));
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'TIME',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.0,
-                            color: textMain,
-                          ),
-                        ),
-                        Text(
-                          '2,484,746 followers',
-                          style: TextStyle(color: textSub, fontSize: 11.5),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'News & Media Publisher',
-                          style: TextStyle(
-                            color: textSub,
-                            fontSize: 11.0,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                _buildFollowButton('time'),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _showPostOptionsBottomSheet(
-                    context: context,
-                    postId: 'time_post',
-                    authorName: 'TIME',
-                    authorHeadline: '2,484,746 followers',
-                    authorAvatar: 'TIME',
-                    postText: 'TIME CEO Jessica Sibley sits down with Alisha Moopen, Managing Director & Group CEO of... more',
-                    postImage: 'assets/images/time_handshake.jpg',
-                    accountData: {
-                      'name': 'TIME',
-                      'avatarText': 'TIME',
-                      'avatarColor': const Color(0xFFE50914),
-                      'dateJoined': 'October 2010',
-                      'location': 'United States',
-                      'sharedFollowers': 12,
-                    },
-                  ),
-                  child: Icon(Icons.more_vert, color: textSub),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Content Text (tappable to open detail)
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const PostDetailScreen(
-                  authorName: 'Christian Pickett',
-                  authorHeadline: 'Co-founder @ Orthogonal (YC W26)',
-                  authorAvatar: 'assets/images/dharmik_avatar.jpg',
-                  timeAgo: '1d',
-                  postText: '',
-                  connectionDegree: '3rd+',
-                ),
-              ));
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Text(
-                'TIME CEO Jessica Sibley sits down with Alisha Moopen, Managing Director & Group CEO of... more',
-                style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Image (TIME video frame with play overlays)
-          InstagrammableImage(
-            onDoubleTap: () {
-              final isLiked = _likedPosts['time_post'] ?? false;
-              final likesCount = _likesCountOverride['time_post'] ?? 1204;
-              setState(() {
-                if (!isLiked) {
-                  _likedPosts['time_post'] = true;
-                  _likesCountOverride['time_post'] = likesCount + 1;
-                }
-              });
-            },
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Image.asset(
-                  'assets/images/time_handshake.jpg',
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                ),
-                // Center Play button
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    shape: BoxShape.circle,
-                  ),
-                  padding: const EdgeInsets.all(12.0),
-                  child: const Icon(Icons.play_arrow, size: 28, color: Colors.white),
-                ),
-                // Top-right video duration overlay
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.75),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 2.0),
-                    child: const Text(
-                      '07:35',
-                      style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                // Bottom-right speaker/volume mute overlay
-                Positioned(
-                  bottom: 10,
-                  right: 10,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.7),
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(5.0),
-                    child: const Icon(Icons.volume_mute, size: 14, color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Action/Engagement row
-          _buildPostActionRow(
-            postId: 'time_post',
-            defaultLikes: 1204,
-            defaultComments: 89,
-          ),
-          if (_commentsExpanded['time_post'] == true) ...[
-            _buildCommentsSection('time_post'),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // Post 3: Alina Sprongole
-  Widget _buildAlinaPostCard() {
-    return Container(
-      color: cardBg,
-      margin: const EdgeInsets.only(bottom: 8.0),
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header Row
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const ProfileScreen(isOwnProfile: false),
-              ));
-            },
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Row(
-              children: [
-                // Alina image avatar
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: AssetImage('assets/images/alina_avatar.jpg'),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Alina Sprongole',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14.0,
-                              color: textMain,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text('• 1st', style: TextStyle(color: textSub, fontSize: 12)),
-                        ],
-                      ),
-                      const Text(
-                        'Visit my website',
-                        style: TextStyle(
-                          color: Color(0xFF0A66C2),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 11.5,
-                        ),
-                      ),
-                      Text(
-                        'Vibe Skills',
-                        style: TextStyle(color: textSub, fontSize: 11.0),
-                      ),
-                    ],
-                  ),
-                ),
-                _buildFollowButton('alina'),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _showPostOptionsBottomSheet(
-                    context: context,
-                    postId: 'alina_post',
-                    authorName: 'Alina Sprongole',
-                    authorHeadline: 'Co-founder & CEO of Vibe Skills',
-                    authorAvatar: 'assets/images/alina_avatar.jpg',
-                    postText: 'A \$24M seed valuation is a death sentence. Carta just released their Q1 2026 data. The...',
-                    postImage: 'assets/images/valuation_sentence.jpg',
-                    accountData: {
-                      'name': 'Alina Sprongole',
-                      'avatarUrl': 'assets/images/alina_avatar.jpg',
-                      'dateJoined': 'November 2020',
-                      'location': 'India',
-                      'sharedFollowers': 2,
-                    },
-                  ),
-                  child: Icon(Icons.more_vert, color: textSub),
-                ),
-              ],
-            ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Post Text (tappable to open detail)
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const PostDetailScreen(
-                  authorName: 'Christian Pickett',
-                  authorHeadline: 'Co-founder @ Orthogonal (YC W26)',
-                  authorAvatar: 'assets/images/dharmik_avatar.jpg',
-                  timeAgo: '1d',
-                  postText: '',
-                  connectionDegree: '3rd+',
-                ),
-              ));
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Text(
-                'A \$24M seed valuation is a death sentence. Carta just released their Q1 2026 data. The... more',
-                style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Image (crossed-out valuation poster)
-          InstagrammableImage(
-            onDoubleTap: () {
-              final isLiked = _likedPosts['alina_post'] ?? false;
-              final likesCount = _likesCountOverride['alina_post'] ?? 23;
-              setState(() {
-                if (!isLiked) {
-                  _likedPosts['alina_post'] = true;
-                  _likesCountOverride['alina_post'] = likesCount + 1;
-                }
-              });
-            },
-            child: Image.asset(
-              'assets/images/valuation_sentence.jpg',
-              fit: BoxFit.cover,
-              width: double.infinity,
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Action/Engagement row
-          _buildPostActionRow(
-            postId: 'alina_post',
-            defaultLikes: 23,
-            defaultComments: 15,
-          ),
-          if (_commentsExpanded['alina_post'] == true) ...[
-            _buildCommentsSection('alina_post'),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // Middle Activity Separator Card
-  Widget _buildActivitySeparatorRow() {
-    return Container(
-      color: cardBg,
-      margin: const EdgeInsets.only(bottom: 8.0),
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 12,
-                backgroundColor: const Color(0xFFEEF3F8),
-                child: Icon(Icons.person, size: 14, color: textSub),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Ankit Sharma likes this',
-                style: TextStyle(
-                  color: textMain,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox.shrink(),
-        ],
-      ),
-    );
-  }
-
-  // Post 4: P Dharmik
-  Widget _buildDharmikPostCard() {
-    return Container(
-      color: cardBg,
-      margin: const EdgeInsets.only(bottom: 8.0),
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header Row
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const ProfileScreen(isOwnProfile: false),
-              ));
-            },
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Row(
-              children: [
-                // Collab avatars (Overlapping)
-                SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: Stack(
-                    children: [
-                      // Top-right avatar (Underneath)
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: const StatusAvatar(
-                          avatarAsset: 'assets/images/somraj_avatar.jpg',
-                          radius: 16,
-                        ),
-                      ),
-                      // Bottom-left avatar (On top)
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                            image: const DecorationImage(
-                              image: AssetImage('assets/images/dharmik_avatar.jpg'),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              'P Dharmik',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13.5,
-                                color: textMain,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'and',
-                            style: TextStyle(fontSize: 13.5, color: textMain),
-                          ),
-                          SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              'somraj lodhi',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13.5,
-                                color: textMain,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        'Acadyk',
-                        style: TextStyle(color: textSub, fontSize: 11.0),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Post Text (tappable to open detail)
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const PostDetailScreen(
-                  authorName: 'Christian Pickett',
-                  authorHeadline: 'Co-founder @ Orthogonal (YC W26)',
-                  authorAvatar: 'assets/images/dharmik_avatar.jpg',
-                  timeAgo: '1d',
-                  postText: '',
-                  connectionDegree: '3rd+',
-                ),
-              ));
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Text(
-                'A 19-year-old left Patna with borrowed money. 50 years later, his company posted \$18.2B in revenue. This is Anil Agarwal - and the story is not... more',
-                style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Image (portrait with double badges overlays)
-          InstagrammableImage(
-            onDoubleTap: () {
-              final isLiked = _likedPosts['collab_post'] ?? false;
-              final likesCount = _likesCountOverride['collab_post'] ?? 1492;
-              setState(() {
-                if (!isLiked) {
-                  _likedPosts['collab_post'] = true;
-                  _likesCountOverride['collab_post'] = likesCount + 1;
-                }
-              });
-            },
-            child: Stack(
-              children: [
-                Image.asset(
-                  'assets/images/young_entrepreneur.jpg',
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                ),
-                // Bottom-left yellow badge
-                Positioned(
-                  bottom: 12,
-                  left: 12,
-                  child: Container(
-                    color: const Color(0xFFFFF176), // Bright Yellow
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                    child: const Text(
-                      'DAY ONE',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11.0,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-                // Top-right yellow badge (Money & Power)
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    color: const Color(0xFFFFF176), // Bright Yellow
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                    child: const Text(
-                      'MONEY &\nPOWER',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10.0,
-                        height: 1.1,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Action/Engagement row
-          _buildPostActionRow(
-            postId: 'collab_post',
-            defaultLikes: 1492,
-            defaultComments: 235,
-          ),
-          if (_commentsExpanded['collab_post'] == true) ...[
-            _buildCommentsSection('collab_post'),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // Post 5: Repost Card
-  Widget _buildRepostCard() {
-    return Container(
-      color: cardBg,
-      margin: const EdgeInsets.only(bottom: 8.0),
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Outer Header (Reposter)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Row(
-              children: [
-                // Reposter Avatar
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ProfileScreen(isOwnProfile: false),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: AssetImage('assets/images/dharmik_avatar.jpg'),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ProfileScreen(isOwnProfile: false),
-                        ),
-                      );
-                    },
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Gokul Rajaram',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.0,
-                                color: textMain,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '• Following',
-                              style: TextStyle(
-                                color: textSub,
-                                fontSize: 13.0,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          'Investor and Company Helper',
-                          style: TextStyle(
-                            color: textSub,
-                            fontSize: 12.0,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                _buildFollowButton('gokul'),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _showPostOptionsBottomSheet(
-                    context: context,
-                    postId: 'openai_post',
-                    authorName: 'Rahul Thathoo',
-                    authorHeadline: 'Engineering @ OpenAI',
-                    authorAvatar: 'assets/images/alina_avatar.jpg',
-                    postText: 'Rahul Thathoo: Engineering @ OpenAI. I enjoyed the podcast featuring Nikesh Arora with Harry Stebbings on 20VC...',
-                    postImage: 'assets/images/young_entrepreneur.jpg',
-                    accountData: {
-                      'name': 'Gokul Rajaram',
-                      'avatarUrl': 'assets/images/dharmik_avatar.jpg',
-                      'dateJoined': 'Jan 2010',
-                      'location': 'United States',
-                      'sharedFollowers': 50,
-                    },
-                  ),
-                  child: Icon(Icons.more_vert, color: textSub),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Reposter Text
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Text(
-              'This is awesome!!!!',
-              style: TextStyle(color: textMain, fontSize: 16.0, height: 1.3),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Inner Card (Original Post)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFE0E0E0), width: 1.0),
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Inner Header
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ProfileScreen(isOwnProfile: false),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              image: DecorationImage(
-                                image: AssetImage('assets/images/alina_avatar.jpg'),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ProfileScreen(isOwnProfile: false),
-                                ),
-                              );
-                            },
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Rahul Thathoo',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14.0,
-                                    color: textMain,
-                                  ),
-                                ),
-                                Text(
-                                  'Engineering @ OpenAI',
-                                  style: TextStyle(
-                                    color: textSub,
-                                    fontSize: 12.0,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        _buildFollowButton('rahul'),
-                      ],
-                    ),
-                  ),
-                  
-                  // Inner Text
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: RichText(
-                      text: TextSpan(
-                        style: TextStyle(color: textMain, fontSize: 13.5, height: 1.45),
-                        children: [
-                          TextSpan(text: 'I enjoyed the podcast featuring '),
-                          TextSpan(
-                            text: 'Nikesh Arora',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
-                          ),
-                          TextSpan(text: ' with '),
-                          TextSpan(
-                            text: 'Harry Stebbings',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
-                          ),
-                          TextSpan(text: ' on 20VC. I utilized '),
-                          TextSpan(
-                            text: 'Gokul Rajaram',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A66C2)),
-                          ),
-                          TextSpan(text: '\'s Use Transcribe tool to... '),
-                          TextSpan(
-                            text: 'more',
-                            style: TextStyle(color: textSub),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Inner Image
-                  InstagrammableImage(
-                    onDoubleTap: () {
-                      final isLiked = _likedPosts['openai_post'] ?? false;
-                      final likesCount = _likesCountOverride['openai_post'] ?? 892;
-                      setState(() {
-                        if (!isLiked) {
-                          _likedPosts['openai_post'] = true;
-                          _likesCountOverride['openai_post'] = likesCount + 1;
-                        }
-                      });
-                    },
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(8.0),
-                        bottomRight: Radius.circular(8.0),
-                      ),
-                      child: Image.asset(
-                        'assets/images/young_entrepreneur.jpg',
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Action/Engagement row
-          _buildPostActionRow(
-            postId: 'openai_post',
-            defaultLikes: 892,
-            defaultComments: 124,
-          ),
-          if (_commentsExpanded['openai_post'] == true) ...[
-            _buildCommentsSection('openai_post'),
-          ],
-        ],
-      ),
-    );
-  }
-
   // -------------------------------------------------------------
   // REUSABLE FEEDBACK ACTION ROW WITH COMMENTS ACCORDION
   // -------------------------------------------------------------
@@ -1362,21 +243,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final likesCount = _likesCountOverride[postId] ?? defaultLikes;
     final isBookmarked = _bookmarkedPosts[postId] ?? false;
     
-    // Dynamic comments count calculation
+    // Real comments count calculation
     final commentsList = _customComments[postId];
-    int commentsCount = defaultComments;
-    if (commentsList != null) {
-      int total = 0;
-      for (var c in commentsList) {
-        total++;
-        final reps = c['replies'] as List?;
-        if (reps != null) {
-          total += reps.length;
-        }
-      }
-      // Offset by 47 to match the baseline of 51 comments initially
-      commentsCount = 47 + total;
-    }
+    final commentsCount = commentsList != null ? commentsList.length : defaultComments;
 
     final isCommentsExpanded = _commentsExpanded[postId] ?? false;
 
@@ -1425,10 +294,30 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               const SizedBox(width: 16),
               // Comment icon button
               GestureDetector(
-                onTap: () {
+                onTap: () async {
+                  final willExpand = !isCommentsExpanded;
                   setState(() {
-                    _commentsExpanded[postId] = !isCommentsExpanded;
+                    _commentsExpanded[postId] = willExpand;
                   });
+                  if (willExpand && (!_customComments.containsKey(postId) || _customComments[postId]!.isEmpty)) {
+                    final fetched = await PostService.getComments(postId);
+                    if (mounted) {
+                      setState(() {
+                        _customComments[postId] = fetched.map((c) => {
+                          'id': c['id'],
+                          'name': c['authorName'] ?? 'Acadyk Member',
+                          'headline': c['authorHeadline'] ?? '',
+                          'avatar': c['authorAvatar'] ?? '',
+                          'isAuthor': false,
+                          'timeText': c['timeAgo'] ?? 'Just now',
+                          'body': c['content'] ?? '',
+                          'likes': c['likes'] ?? 0,
+                          'hasLiked': c['isLiked'] ?? false,
+                          'replies': <Map<String, dynamic>>[],
+                        }).toList();
+                      });
+                    }
+                  }
                 },
                 child: Icon(
                   isCommentsExpanded ? CupertinoIcons.chat_bubble_fill : CupertinoIcons.chat_bubble,
@@ -1466,51 +355,20 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   Widget _buildCommentsSection(String postId) {
-    final comments = _customComments[postId] ?? [
-      {
-        'name': 'Christian Pickett',
-        'headline': 'Co-founder @ Orthogonal (YC W26)',
-        'avatar': 'assets/images/dharmik_avatar.jpg',
-        'isAuthor': true,
-        'timeText': '1d',
-        'body': 'Read more:\nhttps://www.thestreet.com/crypto/newsroom/orthogonal-is-betting-the-agent-economy-needs-better-infrastructure',
-        'likes': 10,
-        'hasLiked': false,
-        'replies': <Map<String, dynamic>>[],
-      },
-      {
-        'name': 'Aryan Gandhi',
-        'headline': 'Building the Future with AI 0->1 | Gen ...',
-        'avatar': 'assets/images/alina_avatar.jpg',
-        'isAuthor': false,
-        'timeText': '15h',
-        'body': 'Congratulations on the raise! The idea of agents dynamically discovering and orchestrating capabilities feels like a missing layer in today\'s agent stack. Excited to see where Orthogonal goes from here. Christian Pickett 👏',
-        'likes': 0,
-        'hasLiked': false,
-        'replies': <Map<String, dynamic>>[],
-      },
-      {
-        'name': 'Ryan Widgeon',
-        'headline': 'Founder | AI/ML | AI Agents |GTM| Forb...',
-        'avatar': 'assets/images/somraj_avatar.jpg',
-        'isAuthor': false,
-        'timeText': '1d',
-        'body': 'Congrats! This is a reallyyy interesting layer to build.\n\nMost agents today are only as useful as the tools they were pre-wired with. The moment the task requires a new capability, they either hallucinate a workaround, fail silently, or punt back to a human.\n\nDynamic capability discovery...',
-        'likes': 9,
-        'hasLiked': false,
-        'replies': <Map<String, dynamic>>[
-          {
-            'name': 'Dr. Xi Zeng',
-            'headline': 'Founder and CEO of Chance A...',
-            'avatar': 'assets/images/dharmik_avatar.jpg',
-            'timeText': '18h',
-            'body': 'Ryan Widgeon The safety point is where this gets interesting. Tool discovery is easy to describe as routing, but the agent also needs a reason to stop....',
-            'likes': 1,
-            'hasLiked': false,
-          }
-        ],
-      }
-    ];
+    final comments = _customComments[postId] ?? [];
+
+    if (comments.isEmpty) {
+      return Container(
+        color: const Color(0xFFF9FAFB),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: const Center(
+          child: Text(
+            'No comments yet.',
+            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
+          ),
+        ),
+      );
+    }
 
     return Container(
       color: const Color(0xFFF9FAFB),
@@ -1518,7 +376,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Dropdown
+          // Header
           Row(
             children: const [
               Text(
@@ -1534,8 +392,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           ...comments.asMap().entries.map((entry) {
             final commentIndex = entry.key;
             final comment = entry.value;
-            final replies = comment['replies'] as List<dynamic>;
+            final replies = (comment['replies'] is List) ? (comment['replies'] as List<dynamic>) : <dynamic>[];
             final hasReplies = replies.isNotEmpty;
+
+            final avatarStr = (comment['avatar'] ?? '') as String;
+            final ImageProvider? commentAvatarProvider = avatarStr.isNotEmpty
+                ? (avatarStr.startsWith('http')
+                    ? NetworkImage(avatarStr)
+                    : (avatarStr.startsWith('assets/') ? AssetImage(avatarStr) as ImageProvider : null))
+                : null;
+            final commentInitials = (comment['name'] != null && (comment['name'] as String).isNotEmpty)
+                ? (comment['name'] as String).substring(0, 1).toUpperCase()
+                : 'U';
 
             return Padding(
               padding: EdgeInsets.only(bottom: hasReplies ? 0 : 16.0),
@@ -1554,7 +422,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               alignment: Alignment.topLeft,
                               child: CircleAvatar(
                                 radius: 18,
-                                backgroundImage: AssetImage(comment['avatar']),
+                                backgroundColor: const Color(0xFF0F4C81),
+                                backgroundImage: commentAvatarProvider,
+                                onBackgroundImageError: commentAvatarProvider != null ? (_, __) {} : null,
+                                child: commentAvatarProvider == null
+                                    ? Text(
+                                        commentInitials,
+                                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                      )
+                                    : null,
                               ),
                             ),
                           ),
@@ -1684,7 +560,20 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                   children: [
                                     CircleAvatar(
                                       radius: 14,
-                                      backgroundImage: AssetImage(reply['avatar']),
+                                      backgroundColor: const Color(0xFF0F4C81),
+                                      backgroundImage: (reply['avatar'] != null && (reply['avatar'] as String).isNotEmpty && (reply['avatar'] as String).startsWith('http'))
+                                          ? NetworkImage(reply['avatar'])
+                                          : (reply['avatar'] != null && (reply['avatar'] as String).startsWith('assets/')
+                                              ? AssetImage(reply['avatar']) as ImageProvider
+                                              : null),
+                                      child: (reply['avatar'] == null || (reply['avatar'] as String).isEmpty || (!(reply['avatar'] as String).startsWith('http') && !(reply['avatar'] as String).startsWith('assets/')))
+                                          ? Text(
+                                              (reply['name'] != null && (reply['name'] as String).isNotEmpty)
+                                                  ? (reply['name'] as String).substring(0, 1).toUpperCase()
+                                                  : 'U',
+                                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                            )
+                                          : null,
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
@@ -1941,41 +830,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   Widget _buildCommentBodyText(String body) {
-    final words = ['Christian Pickett', 'Ryan Widgeon'];
-    String? foundWord;
-    for (final w in words) {
-      if (body.contains(w)) {
-        foundWord = w;
-        break;
-      }
-    }
-
-    if (foundWord == null) {
-      return Text(
-        body,
-        style: const TextStyle(color: Color(0xFF374151), fontSize: 13, height: 1.4),
-      );
-    }
-
-    final parts = body.split(foundWord);
-    return RichText(
-      text: TextSpan(
-        style: const TextStyle(color: Color(0xFF374151), fontSize: 13, height: 1.4),
-        children: [
-          TextSpan(text: parts[0]),
-          TextSpan(
-            text: foundWord,
-            style: const TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const ProfileScreen(isOwnProfile: false),
-                ));
-              },
-          ),
-          if (parts.length > 1) TextSpan(text: parts[1]),
-        ],
-      ),
+    return Text(
+      body,
+      style: const TextStyle(color: Color(0xFF374151), fontSize: 13, height: 1.4),
     );
   }
 
@@ -2482,11 +1339,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 final currentName = (AuthService.currentUser?.fullName != null && AuthService.currentUser!.fullName!.isNotEmpty)
                     ? AuthService.currentUser!.fullName!
                     : (ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Acadyk Member');
-                final usernameRaw = (AuthService.currentUser?.enrollmentNumber != null && AuthService.currentUser!.enrollmentNumber!.isNotEmpty)
-                    ? AuthService.currentUser!.enrollmentNumber!
-                    : (AuthService.currentUser?.username != null && AuthService.currentUser!.username!.isNotEmpty
-                        ? AuthService.currentUser!.username!
-                        : (ProfileManager.username.isNotEmpty ? ProfileManager.username : 'user'));
+                final userEmail = (AuthService.currentUser?.email != null && AuthService.currentUser!.email.isNotEmpty)
+                    ? AuthService.currentUser!.email
+                    : (ProfileManager.email.isNotEmpty ? ProfileManager.email : '25am1ab4@mitsgwl.ac.in');
                 final avatarUrl = ProfileManager.avatarUrl;
                 final ImageProvider? drawerAvatarProvider = ProfileManager.avatarBytes != null
                     ? MemoryImage(ProfileManager.avatarBytes!)
@@ -2538,7 +1393,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               ),
                               const SizedBox(height: 2.0),
                               Text(
-                                usernameRaw,
+                                userEmail,
                                 style: TextStyle(
                                   fontSize: 13.0,
                                   color: subTextColor,
@@ -2834,7 +1689,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  _buildMockAvatar(
+                  _buildAvatar(
                     initials: initials,
                     bgColor: const Color(0xFF0F4C81),
                     size: 38,
@@ -3020,15 +1875,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // ------------------------------------------------------------------
   // MOCK POST CARD BUILDER
   // ------------------------------------------------------------------
-  Widget _buildMockPostCard(Map<String, dynamic> post) {
-    final String postId = post['id']?.toString() ?? 'mock_${post.hashCode}';
-    final String authorName = post['authorName']?.toString() ?? 'Unknown';
+  Widget _buildPostCard(Map<String, dynamic> post) {
+    final String postId = post['id']?.toString() ?? 'post_${post.hashCode}';
+    final String authorName = post['authorName']?.toString() ?? 'Acadyk Member';
     final String authorSubtitle = post['authorSubtitle']?.toString() ?? '';
-    final String authorInitials = post['authorInitials']?.toString() ?? '?';
-    final int authorBgColor = (post['authorBgColor'] as num?)?.toInt() ?? 0xFF424242;
+    final String authorInitials = post['authorInitials']?.toString() ?? 'U';
+    final int authorBgColor = (post['authorBgColor'] as num?)?.toInt() ?? 0xFF0F4C81;
     final bool isVerified = post['isVerified'] == true;
     final String badgeType = post['badgeType']?.toString() ?? 'bronze';
-    final String timeAgo = post['timeAgo']?.toString() ?? '';
+    final String timeAgo = post['timeAgo']?.toString() ?? 'Just now';
     final String content = post['content']?.toString() ?? '';
     final int likes = (post['likes'] as num?)?.toInt() ?? 0;
     final int comments = (post['comments'] as num?)?.toInt() ?? 0;
@@ -3158,7 +2013,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               bgColor: authorBgColor,
                               isVerified: isVerified,
                             ),
-                            child: _buildMockAvatar(
+                            child: _buildAvatar(
                               initials: authorInitials,
                               bgColor: Color(authorBgColor),
                               size: 36,
@@ -3183,7 +2038,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 shape: BoxShape.circle,
                                 border: Border.all(color: Colors.white, width: 2),
                               ),
-                              child: _buildMockAvatar(
+                              child: _buildAvatar(
                                 initials: collabInitials,
                                 bgColor: Color(collabBgColor),
                                 size: 32,
@@ -3220,7 +2075,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           shape: BoxShape.circle,
                           color: isNotification || isMITSOfficial ? Colors.white : Colors.transparent,
                         ),
-                        child: _buildMockAvatar(
+                        child: _buildAvatar(
                           initials: authorInitials,
                           bgColor: Color(authorBgColor),
                           size: 36,
@@ -3389,8 +2244,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     );
   }
 
-  // Helper: Build avatar for mock posts
-  Widget _buildMockAvatar({
+  // -------------------------------------------------------------
+  // REUSABLE FEEDBACK ACTION ROW WITH COMMENTS ACCORDION
+  // -------------------------------------------------------------
+
+  // Helper: Build avatar
+  Widget _buildAvatar({
     required String initials,
     required Color bgColor,
     required double size,
@@ -3398,20 +2257,22 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     String? avatarAsset,
   }) {
     if (avatarAsset != null && avatarAsset.isNotEmpty) {
-      final ImageProvider imageProvider = avatarAsset.startsWith('http')
+      final ImageProvider? imageProvider = avatarAsset.startsWith('http')
           ? NetworkImage(avatarAsset)
-          : AssetImage(avatarAsset) as ImageProvider;
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          image: DecorationImage(
-            image: imageProvider,
-            fit: BoxFit.cover,
+          : (avatarAsset.startsWith('assets/') ? AssetImage(avatarAsset) as ImageProvider : null);
+      if (imageProvider != null) {
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            image: DecorationImage(
+              image: imageProvider,
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-      );
+        );
+      }
     }
     if (isMITS) {
       return Container(
@@ -3494,263 +2355,66 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     );
   }
 
-  Widget _buildDynamicRepostCard(Map<String, dynamic> repost) {
-    final postId = '${repost['postId']}_repost';
-    final hasImage = repost['postImage'] != null;
-
+  // -------------------------------------------------------------
+  // EMPTY FEED STATE
+  // -------------------------------------------------------------
+  Widget _buildEmptyFeedState() {
     return Container(
-      color: cardBg,
-      margin: const EdgeInsets.only(bottom: 8.0),
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 64.0),
+      alignment: Alignment.center,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Outer Header (Reposter)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ProfileScreen(isOwnProfile: true),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: AssetImage('assets/images/somraj_avatar.jpg'),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ProfileScreen(isOwnProfile: true),
-                        ),
-                      );
-                    },
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Somraj lodhi',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.0,
-                                color: textMain,
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              '• You',
-                              style: TextStyle(
-                                color: textSub,
-                                fontSize: 13.0,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          'Founder & Builder @ Acadyk',
-                          style: TextStyle(
-                            color: textSub,
-                            fontSize: 12.0,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.more_vert, color: textSub),
-                  onPressed: () {
-                    _showPostOptionsBottomSheet(
-                      context: context,
-                      postId: postId,
-                      authorName: 'Somraj lodhi',
-                      authorHeadline: 'Founder & Builder @ Acadyk',
-                      authorAvatar: 'assets/images/somraj_avatar.jpg',
-                      postText: repost['comment'] ?? '',
-                      postImage: repost['postImage'],
-                      accountData: const {
-                        'name': 'Somraj lodhi',
-                        'role': 'Founder & Builder @ Acadyk',
-                        'avatar': 'assets/images/somraj_avatar.jpg',
-                        'location': 'India',
-                        'connections': '500+',
-                        'followers': '10,000',
-                      },
-                    );
-                  },
-                ),
-              ],
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: _isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.dynamic_feed_outlined,
+              size: 36,
+              color: _isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
             ),
           ),
-          const SizedBox(height: 10),
-
-          // Reposter Text / Comment
-          if (repost['comment'] != null && (repost['comment'] as String).isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Text(
-                repost['comment'],
-                style: TextStyle(color: textMain, fontSize: 15.0, height: 1.3),
-              ),
+          const SizedBox(height: 16),
+          Text(
+            'No posts yet',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: textMain,
             ),
-          const SizedBox(height: 12),
-
-          // Inner Card (Original Post)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFE0E0E0), width: 1.0),
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Inner Header
-                  GestureDetector(
-                    onTap: () {
-                      if (repost['authorName'] == 'Y Combinator') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CompanyProfileScreen(companyName: 'Y Combinator'),
-                          ),
-                        );
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ProfileScreen(isOwnProfile: false),
-                          ),
-                        );
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: repost['authorAvatar'].startsWith('assets') ? Colors.transparent : const Color(0xFF0A66C2),
-                              shape: BoxShape.circle,
-                              image: repost['authorAvatar'].startsWith('assets')
-                                  ? DecorationImage(
-                                      image: AssetImage(repost['authorAvatar']),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                            alignment: Alignment.center,
-                            child: repost['authorAvatar'].startsWith('assets')
-                                ? null
-                                : Text(
-                                    repost['authorAvatar'],
-                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                                  ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  repost['authorName'],
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13.0,
-                                    color: textMain,
-                                  ),
-                                ),
-                                Text(
-                                  repost['authorHeadline'],
-                                  style: TextStyle(
-                                    color: textSub,
-                                    fontSize: 11.5,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Inner Text
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Text(
-                      repost['postText'],
-                      style: TextStyle(color: textMain, fontSize: 13.0, height: 1.4),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Inner Image (if preview was not removed)
-                  if (hasImage && repost['showImage'] != false)
-                    InstagrammableImage(
-                      onDoubleTap: () {
-                        final isLiked = _likedPosts[postId] ?? false;
-                        final likesCount = _likesCountOverride[postId] ?? 0;
-                        setState(() {
-                          if (!isLiked) {
-                            _likedPosts[postId] = true;
-                            _likesCountOverride[postId] = likesCount + 1;
-                          }
-                        });
-                      },
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(8.0),
-                          bottomRight: Radius.circular(8.0),
-                        ),
-                        child: Image.asset(
-                          repost['postImage'],
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        ),
-                      ),
-                    ),
-                ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Be the first to share an update, project, or event with your campus community.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13.5,
+              color: textSub,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const CreatePostScreen()),
+              );
+            },
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Create Post'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1565C0),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-
-          // Action/Engagement row
-          _buildPostActionRow(
-            postId: postId,
-            defaultLikes: 0,
-            defaultComments: 0,
-          ),
-          if (_commentsExpanded[postId] == true) ...[
-            _buildCommentsSection(postId),
-          ],
         ],
       ),
     );

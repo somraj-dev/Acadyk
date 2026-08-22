@@ -16,6 +16,12 @@ import com.acadyk.modules.users.entity.UserEntity
 import com.acadyk.modules.users.repository.UserRepository
 import com.acadyk.security.AuditService
 import com.acadyk.security.Role
+import com.acadyk.modules.auth.service.EnrollmentNumberService
+import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
+import org.springframework.data.jpa.domain.Specification
+import jakarta.persistence.criteria.Predicate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -32,7 +38,8 @@ class AdminUserService(
     private val postRepository: PostRepository,
     private val communityRepository: CommunityRepository,
     private val authAuditLogRepository: com.acadyk.modules.users.repository.AuthAuditLogRepository,
-    private val auditService: AuditService
+    private val auditService: AuditService,
+    private val enrollmentNumberService: EnrollmentNumberService
 ) {
 
     @Transactional(readOnly = true)
@@ -44,54 +51,67 @@ class AdminUserService(
         branch: String?,
         department: String?,
         page: Int = 0,
-        size: Int = 100
+        size: Int = 50
     ): List<AdminUserResponse> {
-        val allUsers = userRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc()
+        val spec = Specification<UserEntity> { root, query, cb ->
+            val predicates = mutableListOf<Predicate>()
 
-        val filtered = allUsers.filter { user ->
-            var matches = true
+            // Active / non-deleted users
+            predicates.add(cb.isNull(root.get<Instant>("deletedAt")))
 
             if (!search.isNullOrBlank()) {
-                val q = search.trim().lowercase()
-                val profile = profileRepository.findByUserId(user.id).orElse(null)
-                val matchesSearch = user.email.lowercase().contains(q) ||
-                        (user.collegeEmail?.lowercase()?.contains(q) == true) ||
-                        (user.enrollmentNumber?.lowercase()?.contains(q) == true) ||
-                        (user.employeeId?.lowercase()?.contains(q) == true) ||
-                        (user.department?.lowercase()?.contains(q) == true) ||
-                        (user.branch?.lowercase()?.contains(q) == true) ||
-                        (profile?.fullName?.lowercase()?.contains(q) == true)
-
-                if (!matchesSearch) matches = false
+                val pattern = "%${search.trim().lowercase()}%"
+                val emailPred = cb.like(cb.lower(root.get("email")), pattern)
+                val collegeEmailPred = cb.like(cb.lower(root.get("collegeEmail")), pattern)
+                val enrollmentPred = cb.like(cb.lower(root.get("enrollmentNumber")), pattern)
+                val empPred = cb.like(cb.lower(root.get("employeeId")), pattern)
+                val deptPred = cb.like(cb.lower(root.get("department")), pattern)
+                val branchPred = cb.like(cb.lower(root.get("branch")), pattern)
+                val fatherNamePred = cb.like(cb.lower(root.get("fatherName")), pattern)
+                predicates.add(cb.or(emailPred, collegeEmailPred, enrollmentPred, empPred, deptPred, branchPred, fatherNamePred))
             }
 
-            if (matches && role != null) {
-                if (user.role != role) matches = false
+            if (role != null) {
+                predicates.add(cb.equal(root.get<Role>("role"), role))
             }
 
-            if (matches && !status.isNullOrBlank() && status.lowercase() != "all") {
-                val s = status.uppercase()
-                if (user.accountStatus.name != s) matches = false
+            if (!status.isNullOrBlank() && !status.equals("all", ignoreCase = true)) {
+                try {
+                    val s = AccountStatus.valueOf(status.trim().uppercase())
+                    predicates.add(cb.equal(root.get<AccountStatus>("accountStatus"), s))
+                } catch (_: Exception) {}
             }
 
-            if (matches && !course.isNullOrBlank()) {
-                if (!user.degree.equals(course, ignoreCase = true)) matches = false
+            if (!course.isNullOrBlank() && !course.equals("all", ignoreCase = true)) {
+                predicates.add(cb.equal(cb.lower(root.get("degree")), course.trim().lowercase()))
             }
 
-            if (matches && !branch.isNullOrBlank()) {
-                if (!user.branch.equals(branch, ignoreCase = true)) matches = false
+            if (!branch.isNullOrBlank() && !branch.equals("all", ignoreCase = true)) {
+                predicates.add(cb.equal(cb.lower(root.get("branch")), branch.trim().lowercase()))
             }
 
-            if (matches && !department.isNullOrBlank()) {
-                if (!user.department.equals(department, ignoreCase = true)) matches = false
+            if (!department.isNullOrBlank() && !department.equals("all", ignoreCase = true)) {
+                predicates.add(cb.equal(cb.lower(root.get("department")), department.trim().lowercase()))
             }
 
-            matches
+            cb.and(*predicates.toTypedArray())
         }
 
-        // Fetch profiles and map to response
-        return filtered.map { user ->
-            val profile = profileRepository.findByUserId(user.id).or { profileRepository.findById(user.id) }.orElse(null)
+        val safePage = page.coerceAtLeast(0)
+        val safeSize = size.coerceIn(1, 200)
+        val pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"))
+        val pagedResult = userRepository.findAll(spec, pageable)
+        val users = pagedResult.content
+
+        val userIds = users.map { it.id }
+        val profileMap = if (userIds.isNotEmpty()) {
+            profileRepository.findAllByUserIdIn(userIds).associateBy { it.userId }
+        } else {
+            emptyMap()
+        }
+
+        return users.map { user ->
+            val profile = profileMap[user.id]
             mapToAdminUserResponse(user, profile)
         }
     }
@@ -127,6 +147,14 @@ class AdminUserService(
             throw BadRequestException("A valid email address is required.")
         }
 
+        val isMitsDomain = enrollmentNumberService.isCollegeEmail(email)
+        val isAdminInternal = email.endsWith("@acadyk.internal") || email.endsWith("@acadyk.edu") || email == "admin@acadyk.com"
+
+        if (!isMitsDomain && !isAdminInternal) {
+            val domain = email.substringAfter("@", "")
+            throw BadRequestException("Invalid email domain '@$domain'. Only official institutional email addresses ending in @mits.ac.in are accepted.")
+        }
+
         // Check for duplicate email
         if (userRepository.existsByEmail(email) || userRepository.existsByCollegeEmail(email)) {
             throw ConflictException("A user with email '$email' already exists in the system.")
@@ -158,7 +186,7 @@ class AdminUserService(
 
         val userEntity = UserEntity(
             id = userId,
-            firebaseUid = "pre_provisioned_$userId",
+            firebaseUid = null,
             email = email,
             collegeEmail = email,
             enrollmentNumber = enrollment,
@@ -185,8 +213,6 @@ class AdminUserService(
             updatedAt = Instant.now()
         )
 
-        val savedUser = userRepository.save(userEntity)
-
         val profileEntity = ProfileEntity(
             id = UUID.randomUUID(),
             userId = userId,
@@ -200,18 +226,23 @@ class AdminUserService(
             updatedAt = Instant.now()
         )
 
-        val savedProfile = profileRepository.save(profileEntity)
+        try {
+            val savedUser = userRepository.save(userEntity)
+            val savedProfile = profileRepository.save(profileEntity)
 
-        auditService.logAuthEvent(
-            action = "ADMIN_CREATE_USER",
-            userId = savedUser.id,
-            email = savedUser.email,
-            ipAddress = "127.0.0.1",
-            success = true,
-            details = "Created ${savedUser.role} record (Enrollment: $enrollment) by admin $adminEmail"
-        )
+            auditService.logAuthEvent(
+                action = "ADMIN_CREATE_USER",
+                userId = savedUser.id,
+                email = savedUser.email,
+                ipAddress = "127.0.0.1",
+                success = true,
+                details = "Created ${savedUser.role} record (Enrollment: $enrollment) by admin $adminEmail"
+            )
 
-        return mapToAdminUserResponse(savedUser, savedProfile)
+            return mapToAdminUserResponse(savedUser, savedProfile)
+        } catch (ex: DataIntegrityViolationException) {
+            throw ConflictException("A user with this email, enrollment number, or employee ID already exists.")
+        }
     }
 
     @Transactional
@@ -240,7 +271,12 @@ class AdminUserService(
 
         request.email?.trim()?.lowercase()?.takeIf { it.isNotBlank() }?.let { newEmail ->
             if (newEmail != user.email) {
-                val existing = userRepository.findByEmail(newEmail)
+                val isMits = enrollmentNumberService.isCollegeEmail(newEmail)
+                val isAdminInternal = newEmail.endsWith("@acadyk.internal") || newEmail.endsWith("@acadyk.edu") || newEmail == "admin@acadyk.com"
+                if (!isMits && !isAdminInternal) {
+                    throw BadRequestException("Invalid email domain. Only official institutional email addresses ending in @mits.ac.in are accepted.")
+                }
+                val existing = userRepository.findByEmail(newEmail).or { userRepository.findByCollegeEmail(newEmail) }
                 if (existing.isPresent && existing.get().id != user.id) {
                     throw ConflictException("Email '$newEmail' is already in use by another account.")
                 }
@@ -297,19 +333,23 @@ class AdminUserService(
         user.updatedAt = Instant.now()
         profile.updatedAt = Instant.now()
 
-        val savedUser = userRepository.save(user)
-        val savedProfile = profileRepository.save(profile)
+        try {
+            val savedUser = userRepository.save(user)
+            val savedProfile = profileRepository.save(profile)
 
-        auditService.logAuthEvent(
-            action = "ADMIN_UPDATE_USER",
-            userId = savedUser.id,
-            email = savedUser.email,
-            ipAddress = "127.0.0.1",
-            success = true,
-            details = "Updated user profile details by admin $adminEmail"
-        )
+            auditService.logAuthEvent(
+                action = "ADMIN_UPDATE_USER",
+                userId = savedUser.id,
+                email = savedUser.email,
+                ipAddress = "127.0.0.1",
+                success = true,
+                details = "Updated user profile details by admin $adminEmail"
+            )
 
-        return mapToAdminUserResponse(savedUser, savedProfile)
+            return mapToAdminUserResponse(savedUser, savedProfile)
+        } catch (ex: DataIntegrityViolationException) {
+            throw ConflictException("A user with this email or enrollment number already exists.")
+        }
     }
 
     @Transactional

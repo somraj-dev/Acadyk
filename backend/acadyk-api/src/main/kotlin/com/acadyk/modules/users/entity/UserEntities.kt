@@ -21,8 +21,8 @@ data class UserEntity(
     @Id
     val id: UUID = UUID.randomUUID(),
 
-    @Column(name = "firebase_uid", nullable = false, unique = true)
-    var firebaseUid: String,
+    @Column(name = "firebase_uid", unique = true)
+    var firebaseUid: String? = null,
 
     @Column(nullable = false, unique = true)
     var email: String,

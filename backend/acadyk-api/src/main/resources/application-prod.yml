@@ -29,10 +29,6 @@ spring:
       security.protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
       sasl.mechanism: ${KAFKA_SASL_MECHANISM:PLAIN}
       sasl.jaas.config: ${KAFKA_SASL_JAAS_CONFIG:}
-  elasticsearch:
-    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
-    username: ${ELASTICSEARCH_USERNAME:}
-    password: ${ELASTICSEARCH_PASSWORD:}
 
 logging:
   level:
@@ -51,3 +47,7 @@ management:
       show-details: when_authorized
       probes:
         enabled: true
+
+acadyk:
+  auth:
+    dev-mode-enabled: false

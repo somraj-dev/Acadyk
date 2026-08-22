@@ -1,6 +1,7 @@
 package com.acadyk.modules.connections.service
 
 import com.acadyk.common.BadRequestException
+import com.acadyk.common.ForbiddenException
 import com.acadyk.common.ResourceNotFoundException
 import com.acadyk.common.toUUID
 import com.acadyk.infrastructure.kafka.ConnectionCreatedEvent
@@ -20,6 +21,8 @@ import com.acadyk.modules.profiles.dto.ProfileResponse
 import com.acadyk.modules.profiles.mapper.ProfileMapper
 import com.acadyk.modules.profiles.repository.ProfileRepository
 import com.acadyk.security.CurrentUserProvider
+import com.acadyk.common.toUUIDOrNull
+import com.acadyk.modules.users.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -32,15 +35,82 @@ class ConnectionService(
     private val connectionRequestRepository: ConnectionRequestRepository,
     private val followRepository: FollowRepository,
     private val profileRepository: ProfileRepository,
+    private val userRepository: UserRepository,
     private val connectionMapper: ConnectionMapper,
     private val profileMapper: ProfileMapper,
     private val currentUserProvider: CurrentUserProvider,
     private val domainEventPublisher: DomainEventPublisher
 ) {
 
+    fun resolveProfileId(identifier: String): UUID {
+        val trimmed = identifier.trim()
+        if (trimmed.equals("me", ignoreCase = true) || trimmed.equals("self", ignoreCase = true)) {
+            return currentUserProvider.getCurrentUserId()
+        }
+
+        // 1. Direct UUID match
+        val directUuid = trimmed.toUUIDOrNull()
+        if (directUuid != null) {
+            if (profileRepository.existsById(directUuid)) {
+                return directUuid
+            }
+            val byUserId = profileRepository.findByUserId(directUuid)
+            if (byUserId.isPresent) {
+                return byUserId.get().id
+            }
+            return directUuid
+        }
+
+        // 2. Firebase UID match
+        val byFirebase = userRepository.findByFirebaseUid(trimmed)
+        if (byFirebase.isPresent) {
+            val userProfile = profileRepository.findByUserId(byFirebase.get().id)
+            if (userProfile.isPresent) return userProfile.get().id
+            return byFirebase.get().id
+        }
+
+        // 3. Enrollment number match
+        val byEnrollment = userRepository.findByEnrollmentNumber(trimmed)
+        if (byEnrollment.isPresent) {
+            val userProfile = profileRepository.findByUserId(byEnrollment.get().id)
+            if (userProfile.isPresent) return userProfile.get().id
+            return byEnrollment.get().id
+        }
+
+        // 4. Username match
+        val byUsername = profileRepository.findByUsername(trimmed)
+        if (byUsername.isPresent) {
+            return byUsername.get().id
+        }
+
+        // 5. Email match
+        val byEmail = userRepository.findByEmail(trimmed)
+            .or { userRepository.findByCollegeEmail(trimmed) }
+        if (byEmail.isPresent) {
+            val userProfile = profileRepository.findByUserId(byEmail.get().id)
+            if (userProfile.isPresent) return userProfile.get().id
+            return byEmail.get().id
+        }
+
+        // 6. Handle mock-firebase-uid- prefix in dev mode
+        val cleanPrefix = trimmed.removePrefix("mock-firebase-uid-").trim()
+        if (cleanPrefix != trimmed) {
+            val byClean = userRepository.findByEmail("$cleanPrefix@mitsgwl.ac.in")
+                .or { userRepository.findByCollegeEmail("$cleanPrefix@mitsgwl.ac.in") }
+                .or { userRepository.findByEnrollmentNumber(cleanPrefix) }
+            if (byClean.isPresent) {
+                val userProfile = profileRepository.findByUserId(byClean.get().id)
+                if (userProfile.isPresent) return userProfile.get().id
+                return byClean.get().id
+            }
+        }
+
+        throw ResourceNotFoundException("Profile identity could not be resolved for: $identifier")
+    }
+
     fun sendConnectionRequest(request: SendConnectionRequest): ConnectionRequestResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
-        val recipientUuid = request.recipientId.toUUID()
+        val recipientUuid = resolveProfileId(request.recipientId)
         if (currentUserId == recipientUuid) {
             throw BadRequestException("Cannot connect with yourself")
         }
@@ -93,7 +163,15 @@ class ConnectionService(
     fun acceptConnectionRequest(requestId: String) = acceptConnectionRequest(requestId.toUUID())
 
     fun removeConnection(connectionId: UUID) {
-        connectionRepository.deleteById(connectionId)
+        val currentUserId = currentUserProvider.getCurrentUserId()
+        val connection = connectionRepository.findById(connectionId)
+            .orElseThrow { ResourceNotFoundException("Connection not found") }
+
+        if (connection.userA.id != currentUserId && connection.userB.id != currentUserId) {
+            throw ForbiddenException("You are not authorized to remove this connection")
+        }
+
+        connectionRepository.delete(connection)
     }
 
     fun removeConnection(connectionId: String) = removeConnection(connectionId.toUUID())
@@ -132,7 +210,7 @@ class ConnectionService(
         return FollowStatusResponse(targetUserId.toString(), true)
     }
 
-    fun follow(targetUserId: String): FollowStatusResponse = follow(targetUserId.toUUID())
+    fun follow(targetUserId: String): FollowStatusResponse = follow(resolveProfileId(targetUserId))
 
     fun unfollow(targetUserId: UUID): FollowStatusResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
@@ -160,7 +238,7 @@ class ConnectionService(
         return FollowStatusResponse(targetUserId.toString(), false)
     }
 
-    fun unfollow(targetUserId: String): FollowStatusResponse = unfollow(targetUserId.toUUID())
+    fun unfollow(targetUserId: String): FollowStatusResponse = unfollow(resolveProfileId(targetUserId))
 
     fun toggleFollow(targetUserId: UUID): FollowStatusResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()
@@ -176,19 +254,29 @@ class ConnectionService(
         }
     }
 
-    fun toggleFollow(targetUserId: String): FollowStatusResponse = toggleFollow(targetUserId.toUUID())
+    fun toggleFollow(targetUserId: String): FollowStatusResponse = toggleFollow(resolveProfileId(targetUserId))
 
     @Transactional(readOnly = true)
-    fun getFollowers(userId: UUID): List<ProfileResponse> =
-        followRepository.findAllByFollowingId(userId).map { profileMapper.toResponse(it.follower) }
+    fun getFollowers(userId: UUID): List<ProfileResponse> {
+        val currentUserId = runCatching { currentUserProvider.getCurrentUserId() }.getOrNull()
+        return followRepository.findAllByFollowingId(userId).map {
+            val isFollowing = currentUserId?.let { cur -> followRepository.existsByFollowerIdAndFollowingId(cur, it.follower.id) } ?: false
+            profileMapper.toResponse(it.follower, isFollowing = isFollowing)
+        }
+    }
 
     @Transactional(readOnly = true)
-    fun getFollowers(userId: String): List<ProfileResponse> = getFollowers(userId.toUUID())
+    fun getFollowers(userId: String): List<ProfileResponse> = getFollowers(resolveProfileId(userId))
 
     @Transactional(readOnly = true)
-    fun getFollowing(userId: UUID): List<ProfileResponse> =
-        followRepository.findAllByFollowerId(userId).map { profileMapper.toResponse(it.following) }
+    fun getFollowing(userId: UUID): List<ProfileResponse> {
+        val currentUserId = runCatching { currentUserProvider.getCurrentUserId() }.getOrNull()
+        return followRepository.findAllByFollowerId(userId).map {
+            val isFollowing = currentUserId?.let { cur -> followRepository.existsByFollowerIdAndFollowingId(cur, it.following.id) } ?: false
+            profileMapper.toResponse(it.following, isFollowing = isFollowing)
+        }
+    }
 
     @Transactional(readOnly = true)
-    fun getFollowing(userId: String): List<ProfileResponse> = getFollowing(userId.toUUID())
+    fun getFollowing(userId: String): List<ProfileResponse> = getFollowing(resolveProfileId(userId))
 }

@@ -30,7 +30,7 @@ build-android:
 	./scripts/release.sh
 
 run-infra:
-	docker-compose up -d postgres redis kafka elasticsearch
+	docker-compose up -d postgres redis kafka
 
 run-all:
 	docker-compose up -d

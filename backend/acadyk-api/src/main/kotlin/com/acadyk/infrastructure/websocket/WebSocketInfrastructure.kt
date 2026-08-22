@@ -71,7 +71,8 @@ class WebSocketConfig(
 class WebSocketAuthInterceptor(
     private val tokenVerifier: FirebaseTokenVerifier,
     private val profileRepository: ProfileRepository,
-    private val userRepository: com.acadyk.modules.users.repository.UserRepository
+    private val userRepository: com.acadyk.modules.users.repository.UserRepository,
+    private val conversationMemberRepository: ConversationMemberRepository
 ) : ChannelInterceptor {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -79,25 +80,42 @@ class WebSocketAuthInterceptor(
     override fun preSend(message: Message<*>, channel: MessageChannel): Message<*> {
         val accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor::class.java)
 
-        if (accessor != null && StompCommand.CONNECT == accessor.command) {
-            val authHeader = accessor.getFirstNativeHeader("Authorization")
-                ?: accessor.getFirstNativeHeader("token")
+        if (accessor != null) {
+            if (StompCommand.CONNECT == accessor.command) {
+                val authHeader = accessor.getFirstNativeHeader("Authorization")
+                    ?: accessor.getFirstNativeHeader("token")
 
-            if (!authHeader.isNullOrBlank()) {
-                val token = if (authHeader.startsWith("Bearer ")) authHeader.substring(7) else authHeader
-                val verifiedUser = tokenVerifier.verifyToken(token)
+                if (!authHeader.isNullOrBlank()) {
+                    val token = if (authHeader.startsWith("Bearer ")) authHeader.substring(7) else authHeader
+                    val verifiedUser = tokenVerifier.verifyToken(token)
 
-                if (verifiedUser != null) {
-                    val profile = verifiedUser.uid.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
-                        ?: userRepository.findByEmail(verifiedUser.email).flatMap { profileRepository.findById(it.id) }.orElse(null)
-                    val principal = UserPrincipal(
-                        id = profile?.id ?: UUID.nameUUIDFromBytes(verifiedUser.uid.toByteArray()),
-                        email = verifiedUser.email,
-                        username = profile?.username ?: verifiedUser.email.substringBefore("@")
-                    )
-                    val auth = UsernamePasswordAuthenticationToken(principal, null, principal.authorities)
-                    accessor.user = auth
-                    logger.debug("WebSocket authenticated for user: ${principal.id}")
+                    if (verifiedUser != null) {
+                        val profile = verifiedUser.uid.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
+                            ?: userRepository.findByEmail(verifiedUser.email).flatMap { profileRepository.findById(it.id) }.orElse(null)
+                        val principal = UserPrincipal(
+                            id = profile?.id ?: UUID.nameUUIDFromBytes(verifiedUser.uid.toByteArray()),
+                            email = verifiedUser.email,
+                            username = profile?.username ?: verifiedUser.email.substringBefore("@")
+                        )
+                        val auth = UsernamePasswordAuthenticationToken(principal, null, principal.authorities)
+                        accessor.user = auth
+                        logger.debug("WebSocket authenticated for user: ${principal.id}")
+                    }
+                }
+            } else if (StompCommand.SUBSCRIBE == accessor.command) {
+                val destination = accessor.destination
+                if (destination != null && destination.startsWith("/topic/conversations/")) {
+                    val convIdStr = destination.removePrefix("/topic/conversations/").trim()
+                    val convUuid = convIdStr.toUUIDOrNull()
+                    val userPrincipal = (accessor.user as? UsernamePasswordAuthenticationToken)?.principal as? UserPrincipal
+
+                    if (convUuid != null && userPrincipal != null) {
+                        val isMember = conversationMemberRepository.existsByConversationIdAndProfileId(convUuid, userPrincipal.id)
+                        if (!isMember) {
+                            logger.warn("Unauthorized WebSocket subscription rejected for user ${userPrincipal.id} on $destination")
+                            throw IllegalArgumentException("Unauthorized subscription to conversation $convIdStr")
+                        }
+                    }
                 }
             }
         }
@@ -127,11 +145,17 @@ class RealtimeChatController(
         @Payload payload: SendMessageRequest,
         principal: Principal?
     ) {
-        val senderId = principal?.name ?: "anonymous"
+        val userPrincipal = (principal as? UsernamePasswordAuthenticationToken)?.principal as? UserPrincipal
+        val senderUuid = userPrincipal?.id ?: principal?.name?.toUUIDOrNull() ?: return
         if (payload.content.isBlank()) return
 
         val convUuid = conversationId.toUUIDOrNull() ?: return
-        val senderUuid = senderId.toUUIDOrNull() ?: return
+
+        // Verify conversation membership
+        if (!conversationMemberRepository.existsByConversationIdAndProfileId(convUuid, senderUuid)) {
+            logger.warn("User $senderUuid attempted to send message to unauthorized conversation $conversationId")
+            return
+        }
 
         val conversation = conversationRepository.findByIdAndDeletedAtIsNull(convUuid).orElse(null) ?: return
         val sender = profileRepository.findById(senderUuid).orElse(null) ?: return

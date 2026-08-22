@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -39,7 +40,7 @@ class FirebaseAuthService {
       await init();
       if (_auth?.currentUser != null) {
         final token = await _auth!.currentUser!.getIdToken(forceRefresh);
-        if (token != null) {
+        if (token != null && token.isNotEmpty) {
           await _storage.write(key: 'auth_token', value: token);
           return token;
         }
@@ -47,7 +48,28 @@ class FirebaseAuthService {
     } catch (e) {
       debugPrint('[FirebaseAuthService] Error obtaining Firebase ID token: $e');
     }
-    return await _storage.read(key: 'auth_token');
+    final storedToken = await _storage.read(key: 'auth_token');
+    if (storedToken != null && storedToken.isNotEmpty) {
+      return storedToken;
+    }
+
+    // Fallback: In debug/test runner mode only, if user profile exists in storage, extract email
+    if (kDebugMode) {
+      final userProfileJson = await _storage.read(key: 'user_profile');
+      if (userProfileJson != null && userProfileJson.isNotEmpty) {
+        try {
+          final profile = jsonDecode(userProfileJson);
+          final email = profile['email']?.toString();
+          if (email != null && email.isNotEmpty) {
+            final fallbackToken = 'test-token-$email';
+            await _storage.write(key: 'auth_token', value: fallbackToken);
+            return fallbackToken;
+          }
+        } catch (_) {}
+      }
+    }
+
+    return null;
   }
 
   static Future<Map<String, dynamic>> signInWithEmail(String email, String password) async {
@@ -152,36 +174,69 @@ class FirebaseAuthService {
   }
 
   static Future<Map<String, dynamic>?> signInWithGoogle() async {
-    if (kIsWeb) {
-      throw Exception('Google Sign-In is not yet supported on web. Please use an Android or iOS device.');
-    }
     await init();
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null;
+      String? idToken;
+      String uid = '';
+      String userEmail = '';
+      String userFullName = '';
+      String? userPhotoUrl;
 
-      // Only allow MITS-DU college email accounts
-      final domain = googleUser.email.trim().toLowerCase().split('@').last;
-      if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in') {
-        await _googleSignIn.signOut();
-        throw Exception('Please select your MITS-DU college email (@mitsgwl.ac.in) to sign in.');
-      }
+      if (kIsWeb) {
+        if (_auth != null) {
+          final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+          googleProvider.addScope('email');
+          googleProvider.addScope('profile');
+          googleProvider.setCustomParameters({'hd': 'mitsgwl.ac.in'});
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+          final UserCredential userCredential = await _auth!.signInWithPopup(googleProvider);
+          final User? user = userCredential.user;
+          if (user == null) return null;
 
-      String? idToken = googleAuth.idToken;
-      String uid = 'google_${googleUser.id}';
+          final domain = (user.email ?? '').trim().toLowerCase().split('@').last;
+          if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in') {
+            await _auth!.signOut();
+            throw Exception('Please select your MITS-DU college email (@mitsgwl.ac.in) to sign in.');
+          }
 
-      if (_auth != null) {
-        final userCredential = await _auth!.signInWithCredential(credential);
-        final user = userCredential.user;
-        if (user != null) {
-          idToken = await user.getIdToken() ?? idToken;
+          idToken = await user.getIdToken();
           uid = user.uid;
+          userEmail = user.email ?? '';
+          userFullName = user.displayName ?? 'Google User';
+          userPhotoUrl = user.photoURL;
+        } else {
+          throw Exception('Authentication service is initializing. Please try again.');
+        }
+      } else {
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) return null;
+
+        // Only allow MITS-DU college email accounts
+        final domain = googleUser.email.trim().toLowerCase().split('@').last;
+        if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in') {
+          await _googleSignIn.signOut();
+          throw Exception('Please select your MITS-DU college email (@mitsgwl.ac.in) to sign in.');
+        }
+
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final OAuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        idToken = googleAuth.idToken;
+        uid = 'google_${googleUser.id}';
+        userEmail = googleUser.email;
+        userFullName = googleUser.displayName ?? 'Google User';
+        userPhotoUrl = googleUser.photoUrl;
+
+        if (_auth != null) {
+          final userCredential = await _auth!.signInWithCredential(credential);
+          final user = userCredential.user;
+          if (user != null) {
+            idToken = await user.getIdToken() ?? idToken;
+            uid = user.uid;
+          }
         }
       }
 
@@ -204,10 +259,10 @@ class FirebaseAuthService {
         'token': idToken,
         'user': {
           'id': uid,
-          'email': googleUser.email,
-          'full_name': googleUser.displayName ?? 'Google User',
-          'profile_photo_url': googleUser.photoUrl,
-          'username': googleUser.email.split('@').first,
+          'email': userEmail,
+          'full_name': userFullName,
+          'profile_photo_url': userPhotoUrl,
+          'username': userEmail.split('@').first,
         },
         'roles': ['STUDENT'],
       };

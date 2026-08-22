@@ -23,10 +23,9 @@ class FileController(private val fileService: FileService) {
 
     @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun uploadFile(
-        @RequestParam("file") file: MultipartFile,
-        @RequestParam(value = "bucket", required = false) bucket: String?
+        @RequestParam("file") file: MultipartFile
     ): ResponseEntity<ApiResponse<UploadFileResponse>> {
-        val result = fileService.uploadMultipartFile(file, bucket)
+        val result = fileService.uploadMultipartFile(file)
         return ResponseEntity.ok(ApiResponse.success(result))
     }
 }

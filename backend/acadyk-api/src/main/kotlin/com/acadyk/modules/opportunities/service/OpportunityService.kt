@@ -1,5 +1,6 @@
 package com.acadyk.modules.opportunities.service
 
+import com.acadyk.common.ForbiddenException
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
 import com.acadyk.common.toUUID
@@ -109,7 +110,13 @@ class OpportunityService(
         val profile = profileRepository.findById(currentUserId)
             .orElseThrow { ResourceNotFoundException("User profile not found") }
 
-        val resume = request.resumeId?.toUUIDOrNull()?.let { resumeRepository.findById(it).orElse(null) }
+        val resume = request.resumeId?.toUUIDOrNull()?.let { resumeId ->
+            val foundResume = resumeRepository.findById(resumeId).orElse(null)
+            if (foundResume != null && foundResume.profileId != currentUserId) {
+                throw ForbiddenException("You can only submit your own resume")
+            }
+            foundResume
+        }
 
         // Use distributed lock for atomic submission idempotency
         redisDistributedLock.withLock("opportunity:apply:$id:$currentUserId") {

@@ -52,11 +52,34 @@ class PostService(
     }
 
     @Transactional(readOnly = true)
+    fun getPostsByUserId(userId: UUID, page: Int, size: Int): PageResponse<PostResponse> {
+        val pageable = PageRequest.of(page, size)
+        val postsPage = postRepository.findAllByAuthorIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId, pageable)
+        val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
+
+        return PageResponse.from(postsPage) { post ->
+            val media = postMediaRepository.findAllByPostIdOrderByPositionAsc(post.id)
+            val isLiked = if (currentUserId != null) postReactionRepository.existsByPostIdAndUserId(post.id, currentUserId) else false
+            postMapper.toResponse(post, media, isLiked = isLiked)
+        }
+    }
+
+    @Transactional(readOnly = true)
+    fun getPostsByUserId(userId: String, page: Int, size: Int): PageResponse<PostResponse> =
+        getPostsByUserId(userId.toUUID(), page, size)
+
+    @Transactional(readOnly = true)
     fun getPostById(id: UUID): PostResponse {
         val post = postRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow { ResourceNotFoundException("Post with id $id not found") }
-        val media = postMediaRepository.findAllByPostIdOrderByPositionAsc(post.id)
+
         val currentUserId = try { currentUserProvider.getCurrentUserId() } catch (_: Exception) { null }
+
+        if (post.visibility.equals("private", ignoreCase = true) && post.author.id != currentUserId && !currentUserProvider.hasAnyRole("SUPER_ADMIN", "COLLEGE_ADMIN")) {
+            throw ForbiddenException("This post is private")
+        }
+
+        val media = postMediaRepository.findAllByPostIdOrderByPositionAsc(post.id)
         val isLiked = if (currentUserId != null) postReactionRepository.existsByPostIdAndUserId(post.id, currentUserId) else false
         return postMapper.toResponse(post, media, isLiked = isLiked)
     }

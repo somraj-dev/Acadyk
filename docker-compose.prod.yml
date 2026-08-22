@@ -17,7 +17,6 @@ services:
       REDIS_PORT: ${PROD_REDIS_PORT:-6379}
       REDIS_PASSWORD: ${PROD_REDIS_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: ${PROD_KAFKA_BROKERS}
-      ELASTICSEARCH_URIS: ${PROD_ES_URIS}
       AWS_S3_BUCKET: ${PROD_S3_BUCKET}
       AWS_REGION: ${PROD_AWS_REGION:-us-east-1}
       CORS_ALLOWED_ORIGINS: ${PROD_CORS_ORIGINS:-https://acadyk.com,https://app.acadyk.com,http://localhost:3000,http://127.0.0.1:3000}

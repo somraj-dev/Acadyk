@@ -16,6 +16,8 @@ data class CommentAuthorDto(
     val id: String,
     val username: String,
     val fullName: String,
+    val headline: String? = null,
+    val email: String? = null,
     val profilePhotoUrl: String?
 )
 

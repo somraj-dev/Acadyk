@@ -90,6 +90,7 @@ fun String?.toUUIDOrNull(): UUID? = this?.let {
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
+    private val logger = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
 
     @ExceptionHandler(ResourceNotFoundException::class)
     fun handleNotFound(e: ResourceNotFoundException): ResponseEntity<ApiResponse<Unit>> {
@@ -129,7 +130,9 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception::class)
     fun handleGeneric(e: Exception): ResponseEntity<ApiResponse<Unit>> {
+        val errorId = UUID.randomUUID().toString().take(8)
+        logger.error("Unhandled internal server exception [Ref: $errorId]: ${e.message}", e)
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(ApiResponse.error(e.message ?: "An unexpected error occurred"))
+            .body(ApiResponse.error("An unexpected internal error occurred. Error reference: $errorId"))
     }
 }

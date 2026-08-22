@@ -34,6 +34,7 @@ class SecurityConfig(
                 auth
                     .requestMatchers(
                         "/api/v1/auth/**",
+                        "/api/v1/admin/auth/**",
                         "/api/v1/media/public/**",
                         "/ws/**",
                         "/actuator/**"

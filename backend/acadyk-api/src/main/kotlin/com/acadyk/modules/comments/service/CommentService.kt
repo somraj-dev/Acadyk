@@ -1,5 +1,6 @@
 package com.acadyk.modules.comments.service
 
+import com.acadyk.common.BadRequestException
 import com.acadyk.common.ForbiddenException
 import com.acadyk.common.PageResponse
 import com.acadyk.common.ResourceNotFoundException
@@ -84,18 +85,24 @@ class CommentService(
         val comment = commentRepository.findByIdAndDeletedAtIsNull(commentId)
             .orElseThrow { ResourceNotFoundException("Comment with id $commentId not found") }
 
-        if (comment.author.id != currentUserId) {
+        if (comment.post.id != postId) {
+            throw BadRequestException("Comment does not belong to the specified post")
+        }
+
+        val isCommentAuthor = comment.author.id == currentUserId
+        val isPostAuthor = comment.post.author.id == currentUserId
+        val isAdmin = currentUserProvider.hasAnyRole("SUPER_ADMIN", "COLLEGE_ADMIN")
+
+        if (!isCommentAuthor && !isPostAuthor && !isAdmin) {
             throw ForbiddenException("You do not have permission to delete this comment")
         }
 
         comment.deletedAt = Instant.now()
         commentRepository.save(comment)
 
-        val post = postRepository.findByIdAndDeletedAtIsNull(postId).orElse(null)
-        if (post != null) {
-            post.commentsCount = maxOf(0, post.commentsCount - 1)
-            postRepository.save(post)
-        }
+        val post = comment.post
+        post.commentsCount = maxOf(0, post.commentsCount - 1)
+        postRepository.save(post)
     }
 
     fun deleteComment(postId: String, commentId: String) = deleteComment(postId.toUUID(), commentId.toUUID())

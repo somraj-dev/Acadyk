@@ -51,105 +51,28 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     _comments = [];
     if (widget.post != null) {
       _loadRealComments();
-    } else {
-      _comments = [
-        {
-          'name': 'Christian Pickett',
-        'isAuthor': true,
-        'headline': 'Co-founder @ Orthogonal (YC W26)',
-        'timeAgo': '1d',
-        'connectionDegree': null,
-        'body': 'Read more:\nhttps://www.thestreet.com/crypto/newsroom/orthogonal-is-betting-the-agent-economy-needs-better-infrastructure',
-        'likes': 10,
-        'hasLiked': false,
-        'replies': <Map<String, dynamic>>[],
-      },
-      {
-        'name': 'Aryan Gandhi',
-        'isAuthor': false,
-        'headline': 'Building the Future with AI 0->1 | Gen ...',
-        'timeAgo': '15h',
-        'connectionDegree': '1st',
-        'body': 'Congratulations on the raise! The idea of agents dynamically discovering and orchestrating capabilities feels like a missing layer in today\'s agent stack. Excited to see where Orthogonal goes from here. Christian Pickett 👏',
-        'likes': 0,
-        'hasLiked': false,
-        'replies': <Map<String, dynamic>>[],
-      },
-      {
-        'name': 'Ryan Widgeon',
-        'isAuthor': false,
-        'headline': 'Founder | AI/ML | AI Agents |GTM| Forb...',
-        'timeAgo': '1d',
-        'connectionDegree': '3rd+',
-        'body': 'Congrats! This is a reallyyy interesting layer to build.\n\nMost agents today are only as useful as the tools they were pre-wired with. The moment the task requires a new capability, they either hallucinate a workaround, fail silently, or punt back to a human.\n\nDynamic capability discovery...',
-        'likes': 9,
-        'hasLiked': false,
-        'replies': <Map<String, dynamic>>[
-          {
-            'name': 'Dr. Xi Zeng',
-            'headline': 'Founder and CEO of Chance A...',
-            'timeAgo': '18h',
-            'connectionDegree': '3rd+',
-            'body': 'Ryan Widgeon The safety point is where this gets interesting. Tool discovery is easy to describe as routing, but the agent also needs a reason to stop....',
-            'likes': 1,
-            'hasLiked': false,
-          }
-        ],
-      },
-      {
-        'name': 'Sudan Bey',
-        'isAuthor': false,
-        'headline': 'GTM Sales Leader | Digital Engineering ...',
-        'timeAgo': '1d',
-        'connectionDegree': '3rd+',
-        'body': 'This is a smart direction Orthogonal (YC W26) . Customers / organizations are looking for connected action across these AI tools and workflows they already use. This integration layer is just as strategic and important as the intelligence layer.',
-        'likes': 0,
-        'hasLiked': false,
-        'replies': <Map<String, dynamic>>[],
-      }
-    ];
     }
   }
 
   void _loadRealComments() async {
+    if (widget.post == null) return;
     final dbComments = await PostService.getComments(widget.post!['id'].toString());
     if (mounted) {
-      final topLevelList = dbComments.where((c) => c['parent_id'] == null).map((c) {
-        final author = c['profiles'] as Map<String, dynamic>? ?? {};
+      final topLevelList = dbComments.map((c) {
         return {
-          'id': c['id'].toString(),
-          'name': author['full_name'] ?? 'Acadyk User',
-          'isAuthor': author['id'] == widget.post!['user_id'],
-          'headline': author['bio'] ?? 'Member',
-          'avatar': author['profile_photo_url'],
-          'timeAgo': 'Just now',
+          'id': c['id']?.toString() ?? '',
+          'name': c['authorName'] ?? 'Acadyk Member',
+          'isAuthor': c['authorId'] != null && c['authorId'] == widget.post!['authorId'],
+          'headline': c['authorHeadline'] ?? '',
+          'avatar': c['authorAvatar'] ?? '',
+          'timeAgo': c['timeAgo'] ?? 'Just now',
           'connectionDegree': '1st',
           'body': c['content'] ?? '',
-          'likes': c['likes_count'] ?? 0,
-          'hasLiked': false,
+          'likes': c['likes'] ?? 0,
+          'hasLiked': c['isLiked'] ?? false,
           'replies': <Map<String, dynamic>>[],
         };
       }).toList();
-
-      final replyList = dbComments.where((c) => c['parent_id'] != null);
-      for (final reply in replyList) {
-        final parentId = reply['parent_id'].toString();
-        final author = reply['profiles'] as Map<String, dynamic>? ?? {};
-        final parentIndex = topLevelList.indexWhere((c) => c['id'] == parentId);
-        if (parentIndex != -1) {
-          (topLevelList[parentIndex]['replies'] as List).add({
-            'id': reply['id'].toString(),
-            'name': author['full_name'] ?? 'Acadyk User',
-            'headline': author['bio'] ?? 'Member',
-            'avatar': author['profile_photo_url'],
-            'timeAgo': 'Just now',
-            'connectionDegree': '1st',
-            'body': reply['content'] ?? '',
-            'likes': reply['likes_count'] ?? 0,
-            'hasLiked': false,
-          });
-        }
-      }
 
       setState(() {
         _comments = topLevelList;
@@ -607,7 +530,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
                         return _buildComment(
                           index: index,
-                          avatarAsset: comment['avatar'] ?? (comment['name'] == 'Christian Pickett' ? 'assets/images/dharmik_avatar.jpg' : (comment['name'] == 'Aryan Gandhi' ? 'assets/images/somraj_avatar.jpg' : (comment['name'] == 'Ryan Widgeon' ? 'assets/images/alina_avatar.jpg' : 'assets/images/somraj_avatar.jpg'))),
+                          avatarAsset: (comment['avatar'] != null && (comment['avatar'] as String).isNotEmpty) ? (comment['avatar'] as String) : 'assets/images/somraj_avatar.jpg',
                           name: comment['name'],
                           isAuthor: comment['isAuthor'] ?? false,
                           headline: comment['headline'],
@@ -743,35 +666,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
 
   Widget _buildCommentBodyText(String body) {
-    final words = ['Christian Pickett', 'Ryan Widgeon'];
-    String? foundWord;
-    for (final w in words) {
-      if (body.contains(w)) {
-        foundWord = w;
-        break;
-      }
-    }
-
-    if (foundWord == null) {
-      return Text(
-        body,
-        style: const TextStyle(color: Color(0xFF191919), fontSize: 14, height: 1.45),
-      );
-    }
-
-    final parts = body.split(foundWord);
-    return RichText(
-      text: TextSpan(
-        style: const TextStyle(color: Color(0xFF191919), fontSize: 14, height: 1.45),
-        children: [
-          TextSpan(text: parts[0]),
-          TextSpan(
-            text: foundWord,
-            style: const TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-          ),
-          if (parts.length > 1) TextSpan(text: parts[1]),
-        ],
-      ),
+    return Text(
+      body,
+      style: const TextStyle(color: Color(0xFF191919), fontSize: 14, height: 1.45),
     );
   }
 
