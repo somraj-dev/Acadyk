@@ -6,6 +6,10 @@ enum PinCategory {
   experience,
   education,
   club,
+  skill,
+  responsibility,
+  certificate,
+  achievement,
 }
 
 enum PinOriginStatus {
@@ -426,8 +430,273 @@ class ProfilePinsManager {
   }
 
   static void addCustomItem(ProfilePinItem item) {
+    _items.removeWhere((i) => i.id == item.id);
     _items.insert(0, item);
     _notify();
+  }
+
+  static void addProjectPin({
+    required String title,
+    required String subtitle,
+    String? organization,
+    String? duration,
+    String? location,
+    String? description,
+    List<String> tags = const [],
+    PinOriginStatus originStatus = PinOriginStatus.posted,
+    String statusLabel = 'Created & Posted',
+    bool isPinned = true,
+    Map<String, dynamic> rawData = const {},
+  }) {
+    final id = 'proj_${DateTime.now().millisecondsSinceEpoch}';
+    final item = ProfilePinItem(
+      id: id,
+      category: PinCategory.project,
+      title: title,
+      subtitle: subtitle.isNotEmpty ? subtitle : (organization ?? 'Project'),
+      organization: organization,
+      duration: duration,
+      location: location,
+      description: description,
+      tags: tags,
+      originStatus: originStatus,
+      statusLabel: statusLabel,
+      icon: Icons.code_rounded,
+      iconBg: const Color(0xFF0284C7),
+      isPinned: isPinned,
+      rawData: {
+        'title': title,
+        'time': duration ?? '',
+        'duration': duration ?? '',
+        'association': organization ?? subtitle,
+        'organization': organization ?? '',
+        'description': description ?? '',
+        'skills': tags.join(', '),
+        ...rawData,
+      },
+    );
+    addCustomItem(item);
+  }
+
+  static void addExperiencePin({
+    required String title,
+    required String subtitle,
+    String? organization,
+    String? duration,
+    String? location,
+    String? description,
+    List<String> tags = const [],
+    PinOriginStatus originStatus = PinOriginStatus.active,
+    String statusLabel = 'Active Work',
+    bool isPinned = true,
+    Map<String, dynamic> rawData = const {},
+  }) {
+    final id = 'exp_${DateTime.now().millisecondsSinceEpoch}';
+    final item = ProfilePinItem(
+      id: id,
+      category: PinCategory.experience,
+      title: title,
+      subtitle: subtitle.isNotEmpty ? subtitle : (organization ?? 'Company'),
+      organization: organization ?? subtitle,
+      duration: duration,
+      location: location,
+      description: description,
+      tags: tags,
+      originStatus: originStatus,
+      statusLabel: statusLabel,
+      icon: Icons.business_center_rounded,
+      iconBg: const Color(0xFF0F172A),
+      isPinned: isPinned,
+      rawData: {
+        'title': title,
+        'company': organization ?? subtitle,
+        'organization': organization ?? subtitle,
+        'duration': duration ?? '',
+        'location': location ?? '',
+        'description': description ?? '',
+        'skills': tags.join(', '),
+        ...rawData,
+      },
+    );
+    addCustomItem(item);
+  }
+
+  static void addEducationPin({
+    required String school,
+    required String degree,
+    String? duration,
+    String? location,
+    String? description,
+    List<String> tags = const [],
+    PinOriginStatus originStatus = PinOriginStatus.active,
+    String statusLabel = 'Enrolled & In Progress',
+    bool isPinned = true,
+    Map<String, dynamic> rawData = const {},
+  }) {
+    final id = 'edu_${DateTime.now().millisecondsSinceEpoch}';
+    final item = ProfilePinItem(
+      id: id,
+      category: PinCategory.education,
+      title: school,
+      subtitle: degree,
+      organization: school,
+      duration: duration,
+      location: location,
+      description: description,
+      tags: tags,
+      originStatus: originStatus,
+      statusLabel: statusLabel,
+      icon: Icons.school_rounded,
+      iconBg: const Color(0xFF0F4C81),
+      isPinned: isPinned,
+      rawData: {
+        'school': school,
+        'degree': degree,
+        'duration': duration ?? '',
+        'location': location ?? '',
+        'description': description ?? '',
+        ...rawData,
+      },
+    );
+    addCustomItem(item);
+  }
+
+  static void addSkillPin({
+    required String skillName,
+    String? association,
+    String? proficiency,
+    bool isPinned = true,
+  }) {
+    final id = 'skill_${DateTime.now().millisecondsSinceEpoch}';
+    final item = ProfilePinItem(
+      id: id,
+      category: PinCategory.skill,
+      title: skillName,
+      subtitle: association?.isNotEmpty == true ? association! : (proficiency ?? 'Verified Skill'),
+      organization: association,
+      duration: proficiency,
+      description: 'Demonstrated skill on profile',
+      tags: [skillName],
+      originStatus: PinOriginStatus.active,
+      statusLabel: proficiency ?? 'Active Skill',
+      icon: Icons.auto_awesome_rounded,
+      iconBg: const Color(0xFF10B981),
+      isPinned: isPinned,
+      rawData: {
+        'name': skillName,
+        'association': association ?? '',
+        'proficiency': proficiency ?? '',
+      },
+    );
+    addCustomItem(item);
+  }
+
+  static void addResponsibilityPin({
+    required String title,
+    required String organization,
+    String? duration,
+    String? location,
+    String? description,
+    List<String> tags = const [],
+    bool isPinned = true,
+  }) {
+    final id = 'resp_${DateTime.now().millisecondsSinceEpoch}';
+    final item = ProfilePinItem(
+      id: id,
+      category: PinCategory.responsibility,
+      title: title,
+      subtitle: organization,
+      organization: organization,
+      duration: duration,
+      location: location,
+      description: description,
+      tags: tags,
+      originStatus: PinOriginStatus.active,
+      statusLabel: 'Position of Responsibility',
+      icon: Icons.groups_2_rounded,
+      iconBg: const Color(0xFF8B5CF6),
+      isPinned: isPinned,
+      rawData: {
+        'title': title,
+        'organization': organization,
+        'duration': duration ?? '',
+        'location': location ?? '',
+        'description': description ?? '',
+        'skills': tags.join(', '),
+      },
+    );
+    addCustomItem(item);
+  }
+
+  static void addCertificatePin({
+    required String title,
+    required String issuingOrg,
+    String? issueDate,
+    String? credentialUrl,
+    String? description,
+    List<String> tags = const [],
+    bool isPinned = true,
+  }) {
+    final id = 'cert_${DateTime.now().millisecondsSinceEpoch}';
+    final item = ProfilePinItem(
+      id: id,
+      category: PinCategory.certificate,
+      title: title,
+      subtitle: issuingOrg,
+      organization: issuingOrg,
+      duration: issueDate,
+      location: credentialUrl,
+      description: description,
+      tags: tags,
+      originStatus: PinOriginStatus.completed,
+      statusLabel: 'Certified',
+      icon: Icons.workspace_premium_rounded,
+      iconBg: const Color(0xFFEA580C),
+      isPinned: isPinned,
+      rawData: {
+        'title': title,
+        'issuingOrg': issuingOrg,
+        'issueDate': issueDate ?? '',
+        'credentialUrl': credentialUrl ?? '',
+        'description': description ?? '',
+        'skills': tags.join(', '),
+      },
+    );
+    addCustomItem(item);
+  }
+
+  static void addAchievementPin({
+    required String title,
+    required String issuingOrg,
+    String? date,
+    String? description,
+    List<String> tags = const [],
+    bool isPinned = true,
+  }) {
+    final id = 'achv_${DateTime.now().millisecondsSinceEpoch}';
+    final item = ProfilePinItem(
+      id: id,
+      category: PinCategory.achievement,
+      title: title,
+      subtitle: issuingOrg,
+      organization: issuingOrg,
+      duration: date,
+      description: description,
+      tags: tags,
+      originStatus: PinOriginStatus.completed,
+      statusLabel: 'Award & Recognition',
+      icon: Icons.emoji_events_rounded,
+      iconBg: const Color(0xFFF59E0B),
+      isPinned: isPinned,
+      rawData: {
+        'title': title,
+        'issuingOrg': issuingOrg,
+        'date': date ?? '',
+        'description': description ?? '',
+        'skills': tags.join(', '),
+      },
+    );
+    addCustomItem(item);
   }
 
   static List<Map<String, dynamic>> getPinnedProjects() {
@@ -485,8 +754,52 @@ class ProfilePinsManager {
     }).toList();
   }
 
+  static List<Map<String, String>> getPinnedSkills() {
+    final pinned = getPinnedItems(PinCategory.skill);
+    return pinned.map((s) => {
+      'name': s.title,
+      'association': s.subtitle != 'Verified Skill' ? s.subtitle : (s.organization ?? ''),
+    }).toList();
+  }
+
+  static List<Map<String, dynamic>> getPinnedResponsibilities() {
+    final pinned = getPinnedItems(PinCategory.responsibility);
+    return pinned.map((r) => {
+      'title': r.title,
+      'organization': r.organization ?? r.subtitle,
+      'duration': r.duration ?? '',
+      'location': r.location ?? '',
+      'description': r.description ?? '',
+      'skills': r.tags.join(', '),
+    }).toList();
+  }
+
+  static List<Map<String, dynamic>> getPinnedCertificates() {
+    final pinned = getPinnedItems(PinCategory.certificate);
+    return pinned.map((c) => {
+      'title': c.title,
+      'issuingOrg': c.organization ?? c.subtitle,
+      'issueDate': c.duration ?? '',
+      'credentialUrl': c.location ?? '',
+      'description': c.description ?? '',
+      'skills': c.tags.join(', '),
+    }).toList();
+  }
+
+  static List<Map<String, dynamic>> getPinnedAchievements() {
+    final pinned = getPinnedItems(PinCategory.achievement);
+    return pinned.map((a) => {
+      'title': a.title,
+      'issuingOrg': a.organization ?? a.subtitle,
+      'date': a.duration ?? '',
+      'description': a.description ?? '',
+      'skills': a.tags.join(', '),
+    }).toList();
+  }
+
   static void _notify() {
     pinsChangeNotifier.value = !pinsChangeNotifier.value;
     ProfileManager.profileUpdateNotifier.value = !ProfileManager.profileUpdateNotifier.value;
   }
 }
+

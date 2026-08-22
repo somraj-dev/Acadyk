@@ -8,6 +8,7 @@ import 'storage_service.dart';
 
 class PostService {
   static final ValueNotifier<int> feedChangeNotifier = ValueNotifier<int>(0);
+  static final ValueNotifier<Map<String, dynamic>?> activePostingNotifier = ValueNotifier<Map<String, dynamic>?>(null);
 
   // In-memory created posts for immediate and persistent session state
   static final List<Map<String, dynamic>> _inMemoryPosts = [];
@@ -18,6 +19,142 @@ class PostService {
 
   static void notifyFeedChanged() {
     feedChangeNotifier.value = feedChangeNotifier.value + 1;
+  }
+
+  /// Start posting asynchronously with live progress animation
+  static Future<Map<String, dynamic>> startPostingAsync({
+    required String content,
+    String? postType,
+    String? imageUrl,
+    Uint8List? imageBytes,
+    String? imageName,
+    String? gifUrl,
+    Map<String, dynamic>? poll,
+    String? milestone,
+    String? location,
+    List<String>? taggedPeople,
+    String replyVisibility = 'Everyone can reply',
+  }) async {
+    final authorName = ProfileManager.name.isNotEmpty
+        ? ProfileManager.name
+        : (AuthService.currentUser?.fullName ?? 'Acadyk Member');
+    final authorAvatar = ProfileManager.avatarUrl;
+    final authorBio = ProfileManager.bio;
+    final authorHandle = ProfileManager.username.isNotEmpty
+        ? ProfileManager.username
+        : (AuthService.currentUser?.username ?? 'user');
+
+    // 1. Notify posting in progress
+    activePostingNotifier.value = {
+      'status': 'posting',
+      'content': content,
+      'avatar': authorAvatar,
+      'name': authorName,
+    };
+
+    String? uploadedImageUrl = imageUrl;
+    if (imageBytes != null) {
+      try {
+        final userId = AuthService.currentUser?.id ?? 'user';
+        final ext = (imageName != null && imageName.contains('.')) ? imageName.split('.').last : 'jpg';
+        uploadedImageUrl = await StorageService.uploadBytes(
+          bucket: 'posts',
+          bytes: imageBytes,
+          fileName: 'post_${DateTime.now().millisecondsSinceEpoch}.$ext',
+          remotePath: 'posts/$userId',
+        );
+      } catch (e) {
+        debugPrint('[PostService] Image upload note: $e');
+      }
+    }
+
+    final newId = 'post_${DateTime.now().millisecondsSinceEpoch}';
+    final authorInitials = authorName.isNotEmpty ? authorName.substring(0, min(2, authorName.length)).toUpperCase() : 'U';
+
+    final fullPost = {
+      'id': newId,
+      'author': {
+        'id': AuthService.currentUser?.id ?? '',
+        'username': authorHandle,
+        'fullName': authorName,
+        'headline': authorBio,
+        'profilePhotoUrl': authorAvatar,
+      },
+      'authorName': authorName,
+      'authorSubtitle': authorBio.isNotEmpty ? authorBio : 'Student @ Acadyk',
+      'authorInitials': authorInitials,
+      'authorBgColor': 0xFF0F4C81,
+      'authorAvatar': authorAvatar,
+      'isVerified': true,
+      'badgeType': 'gold',
+      'timeAgo': 'Just now',
+      'content': content,
+      'postType': postType ?? (poll != null ? 'poll' : (gifUrl != null ? 'gif' : (uploadedImageUrl != null ? 'image' : 'text'))),
+      'imageUrl': uploadedImageUrl,
+      'gifUrl': gifUrl,
+      'poll': poll,
+      'milestone': milestone,
+      'location': location,
+      'taggedPeople': taggedPeople,
+      'replyVisibility': replyVisibility,
+      'likes': 0,
+      'comments': 0,
+      'isLiked': false,
+      'isBookmarked': false,
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+
+    // Prepend to in-memory list
+    _inMemoryPosts.insert(0, fullPost);
+
+    // Call backend API gracefully
+    try {
+      await ApiClient.post('/posts', data: {
+        'content': content,
+        'postType': fullPost['postType'],
+        if (uploadedImageUrl != null) 'mediaUrls': [uploadedImageUrl],
+        if (location != null) 'location': location,
+      });
+    } catch (e) {
+      debugPrint('[PostService] Backend create post note: $e');
+    }
+
+    // Notify done and refresh feed
+    activePostingNotifier.value = {
+      'status': 'done',
+      'post': fullPost,
+    };
+    notifyFeedChanged();
+
+    // Auto-clear posting progress banner after 1.8s
+    Future.delayed(const Duration(milliseconds: 1800), () {
+      if (activePostingNotifier.value?['status'] == 'done') {
+        activePostingNotifier.value = null;
+      }
+    });
+
+    return fullPost;
+  }
+
+  /// Vote on an interactive poll in the feed
+  static void votePoll(String postId, int optionIndex) {
+    for (int i = 0; i < _inMemoryPosts.length; i++) {
+      if (_inMemoryPosts[i]['id']?.toString() == postId) {
+        final poll = _inMemoryPosts[i]['poll'] as Map<String, dynamic>?;
+        if (poll != null) {
+          final options = poll['options'] as List<dynamic>?;
+          if (options != null && optionIndex >= 0 && optionIndex < options.length) {
+            final currentVotes = (options[optionIndex]['votes'] as num?)?.toInt() ?? 0;
+            options[optionIndex]['votes'] = currentVotes + 1;
+            final total = (poll['totalVotes'] as num?)?.toInt() ?? 0;
+            poll['totalVotes'] = total + 1;
+            poll['userVotedIndex'] = optionIndex;
+            notifyFeedChanged();
+          }
+        }
+        break;
+      }
+    }
   }
 
   /// Get feed posts (fetches from backend and merges with any local created posts)
@@ -171,7 +308,7 @@ class PostService {
         'profilePhotoUrl': resolvedAvatar,
       },
       'authorName': resolvedName,
-      'authorSubtitle': resolvedBio.isNotEmpty ? '$resolvedBio • Just now' : 'Just now',
+      'authorSubtitle': resolvedBio.isNotEmpty ? resolvedBio : 'Student @ Acadyk',
       'authorInitials': authorInitials,
       'authorBgColor': 0xFF0F4C81,
       'authorAvatar': resolvedAvatar,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/profile_manager.dart';
 
 class SettingsAboutMeScreen extends StatefulWidget {
   const SettingsAboutMeScreen({super.key});
@@ -8,7 +9,13 @@ class SettingsAboutMeScreen extends StatefulWidget {
 }
 
 class _SettingsAboutMeScreenState extends State<SettingsAboutMeScreen> {
-  final TextEditingController _aboutCtrl = TextEditingController();
+  late TextEditingController _aboutCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _aboutCtrl = TextEditingController(text: ProfileManager.summary);
+  }
 
   @override
   void dispose() {
@@ -31,7 +38,7 @@ class _SettingsAboutMeScreenState extends State<SettingsAboutMeScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'About',
+          'Summary',
           style: TextStyle(
             color: Color(0xFF191919),
             fontWeight: FontWeight.w600,
@@ -54,7 +61,7 @@ class _SettingsAboutMeScreenState extends State<SettingsAboutMeScreen> {
             children: [
               RichText(
                 text: const TextSpan(
-                  text: 'About Me',
+                  text: 'Summary',
                   style: TextStyle(
                     fontSize: 16.0,
                     fontWeight: FontWeight.w600,
@@ -89,7 +96,7 @@ class _SettingsAboutMeScreenState extends State<SettingsAboutMeScreen> {
                   buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
                   style: const TextStyle(fontSize: 14.5, color: Color(0xFF191919), height: 1.4),
                   decoration: InputDecoration(
-                    hintText: 'Introduce yourself here! Share a brief overview of who you are, your interests, and connect with fellow users, recruiters & organizers.',
+                    hintText: 'Introduce yourself and summarize your professional background, achievements, academic passions, and future goals!',
                     hintMaxLines: 5,
                     hintStyle: const TextStyle(
                       color: Color(0xFFB0B0B0),
@@ -142,7 +149,17 @@ class _SettingsAboutMeScreenState extends State<SettingsAboutMeScreen> {
                       elevation: 0,
                     ),
                     onPressed: () {
-                      Navigator.of(context).pop();
+                      final newSummary = _aboutCtrl.text.trim();
+                      ProfileManager.updateSummary(newSummary);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Summary updated successfully!'),
+                          backgroundColor: Color(0xFF10B981),
+                          behavior: SnackBarBehavior.floating,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                      Navigator.of(context).pop(true);
                     },
                     child: const Text(
                       'Save',
@@ -162,3 +179,4 @@ class _SettingsAboutMeScreenState extends State<SettingsAboutMeScreen> {
     );
   }
 }
+

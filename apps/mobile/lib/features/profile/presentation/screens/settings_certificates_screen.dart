@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
+import '../services/profile_manager.dart';
+import '../services/profile_pins_manager.dart';
 
 class SettingsCertificatesScreen extends StatefulWidget {
   const SettingsCertificatesScreen({super.key});
@@ -262,25 +264,54 @@ class _SettingsCertificatesScreenState extends State<SettingsCertificatesScreen>
                           return;
                         }
 
+                        final issueDate = _issuedDateCtrl.text.trim();
+                        final desc = _descriptionCtrl.text.trim();
+                        final skills = _skillsCtrl.text.trim();
+                        final tagsList = skills.isNotEmpty
+                            ? skills.split(RegExp(r'[,|•]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+                            : <String>[];
+
+                        // 1. Add to ProfileManager
+                        ProfileManager.addCertificate({
+                          'title': title,
+                          'issuingOrg': org,
+                          'issueDate': issueDate,
+                          'description': desc,
+                          'skills': skills,
+                        });
+
+                        // 2. Add to ProfilePinsManager
+                        ProfilePinsManager.addCertificatePin(
+                          title: title,
+                          issuingOrg: org,
+                          issueDate: issueDate.isNotEmpty ? issueDate : 'Issued',
+                          description: desc,
+                          tags: tagsList,
+                          isPinned: true,
+                        );
+
+                        // 3. Sync to backend gracefully
                         try {
                           await ApiClient.post('/me/certificates', data: {
                             'title': title,
                             'issuingOrg': org,
-                            'skills': _skillsCtrl.text.trim(),
-                            'description': _descriptionCtrl.text.trim(),
+                            'skills': skills,
+                            'description': desc,
                           });
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Certificate saved successfully!'), backgroundColor: Colors.green),
-                            );
-                            Navigator.of(context).pop(true);
-                          }
                         } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error saving certificate: $e'), backgroundColor: Colors.red),
-                            );
-                          }
+                          debugPrint('[Certificates] Backend sync note: $e');
+                        }
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Certificate "$title" added and pinned to profile!'),
+                              backgroundColor: const Color(0xFF10B981),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                          Navigator.of(context).pop(true);
                         }
                       },
                       child: const Text(

@@ -8,7 +8,9 @@ import 'settings_work_experience_screen.dart';
 import 'settings_achievements_screen.dart';
 import 'settings_responsibilities_screen.dart';
 import 'settings_certificates_screen.dart';
-import '../../../feed/presentation/screens/create_startup_screen.dart';
+import 'settings_skills_screen.dart';
+import 'settings_projects_screen.dart';
+import 'profile_pins_screen.dart';
 
 class SettingsProfileVisibilityScreen extends StatefulWidget {
   const SettingsProfileVisibilityScreen({super.key});
@@ -36,10 +38,10 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
       buttonText: 'Add Resume',
     ),
     CarouselItemData(
-      icon: Icons.person,
-      title: 'Add About',
-      subtitle: "This is your bio for people who don't know you, including recruiters from your favourite brands!",
-      buttonText: 'Add About',
+      icon: Icons.person_outline_rounded,
+      title: 'Add Summary',
+      subtitle: 'Add a detailed summary of your background, experience, and passions for recruiters and peers!',
+      buttonText: 'Add Summary',
     ),
   ];
 
@@ -147,6 +149,18 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
             fontSize: 18,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.push_pin_rounded, color: Color(0xFF0073B1), size: 22),
+            tooltip: 'Profile Pins',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProfilePinsScreen()),
+              );
+            },
+          ),
+          const SizedBox(width: 6),
+        ],
       ),
       body: SafeArea(
         child: Center(
@@ -175,7 +189,11 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                   description: 'Spotlight your unique skills and catch the eye of recruiters looking for your exact talents!',
                   actionLabel: 'Add Skills',
                   painter: const SkillsPainter(),
-                  onActionTap: () {},
+                  onActionTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsSkillsScreen()),
+                    );
+                  },
                 ),
                 _buildDivider(),
 
@@ -243,7 +261,7 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                   painter: const ProjectsPainter(),
                   onActionTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const CreateStartupScreen()),
+                      MaterialPageRoute(builder: (_) => const SettingsProjectsScreen()),
                     );
                   },
                 ),
@@ -456,7 +474,7 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'About',
+                  'Summary',
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
@@ -465,7 +483,7 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Craft an engaging story in your bio and make meaningful connections with peers and recruiters alike!',
+                  'Craft an engaging story in your summary and make meaningful connections with peers and recruiters alike!',
                   style: TextStyle(
                     fontSize: 13.0,
                     color: Color(0xFF737373),
@@ -480,7 +498,7 @@ class _SettingsProfileVisibilityScreenState extends State<SettingsProfileVisibil
                     );
                   },
                   child: const Text(
-                    'Add About',
+                    'Add Summary',
                     style: TextStyle(
                       fontSize: 14.5,
                       color: Color(0xFF0095F6),

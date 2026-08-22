@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
+import '../services/profile_manager.dart';
+import '../services/profile_pins_manager.dart';
 
 class SettingsAchievementsScreen extends StatefulWidget {
   const SettingsAchievementsScreen({super.key});
@@ -181,25 +183,52 @@ class _SettingsAchievementsScreenState extends State<SettingsAchievementsScreen>
                           return;
                         }
 
+                        final org = _linkedAchievement != null && _linkedAchievement!.isNotEmpty ? _linkedAchievement! : 'Academic & Technical Excellence';
+                        final desc = _descriptionCtrl.text.trim();
+                        final skills = _skillsCtrl.text.trim();
+                        final tagsList = skills.isNotEmpty
+                            ? skills.split(RegExp(r'[,|•]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+                            : <String>[];
+
+                        // 1. Add to ProfileManager
+                        ProfileManager.addAchievement({
+                          'title': title,
+                          'issuingOrg': org,
+                          'description': desc,
+                          'skills': skills,
+                        });
+
+                        // 2. Add to ProfilePinsManager
+                        ProfilePinsManager.addAchievementPin(
+                          title: title,
+                          issuingOrg: org,
+                          description: desc,
+                          tags: tagsList,
+                          isPinned: true,
+                        );
+
+                        // 3. Sync to backend gracefully
                         try {
                           await ApiClient.post('/me/certificates', data: {
                             'title': title,
-                            'issuingOrg': 'Acadyk Awards',
-                            'description': _descriptionCtrl.text.trim(),
-                            'skills': _skillsCtrl.text.trim(),
+                            'issuingOrg': org,
+                            'description': desc,
+                            'skills': skills,
                           });
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Achievement saved successfully!'), backgroundColor: Colors.green),
-                            );
-                            Navigator.of(context).pop(true);
-                          }
                         } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error saving achievement: $e'), backgroundColor: Colors.red),
-                            );
-                          }
+                          debugPrint('[Achievements] Backend sync note: $e');
+                        }
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Achievement "$title" added and pinned to profile!'),
+                              backgroundColor: const Color(0xFF10B981),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                          Navigator.of(context).pop(true);
                         }
                       },
                       child: const Text(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
+import 'package:acadyk/features/search/presentation/delegates/acadyk_search_delegate.dart';
+export 'package:acadyk/features/search/presentation/delegates/acadyk_search_delegate.dart';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:acadyk/common/services/post_service.dart';
@@ -187,21 +189,24 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                       });
                                     }
                                   },
-                                  child: ListView(
-                                    physics: const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      if (_isLoading)
-                                        const FeedSkeleton()
-                                      else ...[
-                                        if (_feedPosts.isNotEmpty)
-                                          ..._feedPosts.map((post) => _buildMockPostCard(post)),
-                                        // Mock posts from MITS Gwalior
-                                        ...MockFeedData.mockPosts.map((post) => _buildMockPostCard(post)),
-                                      ],
+                                   child: ListView(
+                                     physics: const AlwaysScrollableScrollPhysics(),
+                                     children: [
+                                       // Live Twitter-style Posting Progress Card
+                                       _buildPostingProgressCard(),
 
-                                      const SizedBox(height: 16.0),
-                                    ],
-                                  ),
+                                       if (_isLoading)
+                                         const FeedSkeleton()
+                                       else ...[
+                                         if (_feedPosts.isNotEmpty)
+                                           ..._feedPosts.map((post) => _buildMockPostCard(post)),
+                                         // Mock posts from MITS Gwalior
+                                         ...MockFeedData.mockPosts.map((post) => _buildMockPostCard(post)),
+                                       ],
+
+                                       const SizedBox(height: 16.0),
+                                     ],
+                                   ),
                                 ),
                               ),
                             ),
@@ -2789,6 +2794,230 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   // ------------------------------------------------------------------
+  // LIVE POSTING PROGRESS CARD (Twitter / X Animated Banner)
+  // ------------------------------------------------------------------
+  Widget _buildPostingProgressCard() {
+    return ValueListenableBuilder<Map<String, dynamic>?>(
+      valueListenable: PostService.activePostingNotifier,
+      builder: (context, postingState, _) {
+        if (postingState == null) return const SizedBox.shrink();
+
+        final status = postingState['status']?.toString() ?? 'posting';
+        final isPosting = status == 'posting';
+        final isDone = status == 'done';
+        final avatar = postingState['avatar']?.toString() ?? ProfileManager.avatarUrl;
+        final name = postingState['name']?.toString() ?? ProfileManager.name;
+        final initials = name.isNotEmpty ? name.substring(0, min(2, name.length)).toUpperCase() : 'U';
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: _isDark ? const Color(0xFF16181C) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDone ? const Color(0xFF10B981) : const Color(0xFF1D9BF0).withValues(alpha: 0.3),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: (isDone ? const Color(0xFF10B981) : const Color(0xFF1D9BF0)).withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // User avatar with mini loader
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  _buildMockAvatar(
+                    initials: initials,
+                    bgColor: const Color(0xFF0F4C81),
+                    size: 38,
+                    isMITS: false,
+                    avatarAsset: avatar,
+                  ),
+                  if (isPosting)
+                    const Positioned.fill(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1D9BF0)),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          isDone ? 'Post sent!' : 'Posting to your feed...',
+                          style: TextStyle(
+                            color: isDone ? const Color(0xFF10B981) : textMain,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.5,
+                          ),
+                        ),
+                        if (isDone) ...[
+                          const SizedBox(width: 6),
+                          const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 16),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      isDone ? 'Visible to your connections & feed' : 'Uploading media & synchronizing...',
+                      style: TextStyle(
+                        color: textSub,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isPosting)
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1D9BF0))),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // INTERACTIVE POLL CARD BUILDER
+  // ------------------------------------------------------------------
+  Widget _buildPollCard(String postId, Map<String, dynamic> poll) {
+    final options = (poll['options'] as List<dynamic>?) ?? [];
+    final int totalVotes = (poll['totalVotes'] as num?)?.toInt() ?? 0;
+    final int userVotedIndex = (poll['userVotedIndex'] as num?)?.toInt() ?? -1;
+    final String duration = poll['duration']?.toString() ?? '1 day';
+    final bool hasVoted = userVotedIndex >= 0;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _isDark ? const Color(0xFF16181C) : const Color(0xFFF7F9F9),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _isDark ? const Color(0xFF2F3336) : const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (int i = 0; i < options.length; i++) ...[
+            Builder(builder: (context) {
+              final opt = options[i] is Map ? options[i] as Map : {'text': options[i].toString(), 'votes': 0};
+              final optText = opt['text']?.toString() ?? '';
+              final int optVotes = (opt['votes'] as num?)?.toInt() ?? 0;
+              final double percent = totalVotes > 0 ? (optVotes / totalVotes) : 0.0;
+              final bool isSelected = userVotedIndex == i;
+
+              return GestureDetector(
+                onTap: () {
+                  if (!hasVoted) {
+                    PostService.votePoll(postId, i);
+                    setState(() {});
+                  }
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  height: 42,
+                  child: Stack(
+                    children: [
+                      // Background progress bar if voted
+                      if (hasVoted)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: LinearProgressIndicator(
+                            value: percent,
+                            minHeight: 42,
+                            backgroundColor: _isDark ? const Color(0xFF202327) : const Color(0xFFE5E7EB),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              isSelected ? const Color(0xFF1D9BF0).withValues(alpha: 0.35) : const Color(0xFF1D9BF0).withValues(alpha: 0.15),
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF1D9BF0), width: 1.2),
+                          ),
+                        ),
+
+                      // Option Text and percentage
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                if (isSelected) ...[
+                                  const Icon(Icons.check_circle, size: 16, color: Color(0xFF1D9BF0)),
+                                  const SizedBox(width: 6),
+                                ],
+                                Text(
+                                  optText,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                    color: _isDark ? Colors.white : const Color(0xFF0F1419),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (hasVoted)
+                              Text(
+                                '${(percent * 100).toStringAsFixed(0)}%',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected ? const Color(0xFF1D9BF0) : textSub,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+          const SizedBox(height: 2),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$totalVotes vote${totalVotes == 1 ? '' : 's'} • $duration left',
+                style: TextStyle(fontSize: 12, color: textSub, fontWeight: FontWeight.w500),
+              ),
+              if (!hasVoted)
+                const Text(
+                  'Tap choice to vote',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF1D9BF0), fontWeight: FontWeight.w600),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------------
   // MOCK POST CARD BUILDER
   // ------------------------------------------------------------------
   Widget _buildMockPostCard(Map<String, dynamic> post) {
@@ -2818,7 +3047,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final bool isMITSOfficial = authorName.startsWith('MITS');
 
     final String mainAvatarAsset = post['authorAvatar'] ?? (isMITSOfficial ? 'assets/images/mits_logo.png' : '');
-    final String? postImageUrl = post['imageUrl'] ?? post['image'];
+    final String? postImageUrl = post['imageUrl'] ?? post['image'] ?? post['gifUrl'];
+    final String? milestone = post['milestone']?.toString();
+    final String? location = post['location']?.toString();
+    final dynamic pollData = post['poll'];
+    final List<dynamic>? taggedPeople = post['taggedPeople'] as List<dynamic>?;
 
     return Container(
       color: cardBg,
@@ -2826,6 +3059,29 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Milestone banner if present
+          if (milestone != null && milestone.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 7.0),
+              decoration: BoxDecoration(
+                color: _isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
+                border: Border(bottom: BorderSide(color: _isDark ? const Color(0xFF334155) : const Color(0xFFDBEAFE))),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.stars_rounded, size: 16, color: Color(0xFF1D9BF0)),
+                  const SizedBox(width: 6),
+                  Text(
+                    milestone,
+                    style: const TextStyle(
+                      color: Color(0xFF1D9BF0),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // Notification banner for notification-type posts
           if (isNotification)
             Container(
@@ -3001,13 +3257,16 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        Text(
-                          authorSubtitle,
-                          style: TextStyle(color: textSub, fontSize: 11.5),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (!isNotification)
+                        if (authorSubtitle.isNotEmpty &&
+                            authorSubtitle.trim().toLowerCase() != 'just now' &&
+                            authorSubtitle.trim().toLowerCase() != timeAgo.trim().toLowerCase())
+                          Text(
+                            authorSubtitle,
+                            style: TextStyle(color: textSub, fontSize: 11.5),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        if (!isNotification && timeAgo.isNotEmpty)
                           Text(
                             timeAgo,
                             style: TextStyle(color: textSub, fontSize: 11),
@@ -3047,17 +3306,27 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           const SizedBox(height: 10),
 
           // Post content with "see more" truncation for long posts
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: _buildExpandableContent(postId, content),
-          ),
-          const SizedBox(height: 10),
+          if (content.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: _buildExpandableContent(postId, content),
+            ),
+          if (content.isNotEmpty) const SizedBox(height: 10),
+
+          // Poll Widget if present
+          if (pollData is Map<String, dynamic>) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: _buildPollCard(postId, pollData),
+            ),
+            const SizedBox(height: 10),
+          ],
 
           if (postImageUrl != null && postImageUrl.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
                 child: postImageUrl.startsWith('http')
                     ? Image.network(
                         postImageUrl,
@@ -3069,6 +3338,38 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                       ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // Location and tagged people footer
+          if ((location != null && location.isNotEmpty) || (taggedPeople != null && taggedPeople.isNotEmpty)) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 4,
+                children: [
+                  if (location != null && location.isNotEmpty)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(CupertinoIcons.location_solid, size: 13, color: Color(0xFF1D9BF0)),
+                        const SizedBox(width: 4),
+                        Text(location, style: const TextStyle(fontSize: 12, color: Color(0xFF1D9BF0), fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  if (taggedPeople != null && taggedPeople.isNotEmpty)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(CupertinoIcons.person_2_fill, size: 13, color: Color(0xFF1D9BF0)),
+                        const SizedBox(width: 4),
+                        Text('with ${taggedPeople.join(', ')}', style: const TextStyle(fontSize: 12, color: Color(0xFF1D9BF0), fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 10),
@@ -3484,346 +3785,6 @@ class QuantaforzeLogoPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class AcadykSearchDelegate extends SearchDelegate<String> {
-  final List<String> suggestions = [
-    'Somraj',
-    'Y Combinator',
-    'Horror Circus tarot deck',
-    'Gandalf the White',
-    'Parks Europe',
-    'Alina Sprongole',
-    'Startup Gallery',
-    'Clubs',
-  ];
-
-  final List<Map<String, dynamic>> mockUsers = [
-    {
-      'name': 'Somraj Lodhi',
-      'headline': 'Founder | Thinker | Quant Engineer',
-      'location': 'Indore, Madhya Pradesh, India',
-      'avatar': 'assets/images/somraj_avatar.jpg',
-      'hiring': false,
-      'mutual': <String>[],
-    },
-    {
-      'name': 'Somraj Dev',
-      'headline': 'Entrepreneur | Founder @ Nexure Agents & Black Torque Media | AI A...',
-      'location': 'India',
-      'avatar': 'assets/images/user_avatar.jpg',
-      'hiring': false,
-      'mutual': <String>['assets/images/somraj_avatar.jpg', 'assets/images/dharmik_avatar.jpg'],
-    },
-    {
-      'name': 'Somraj Ghosh',
-      'headline': 'Founder & CEO @ Layrda',
-      'location': 'India',
-      'avatar': 'assets/images/somraj_avatar.jpg',
-      'hiring': true,
-      'mutual': <String>['assets/images/dharmik_avatar.jpg'],
-    },
-    {
-      'name': 'Somraj Chalukya',
-      'headline': 'Operational Specialist, Direct Apply Operations at Cialfo',
-      'location': 'Delhi, India',
-      'avatar': 'assets/images/user_avatar.jpg',
-      'hiring': false,
-      'mutual': <String>['assets/images/dharmik_avatar.jpg'],
-    },
-    {
-      'name': 'Somraj Singh Goyal',
-      'headline': 'TOSCA Automation Tester | Certified Tosca Product Consultant| Expertis...',
-      'location': 'Indore, Madhya Pradesh, India',
-      'avatar': 'assets/images/somraj_avatar.jpg',
-      'hiring': false,
-      'mutual': <String>[],
-    },
-    {
-      'name': 'Alina Sprongole',
-      'headline': 'Software Engineer @ Google | Tech Lead',
-      'location': 'Riga, Latvia',
-      'avatar': 'assets/images/alina_avatar.jpg',
-      'hiring': false,
-      'mutual': <String>['assets/images/somraj_avatar.jpg'],
-    },
-    {
-      'name': 'Dharmik Patel',
-      'headline': 'Full Stack Developer | Open Source Contributor',
-      'location': 'Gujarat, India',
-      'avatar': 'assets/images/dharmik_avatar.jpg',
-      'hiring': false,
-      'mutual': <String>['assets/images/somraj_avatar.jpg', 'assets/images/user_avatar.jpg'],
-    },
-  ];
-
-  @override
-  ThemeData appBarTheme(BuildContext context) {
-    return ThemeData(
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black),
-        elevation: 0,
-      ),
-      inputDecorationTheme: const InputDecorationTheme(
-        border: InputBorder.none,
-        hintStyle: TextStyle(color: Colors.grey),
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Colors.black, fontSize: 18),
-      ),
-    );
-  }
-
-  @override
-  List<Widget>? buildActions(BuildContext context) {
-    return [
-      IconButton(
-        icon: const Icon(Icons.clear, color: Colors.black54),
-        onPressed: () {
-          query = '';
-        },
-      ),
-    ];
-  }
-
-  @override
-  Widget? buildLeading(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back, color: Colors.black54),
-      onPressed: () {
-        close(context, '');
-      },
-    );
-  }
-
-  @override
-  Widget buildResults(BuildContext context) {
-    final results = mockUsers
-        .where((user) =>
-            user['name'].toLowerCase().contains(query.toLowerCase()) ||
-            user['headline'].toLowerCase().contains(query.toLowerCase()))
-        .toList();
-
-    if (query.toLowerCase() == 'y combinator') {
-      return Container(
-        color: Colors.white,
-        child: ListTile(
-          leading: Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFF6600),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: const Text(
-              'Y',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
-            ),
-          ),
-          title: const Text('Y Combinator', style: TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: const Text('Startup Accelerator - Mountain View, CA'),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const CompanyProfileScreen(companyName: 'Y Combinator'),
-              ),
-            );
-          },
-        ),
-      );
-    }
-
-    if (results.isEmpty) {
-      return Container(
-        color: Colors.white,
-        child: Center(
-          child: Text(
-            'No results found for "$query"',
-            style: const TextStyle(color: Colors.black54, fontSize: 16),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      color: Colors.white,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        itemCount: results.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          final user = results[index];
-          final bool hiring = user['hiring'] == true;
-          final List<String> mutual = List<String>.from(user['mutual']);
-
-          return InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ProfileScreen(isOwnProfile: false, userData: user),
-                ),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Left: Avatar with stacked hiring banner if active
-                  Stack(
-                    alignment: Alignment.center,
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: 62,
-                        height: 62,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: hiring ? const Color(0xFF7C3AED) : Colors.transparent,
-                            width: hiring ? 2.5 : 0,
-                          ),
-                        ),
-                        padding: EdgeInsets.all(hiring ? 2 : 0),
-                        child: CircleAvatar(
-                          radius: 28,
-                          backgroundImage: AssetImage(user['avatar']),
-                        ),
-                      ),
-                      if (hiring)
-                        Positioned(
-                          bottom: -4,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF7C3AED),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              '#HIRING',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 7.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(width: 14),
-                  // Right: Profile info details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user['name'],
-                          style: const TextStyle(
-                            color: Color(0xFF111827),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          user['headline'],
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFF4B5563),
-                            fontSize: 13.5,
-                            height: 1.25,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          user['location'],
-                          style: const TextStyle(
-                            color: Color(0xFF6B7280),
-                            fontSize: 13.5,
-                          ),
-                        ),
-                        if (mutual.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              // Stack of overlapping connection circular avatars
-                              SizedBox(
-                                width: 20.0 + (mutual.length - 1) * 12.0,
-                                height: 20,
-                                child: Stack(
-                                  children: List.generate(mutual.length, (i) {
-                                    return Positioned(
-                                      left: i * 12.0,
-                                      child: Container(
-                                        width: 20,
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(color: Colors.white, width: 1.5),
-                                          image: DecorationImage(
-                                            image: AssetImage(mutual[i]),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${mutual.length} mutual connection${mutual.length > 1 ? 's' : ''}',
-                                style: const TextStyle(
-                                  color: Color(0xFF6B7280),
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  @override
-  Widget buildSuggestions(BuildContext context) {
-    final suggestionList = query.isEmpty
-        ? suggestions
-        : suggestions.where((element) => element.toLowerCase().contains(query.toLowerCase())).toList();
-
-    return Container(
-      color: Colors.white,
-      child: ListView.builder(
-        itemCount: suggestionList.length,
-        itemBuilder: (context, index) => ListTile(
-          leading: const Icon(Icons.search, color: Colors.black45),
-          title: Text(
-            suggestionList[index],
-            style: const TextStyle(color: Colors.black87),
-          ),
-          onTap: () {
-            query = suggestionList[index];
-            showResults(context);
-          },
-        ),
-      ),
-    );
-  }
 }
 
 class _MainCommentThreadPainter extends CustomPainter {

@@ -30,6 +30,9 @@ class ProfileManager {
   static List<Map<String, String>> skills = [];
   static List<Map<String, dynamic>> clubs = [];
   static List<Map<String, dynamic>> education = [];
+  static List<Map<String, dynamic>> responsibilities = [];
+  static List<Map<String, dynamic>> certificates = [];
+  static List<Map<String, dynamic>> achievements = [];
 
   static String selectedFrame = 'None';
   static String academicSession = '2022 – 2026';
@@ -40,6 +43,48 @@ class ProfileManager {
   static List<Map<String, String>> showcaseBanners = [];
 
   static final ValueNotifier<bool> profileUpdateNotifier = ValueNotifier<bool>(false);
+
+  static void addSkill(String name, [String association = '']) {
+    skills.removeWhere((s) => s['name']?.toLowerCase() == name.toLowerCase());
+    skills.insert(0, {'name': name, 'association': association});
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
+
+  static void addProject(Map<String, dynamic> project) {
+    projects.removeWhere((p) => p['title']?.toString().toLowerCase() == project['title']?.toString().toLowerCase());
+    projects.insert(0, project);
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
+
+  static void addExperience(Map<String, dynamic> exp) {
+    experiences.removeWhere((e) => e['title']?.toString().toLowerCase() == exp['title']?.toString().toLowerCase() && e['company']?.toString().toLowerCase() == exp['company']?.toString().toLowerCase());
+    experiences.insert(0, exp);
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
+
+  static void addEducation(Map<String, dynamic> edu) {
+    education.removeWhere((e) => e['school']?.toString().toLowerCase() == edu['school']?.toString().toLowerCase());
+    education.insert(0, edu);
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
+
+  static void addResponsibility(Map<String, dynamic> resp) {
+    responsibilities.removeWhere((r) => r['title']?.toString().toLowerCase() == resp['title']?.toString().toLowerCase());
+    responsibilities.insert(0, resp);
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
+
+  static void addCertificate(Map<String, dynamic> cert) {
+    certificates.removeWhere((c) => c['title']?.toString().toLowerCase() == cert['title']?.toString().toLowerCase());
+    certificates.insert(0, cert);
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
+
+  static void addAchievement(Map<String, dynamic> achv) {
+    achievements.removeWhere((a) => a['title']?.toString().toLowerCase() == achv['title']?.toString().toLowerCase());
+    achievements.insert(0, achv);
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+  }
 
   static void setProfileTrack(String title, String artist) {
     profileTrackTitle = title;
@@ -118,6 +163,20 @@ class ProfileManager {
         if (newBanner != null) 'coverPhotoUrl': newBanner,
       }).catchError((e) {
         debugPrint('[ProfileManager] Backend profile sync warning: $e');
+      });
+    }
+  }
+
+  static void updateSummary(String newSummary) {
+    summary = newSummary;
+    profileUpdateNotifier.value = !profileUpdateNotifier.value;
+
+    final currentUserId = AuthService.currentUser?.id;
+    if (currentUserId != null) {
+      ProfileService.updateProfile(currentUserId, {
+        'summary': newSummary,
+      }).catchError((e) {
+        debugPrint('[ProfileManager] Summary update sync note: $e');
       });
     }
   }

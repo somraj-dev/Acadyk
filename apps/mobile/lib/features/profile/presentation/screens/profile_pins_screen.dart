@@ -351,6 +351,10 @@ class _ProfilePinsScreenState extends State<ProfilePinsScreen> with SingleTicker
       {'label': 'Experience', 'cat': PinCategory.experience, 'count': ProfilePinsManager.countByCategory(PinCategory.experience)},
       {'label': 'Education', 'cat': PinCategory.education, 'count': ProfilePinsManager.countByCategory(PinCategory.education)},
       {'label': 'Clubs & Chapters', 'cat': PinCategory.club, 'count': ProfilePinsManager.countByCategory(PinCategory.club)},
+      {'label': 'Skills', 'cat': PinCategory.skill, 'count': ProfilePinsManager.countByCategory(PinCategory.skill)},
+      {'label': 'Certificates', 'cat': PinCategory.certificate, 'count': ProfilePinsManager.countByCategory(PinCategory.certificate)},
+      {'label': 'Responsibilities', 'cat': PinCategory.responsibility, 'count': ProfilePinsManager.countByCategory(PinCategory.responsibility)},
+      {'label': 'Achievements', 'cat': PinCategory.achievement, 'count': ProfilePinsManager.countByCategory(PinCategory.achievement)},
     ];
 
     return Container(
@@ -508,10 +512,10 @@ class _ProfilePinsScreenState extends State<ProfilePinsScreen> with SingleTicker
             'title': item.title,
             'name': item.title,
             'category': 'Student Chapter',
-            'location': item.organization ?? item.subtitle ?? 'MITS Campus, Gwalior',
+            'location': item.organization ?? item.subtitle,
             'time': item.duration ?? 'Active Chapter',
             'description': item.description ?? 'Official student chapter fostering technical workshops, open source innovation, and campus hackathons.',
-            'organizerName': item.subtitle ?? 'Core Student Committee',
+            'organizerName': item.subtitle,
             'organizerRole': 'Leadership & Core Team',
             'memberCount': '450+ Members',
             'heroImage': 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&auto=format&fit=crop&q=80',
@@ -531,7 +535,6 @@ class _ProfilePinsScreenState extends State<ProfilePinsScreen> with SingleTicker
     final bool isProject = item.category == PinCategory.project;
     final bool isExperience = item.category == PinCategory.experience;
     final bool isClub = item.category == PinCategory.club;
-    final bool isTappable = isProject || isExperience || isClub;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -804,6 +807,14 @@ class _ProfilePinsScreenState extends State<ProfilePinsScreen> with SingleTicker
         return 'Education';
       case PinCategory.club:
         return 'Club / Org';
+      case PinCategory.skill:
+        return 'Skill';
+      case PinCategory.responsibility:
+        return 'Leadership';
+      case PinCategory.certificate:
+        return 'Certificate';
+      case PinCategory.achievement:
+        return 'Achievement';
     }
   }
 }

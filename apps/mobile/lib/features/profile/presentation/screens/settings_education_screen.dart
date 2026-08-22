@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
+import '../services/profile_manager.dart';
+import '../services/profile_pins_manager.dart';
 
 class SettingsEducationScreen extends StatefulWidget {
   const SettingsEducationScreen({super.key});
@@ -313,6 +315,38 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
                           return;
                         }
 
+                        final degreeStr = '${_selectedQualification!}${_selectedCourse != null ? " in $_selectedCourse" : (_selectedSpecialization != null ? " ($_selectedSpecialization)" : "")}';
+                        final startY = _startYearCtrl.text.trim().isNotEmpty ? _startYearCtrl.text.trim() : '2022';
+                        final endY = _endYearCtrl.text.trim().isNotEmpty ? _endYearCtrl.text.trim() : '2026';
+                        final durationStr = '$startY – $endY';
+                        final desc = _descriptionCtrl.text.trim();
+                        final skills = _skillsCtrl.text.trim();
+                        final tagsList = skills.isNotEmpty
+                            ? skills.split(RegExp(r'[,|•]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+                            : <String>[];
+
+                        // 1. Add to ProfileManager
+                        ProfileManager.addEducation({
+                          'school': institute,
+                          'degree': degreeStr,
+                          'duration': durationStr,
+                          'location': 'India',
+                          'description': desc,
+                        });
+
+                        // 2. Add to ProfilePinsManager
+                        ProfilePinsManager.addEducationPin(
+                          school: institute,
+                          degree: degreeStr,
+                          duration: durationStr,
+                          description: desc,
+                          tags: tagsList,
+                          originStatus: PinOriginStatus.active,
+                          statusLabel: 'Enrolled & In Progress',
+                          isPinned: true,
+                        );
+
+                        // 3. Sync to backend gracefully
                         try {
                           await ApiClient.post('/me/education', data: {
                             'institutionName': institute,
@@ -321,21 +355,23 @@ class _SettingsEducationScreenState extends State<SettingsEducationScreen> {
                             'startYear': int.tryParse(_startYearCtrl.text.trim()) ?? 2022,
                             'endYear': int.tryParse(_endYearCtrl.text.trim()),
                             'grade': _cgpaCtrl.text.trim().isNotEmpty ? _cgpaCtrl.text.trim() : _percentageCtrl.text.trim(),
-                            'activities': _skillsCtrl.text.trim(),
-                            'description': _descriptionCtrl.text.trim(),
+                            'activities': skills,
+                            'description': desc,
                           });
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Education saved successfully!'), backgroundColor: Colors.green),
-                            );
-                            Navigator.of(context).pop(true);
-                          }
                         } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error saving education: $e'), backgroundColor: Colors.red),
-                            );
-                          }
+                          debugPrint('[Education] Backend sync note: $e');
+                        }
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Education at $institute added and pinned to profile!'),
+                              backgroundColor: const Color(0xFF10B981),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                          Navigator.of(context).pop(true);
                         }
                       },
                       child: const Text(

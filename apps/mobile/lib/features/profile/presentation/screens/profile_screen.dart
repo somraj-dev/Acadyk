@@ -23,6 +23,9 @@ import 'package:path/path.dart' as p;
 import 'add_cover_image_screen.dart';
 import 'profile_showcase.dart';
 import 'club_details_screen.dart';
+import 'package:flutter/services.dart';
+import 'package:acadyk/features/search/presentation/delegates/acadyk_search_delegate.dart';
+import '../../../chat/presentation/screens/direct_message_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final bool isOwnProfile;
@@ -49,6 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String? _profileName;
   String? _profileBio;
+  String? _profileSummary;
   String? _profileLocation;
   String? _profilePhotoUrl;
   String? _coverPhotoUrl;
@@ -58,6 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Timer? _avatarHoldTimer;
   bool _avatarHoldTriggered = false;
   bool _bannerHoldTriggered = false;
+
 
   void _startBannerHoldTimer() {
     _bannerHoldTimer?.cancel();
@@ -586,6 +591,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _profileName = ProfileManager.name;
         _profileBio = ProfileManager.bio;
+        _profileSummary = ProfileManager.summary;
         _profileLocation = ProfileManager.location;
         _profilePhotoUrl = ProfileManager.avatarUrl;
         _coverPhotoUrl = ProfileManager.bannerUrl;
@@ -619,12 +625,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (widget.userData != null) {
       _profileName = widget.userData!['name'] ?? widget.userData!['full_name'] ?? widget.userData!['authorName'];
       _profileBio = widget.userData!['headline'] ?? widget.userData!['bio'] ?? widget.userData!['authorSubtitle'];
+      _profileSummary = widget.userData!['summary'] ?? widget.userData!['about'];
       _profileLocation = widget.userData!['location'];
       _profilePhotoUrl = widget.userData!['avatar'] ?? widget.userData!['avatarUrl'] ?? widget.userData!['profile_photo_url'];
       _coverPhotoUrl = widget.userData!['cover_photo_url'] ?? widget.userData!['banner'];
     } else {
       _profileName = widget.isOwnProfile ? (ProfileManager.name.isNotEmpty ? ProfileManager.name : (AuthService.currentUser?.fullName ?? '')) : '';
       _profileBio = widget.isOwnProfile ? ProfileManager.bio : '';
+      _profileSummary = widget.isOwnProfile ? ProfileManager.summary : '';
       _profileLocation = widget.isOwnProfile ? ProfileManager.location : '';
       _profilePhotoUrl = widget.isOwnProfile ? ProfileManager.avatarUrl : '';
       _coverPhotoUrl = widget.isOwnProfile ? ProfileManager.bannerUrl : '';
@@ -714,6 +722,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // SECTION 9: Clubs & Organizations
                     _buildClubsSection(),
+                    const SizedBox(height: 8),
+
+                    // SECTION 10: Responsibilities
+                    if (_getResponsibilitiesList().isNotEmpty) ...[
+                      _buildResponsibilitiesSection(),
+                      const SizedBox(height: 8),
+                    ],
+
+                    // SECTION 11: Licenses & Certificates
+                    if (_getCertificatesList().isNotEmpty) ...[
+                      _buildCertificatesSection(),
+                      const SizedBox(height: 8),
+                    ],
+
+                    // SECTION 12: Honors & Achievements
+                    if (_getAchievementsList().isNotEmpty) ...[
+                      _buildAchievementsSection(),
+                      const SizedBox(height: 8),
+                    ],
 
                     const SizedBox(height: 32),
                   ],
@@ -733,11 +760,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         GestureDetector(
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Search within profile loaded'),
-                                duration: Duration(seconds: 1),
-                              ),
+                            showSearch(
+                              context: context,
+                              delegate: AcadykSearchDelegate(),
                             );
                           },
                           child: Container(
@@ -1350,10 +1375,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =============================================================
   Widget _buildAboutSection() {
     final String defaultSummary = widget.isOwnProfile
-        ? (ProfileManager.summary.isNotEmpty ? ProfileManager.summary : (ProfileManager.bio.isNotEmpty ? ProfileManager.bio : 'No summary added yet.'))
-        : (widget.userData?['summary'] ??
-            widget.userData?['about'] ??
-            (widget.userData?['bio'] != null && widget.userData!['bio'].toString().isNotEmpty ? widget.userData!['bio'] : 'No summary provided.'));
+        ? (ProfileManager.summary.isNotEmpty ? ProfileManager.summary : 'No summary added yet.')
+        : (_profileSummary != null && _profileSummary!.isNotEmpty
+            ? _profileSummary!
+            : (widget.userData?['summary'] ?? widget.userData?['about'] ?? 'No summary provided.'));
 
     return Container(
       color: Colors.white,
@@ -2116,6 +2141,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =============================================================
   List<Map<String, String>> _getSkillsList() {
     if (widget.isOwnProfile) {
+      final pinned = ProfilePinsManager.getPinnedSkills();
+      if (pinned.isNotEmpty) {
+        return pinned;
+      }
       return ProfileManager.skills;
     } else {
       final List<dynamic>? userSkills = widget.userData?['skills'] as List<dynamic>?;
@@ -2430,7 +2459,264 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // =============================================================
+  // SECTION 10: Responsibilities
+  // =============================================================
+  List<Map<String, dynamic>> _getResponsibilitiesList() {
+    if (widget.isOwnProfile) {
+      return ProfilePinsManager.getPinnedResponsibilities();
+    } else {
+      final List<dynamic>? userResp = widget.userData?['responsibilities'] as List<dynamic>?;
+      if (userResp != null && userResp.isNotEmpty) {
+        return userResp.map((r) => Map<String, dynamic>.from(r as Map)).toList();
+      }
+      return [];
+    }
+  }
 
+  Widget _buildResponsibilitiesSection() {
+    final list = _getResponsibilitiesList();
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Positions of Responsibility (${list.length})',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
+          ),
+          const SizedBox(height: 16),
+          for (int i = 0; i < list.length; i++) ...[
+            _buildResponsibilityItem(list[i]),
+            if (i < list.length - 1) ...[
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: Color(0xFFE0E0E0)),
+              const SizedBox(height: 16),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResponsibilityItem(Map<String, dynamic> item) {
+    final title = item['title']?.toString() ?? '';
+    final org = item['organization']?.toString() ?? '';
+    final duration = item['duration']?.toString() ?? '';
+    final location = item['location']?.toString() ?? '';
+    final description = item['description']?.toString() ?? '';
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(Icons.groups_2_rounded, size: 24, color: Color(0xFF8B5CF6)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
+              if (org.isNotEmpty)
+                Text(org, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              if (duration.isNotEmpty)
+                Text(duration, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              if (location.isNotEmpty)
+                Text(location, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              if (description.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(description, style: const TextStyle(fontSize: 13, color: Color(0xFF191919), height: 1.35)),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // =============================================================
+  // SECTION 11: Licenses & Certifications
+  // =============================================================
+  List<Map<String, dynamic>> _getCertificatesList() {
+    if (widget.isOwnProfile) {
+      return ProfilePinsManager.getPinnedCertificates();
+    } else {
+      final List<dynamic>? userCerts = widget.userData?['certificates'] as List<dynamic>?;
+      if (userCerts != null && userCerts.isNotEmpty) {
+        return userCerts.map((c) => Map<String, dynamic>.from(c as Map)).toList();
+      }
+      return [];
+    }
+  }
+
+  Widget _buildCertificatesSection() {
+    final list = _getCertificatesList();
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Licenses & Certifications (${list.length})',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
+          ),
+          const SizedBox(height: 16),
+          for (int i = 0; i < list.length; i++) ...[
+            _buildCertificateItem(list[i]),
+            if (i < list.length - 1) ...[
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: Color(0xFFE0E0E0)),
+              const SizedBox(height: 16),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCertificateItem(Map<String, dynamic> item) {
+    final title = item['title']?.toString() ?? '';
+    final org = item['issuingOrg']?.toString() ?? '';
+    final issueDate = item['issueDate']?.toString() ?? '';
+    final credUrl = item['credentialUrl']?.toString() ?? '';
+    final description = item['description']?.toString() ?? '';
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEA580C).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(Icons.workspace_premium_rounded, size: 24, color: Color(0xFFEA580C)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
+              if (org.isNotEmpty)
+                Text(org, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              if (issueDate.isNotEmpty)
+                Text('Issued $issueDate', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              if (credUrl.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  credUrl,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF0073B1), decoration: TextDecoration.underline),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              if (description.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(description, style: const TextStyle(fontSize: 13, color: Color(0xFF191919), height: 1.35)),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // =============================================================
+  // SECTION 12: Honors & Achievements
+  // =============================================================
+  List<Map<String, dynamic>> _getAchievementsList() {
+    if (widget.isOwnProfile) {
+      return ProfilePinsManager.getPinnedAchievements();
+    } else {
+      final List<dynamic>? userAchv = widget.userData?['achievements'] as List<dynamic>?;
+      if (userAchv != null && userAchv.isNotEmpty) {
+        return userAchv.map((a) => Map<String, dynamic>.from(a as Map)).toList();
+      }
+      return [];
+    }
+  }
+
+  Widget _buildAchievementsSection() {
+    final list = _getAchievementsList();
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Honors & Awards (${list.length})',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
+          ),
+          const SizedBox(height: 16),
+          for (int i = 0; i < list.length; i++) ...[
+            _buildAchievementItem(list[i]),
+            if (i < list.length - 1) ...[
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: Color(0xFFE0E0E0)),
+              const SizedBox(height: 16),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAchievementItem(Map<String, dynamic> item) {
+    final title = item['title']?.toString() ?? '';
+    final org = item['issuingOrg']?.toString() ?? '';
+    final date = item['date']?.toString() ?? '';
+    final description = item['description']?.toString() ?? '';
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(Icons.emoji_events_rounded, size: 24, color: Color(0xFFF59E0B)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF191919))),
+              if (org.isNotEmpty)
+                Text(org, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              if (date.isNotEmpty)
+                Text(date, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              if (description.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(description, style: const TextStyle(fontSize: 13, color: Color(0xFF191919), height: 1.35)),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   void _showImagePreviewDialog({
     required String title,
@@ -2726,6 +3012,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showProfileOptionsBottomSheet(BuildContext context) {
     final String currentMemberName = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? (ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Acadyk Member') : 'Member');
     final String currentMemberAvatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : '');
+    final String currentMemberBio = _profileBio ?? widget.userData?['headline'] ?? widget.userData?['bio'] ?? (widget.isOwnProfile ? ProfileManager.bio : 'Acadyk Member');
 
     showModalBottomSheet(
       context: context,
@@ -2752,8 +3039,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: 'Send profile in a message',
                 onTap: () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Profile sent in message!')),
+                  _showSendProfileInMessageBottomSheet(
+                    context,
+                    currentMemberName,
+                    currentMemberAvatar,
+                    currentMemberBio,
                   );
                 },
               ),
@@ -2762,8 +3052,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: 'Share via...',
                 onTap: () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Link copied to clipboard!')),
+                  _showShareProfileBottomSheet(
+                    context,
+                    currentMemberName,
+                    currentMemberAvatar,
+                    currentMemberBio,
                   );
                 },
               ),
@@ -2785,10 +3078,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       builder: (context) => AboutAccountScreen(
                         accountData: {
                           'name': currentMemberName,
-                          'username': widget.userData?['username'] ?? (widget.isOwnProfile ? ProfileManager.username : ''),
+                          'username': widget.userData?['username'] ?? (widget.isOwnProfile ? ProfileManager.username : currentMemberName.toLowerCase().replaceAll(' ', '_')),
                           'email': widget.isOwnProfile
                               ? (ProfileManager.email.isNotEmpty ? ProfileManager.email : (AuthService.currentUser?.email ?? ''))
-                              : (widget.userData?['email'] ?? widget.userData?['collegeEmail'] ?? ''),
+                              : (widget.userData?['email'] ?? widget.userData?['collegeEmail'] ?? '${currentMemberName.toLowerCase().replaceAll(' ', '.')}@acadyk.edu'),
                           'avatarUrl': currentMemberAvatar,
                           'avatarBytes': widget.isOwnProfile ? ProfileManager.avatarBytes : null,
                           'branch': widget.isOwnProfile
@@ -2817,13 +3110,393 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showContactInfoBottomSheet(BuildContext context) {
-    final String contactEmail = widget.isOwnProfile
-        ? (ProfileManager.email.isNotEmpty ? ProfileManager.email : (AuthService.currentUser?.email ?? ''))
-        : (widget.userData?['email'] ?? widget.userData?['collegeEmail'] ?? '');
-    final String contactWebsite = widget.isOwnProfile
-        ? ProfileManager.website
-        : (widget.userData?['website'] ?? '');
+  // -------------------------------------------------------------
+  // 1. SEND PROFILE IN A MESSAGE MODAL
+  // -------------------------------------------------------------
+  void _showSendProfileInMessageBottomSheet(
+    BuildContext context,
+    String memberName,
+    String memberAvatar,
+    String memberBio,
+  ) {
+    final TextEditingController messageCtrl = TextEditingController();
+    final TextEditingController searchCtrl = TextEditingController();
+    final Set<String> sentToHandles = {};
+    String filterText = '';
+
+    final List<Map<String, dynamic>> mockConnections = [
+      {
+        'name': 'Somraj Dev',
+        'handle': 'somraj_dev',
+        'headline': 'Founder @ Nexure Agents & Black Torque',
+        'avatar': 'assets/images/user_avatar.jpg',
+        'color': const Color(0xFF1565C0),
+      },
+      {
+        'name': 'Dharmik Patel',
+        'handle': 'dharmik_patel',
+        'headline': 'Full Stack Developer | Open Source Contributor',
+        'avatar': 'assets/images/dharmik_avatar.jpg',
+        'color': const Color(0xFF0D9488),
+      },
+      {
+        'name': 'Alina Sprongole',
+        'handle': 'alina_sprongole',
+        'headline': 'Tech Lead & Engineer @ Google',
+        'avatar': 'assets/images/alina_avatar.jpg',
+        'color': const Color(0xFF7C3AED),
+      },
+      {
+        'name': 'Christian Pickett',
+        'handle': 'christian_pickett',
+        'headline': 'Co-founder @ Orthogonal (YC W26)',
+        'avatar': 'assets/images/dharmik_avatar.jpg',
+        'color': const Color(0xFFEA580C),
+      },
+      {
+        'name': 'Somraj Ghosh',
+        'handle': 'somraj_ghosh',
+        'headline': 'Founder & CEO @ Layrda',
+        'avatar': 'assets/images/somraj_avatar.jpg',
+        'color': const Color(0xFF0284C7),
+      },
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28.0)),
+      ),
+      builder: (BuildContext ctx) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            final filteredList = mockConnections.where((c) {
+              final n = (c['name'] as String).toLowerCase();
+              final h = (c['handle'] as String).toLowerCase();
+              return n.contains(filterText) || h.contains(filterText);
+            }).toList();
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: SafeArea(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Handle
+                      Center(
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 12, bottom: 8),
+                          width: 44,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE2E8F0),
+                            borderRadius: BorderRadius.circular(2.5),
+                          ),
+                        ),
+                      ),
+
+                      // Header
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        child: Row(
+                          children: [
+                            const Text(
+                              'Send profile in message',
+                              style: TextStyle(
+                                fontSize: 17.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Color(0xFF64748B), size: 22),
+                              onPressed: () => Navigator.pop(ctx),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Profile Card Preview Snippet
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Color(0xFF1565C0),
+                                ),
+                                child: ClipOval(
+                                  child: memberAvatar.isNotEmpty
+                                      ? (memberAvatar.startsWith('http')
+                                          ? Image.network(memberAvatar, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Center(child: Text(memberName.isNotEmpty ? memberName[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))))
+                                          : Image.asset(memberAvatar, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Center(child: Text(memberName.isNotEmpty ? memberName[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)))))
+                                      : Center(child: Text(memberName.isNotEmpty ? memberName[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      memberName,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14.5,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      memberBio.isNotEmpty ? memberBio : 'Acadyk Member',
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0F4C81).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  'Profile Card',
+                                  style: TextStyle(
+                                    color: Color(0xFF0F4C81),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Optional Note Text Field
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: TextField(
+                            controller: messageCtrl,
+                            decoration: const InputDecoration(
+                              hintText: 'Add an optional message...',
+                              hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                          ),
+                        ),
+                      ),
+
+                      // Search contacts field
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                        child: Container(
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  controller: searchCtrl,
+                                  onChanged: (val) {
+                                    setModalState(() {
+                                      filterText = val.toLowerCase().trim();
+                                    });
+                                  },
+                                  decoration: const InputDecoration(
+                                    hintText: 'Search connections...',
+                                    hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      // Connections List
+                      Flexible(
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          itemCount: filteredList.length,
+                          itemBuilder: (context, idx) {
+                            final item = filteredList[idx];
+                            final String handle = item['handle'];
+                            final String name = item['name'];
+                            final String headline = item['headline'];
+                            final String avatarAsset = item['avatar'];
+                            final Color avatarColor = item['color'];
+                            final bool isSent = sentToHandles.contains(handle);
+
+                            return InkWell(
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => DirectMessageScreen(
+                                      name: name,
+                                      handle: handle,
+                                      avatarColor: avatarColor,
+                                      avatarIcon: Icons.person,
+                                    ),
+                                  ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor: avatarColor,
+                                      backgroundImage: AssetImage(avatarAsset),
+                                      onBackgroundImageError: (_, __) {},
+                                      child: Text(
+                                        name[0],
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14.5,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            headline,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    GestureDetector(
+                                      onTap: () {
+                                        setModalState(() {
+                                          if (!isSent) {
+                                            sentToHandles.add(handle);
+                                          }
+                                        });
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Profile sent to $name!'),
+                                            behavior: SnackBarBehavior.floating,
+                                            backgroundColor: const Color(0xFF0F172A),
+                                            duration: const Duration(seconds: 2),
+                                          ),
+                                        );
+                                      },
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 200),
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                        decoration: BoxDecoration(
+                                          color: isSent ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          isSent ? 'Sent' : 'Send',
+                                          style: TextStyle(
+                                            color: isSent ? const Color(0xFF475569) : Colors.white,
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // -------------------------------------------------------------
+  // 2. SHARE VIA... MODAL
+  // -------------------------------------------------------------
+  void _showShareProfileBottomSheet(
+    BuildContext context,
+    String memberName,
+    String memberAvatar,
+    String memberBio,
+  ) {
+    final String memberUsername = widget.userData?['username'] ?? memberName.toLowerCase().replaceAll(' ', '_');
+    final String profileUrl = 'https://acadyk.app/u/$memberUsername';
 
     showModalBottomSheet(
       context: context,
@@ -2831,62 +3504,336 @@ class _ProfileScreenState extends State<ProfileScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28.0)),
       ),
-      builder: (BuildContext context) {
+      builder: (BuildContext ctx) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(2.5),
+                    ),
+                  ),
+                ),
+
+                // Header
+                Row(
+                  children: [
+                    const Text(
+                      'Share profile',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF64748B), size: 22),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Profile Link Box with Copy Button
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.link_rounded, size: 22, color: Color(0xFF0F4C81)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          profileUrl,
+                          style: const TextStyle(
+                            color: Color(0xFF334155),
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () {
+                          Clipboard.setData(ClipboardData(text: profileUrl));
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Profile link copied to clipboard!'),
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Color(0xFF0F172A),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'Copy',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Social Channels Grid
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildShareChannelButton(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      label: 'WhatsApp',
+                      color: const Color(0xFF25D366),
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: 'Check out $memberName on Acadyk: $profileUrl'));
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Sharing to WhatsApp (Link copied)'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Color(0xFF25D366),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildShareChannelButton(
+                      icon: Icons.alternate_email_rounded,
+                      label: 'X (Twitter)',
+                      color: const Color(0xFF0F172A),
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: 'Discover $memberName ($memberBio) on @Acadyk: $profileUrl'));
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Post ready to share on X (Copied)'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Color(0xFF0F172A),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildShareChannelButton(
+                      icon: Icons.business_center_rounded,
+                      label: 'LinkedIn',
+                      color: const Color(0xFF0A66C2),
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: profileUrl));
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Sharing to LinkedIn (Link copied)'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Color(0xFF0A66C2),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildShareChannelButton(
+                      icon: Icons.mail_outline_rounded,
+                      label: 'Email',
+                      color: const Color(0xFFEA4335),
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: 'Check out $memberName\'s Acadyk profile: $profileUrl'));
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Email share text copied!'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Color(0xFFEA4335),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildShareChannelButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 24, color: color),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF334155),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------
+  // 3. CONTACT INFO MODAL
+  // -------------------------------------------------------------
+  void _showContactInfoBottomSheet(BuildContext context) {
+    final String currentMemberName = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? (ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Acadyk Member') : 'Member');
+    final String contactEmail = widget.isOwnProfile
+        ? (ProfileManager.email.isNotEmpty ? ProfileManager.email : (AuthService.currentUser?.email ?? ''))
+        : (widget.userData?['email'] ?? widget.userData?['collegeEmail'] ?? '${currentMemberName.toLowerCase().replaceAll(' ', '.')}@acadyk.edu');
+    final String contactWebsite = widget.isOwnProfile
+        ? (ProfileManager.website.isNotEmpty ? ProfileManager.website : 'https://acadyk.com')
+        : (widget.userData?['website'] ?? 'https://${currentMemberName.toLowerCase().replaceAll(' ', '')}.dev');
+    final String contactLocation = widget.isOwnProfile
+        ? (ProfileManager.location.isNotEmpty ? ProfileManager.location : 'Gwalior, Madhya Pradesh, India')
+        : (widget.userData?['location'] ?? 'Indore, Madhya Pradesh, India');
+    final String contactCollege = widget.isOwnProfile
+        ? 'Madhav Institute of Technology & Science (MITS)'
+        : (widget.userData?['college'] ?? widget.userData?['university'] ?? 'Madhav Institute of Technology & Science (MITS)');
+    final String memberUsername = widget.userData?['username'] ?? (widget.isOwnProfile ? ProfileManager.username : currentMemberName.toLowerCase().replaceAll(' ', '_'));
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28.0)),
+      ),
+      builder: (BuildContext ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
                   child: Container(
-                    margin: const EdgeInsets.only(top: 12, bottom: 16),
-                    width: 48,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    width: 44,
                     height: 5,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE0E0E0),
+                      color: const Color(0xFFE2E8F0),
                       borderRadius: BorderRadius.circular(2.5),
                     ),
                   ),
                 ),
-                const Center(
-                  child: Text(
-                    'Contact info',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF262626),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                if (contactEmail.isNotEmpty) ...[
-                  _buildContactInfoTile(
-                    icon: Icons.email_outlined,
-                    title: 'Email',
-                    value: contactEmail,
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                if (contactWebsite.isNotEmpty) ...[
-                  _buildContactInfoTile(
-                    icon: Icons.link,
-                    title: 'Website',
-                    value: contactWebsite,
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                if (contactEmail.isEmpty && contactWebsite.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
-                    child: Center(
-                      child: Text(
-                        'No public contact information listed.',
-                        style: TextStyle(color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+                Row(
+                  children: [
+                    const Text(
+                      'Contact info',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
                       ),
                     ),
-                  ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF64748B), size: 22),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Email
+                _buildContactInfoTile(
+                  context: context,
+                  icon: Icons.email_outlined,
+                  title: 'Email',
+                  value: contactEmail,
+                  copyable: true,
+                ),
+                const SizedBox(height: 12),
+
+                // Website / Portfolio
+                _buildContactInfoTile(
+                  context: context,
+                  icon: Icons.language_rounded,
+                  title: 'Portfolio / Website',
+                  value: contactWebsite,
+                  copyable: true,
+                ),
+                const SizedBox(height: 12),
+
+                // Profile Link
+                _buildContactInfoTile(
+                  context: context,
+                  icon: Icons.account_circle_outlined,
+                  title: 'Acadyk Profile',
+                  value: 'acadyk.app/u/$memberUsername',
+                  copyable: true,
+                ),
+                const SizedBox(height: 12),
+
+                // Location
+                _buildContactInfoTile(
+                  context: context,
+                  icon: Icons.location_on_outlined,
+                  title: 'Location',
+                  value: contactLocation,
+                  copyable: true,
+                ),
+                const SizedBox(height: 12),
+
+                // Institution
+                _buildContactInfoTile(
+                  context: context,
+                  icon: Icons.school_outlined,
+                  title: 'Institution',
+                  value: contactCollege,
+                  copyable: false,
+                ),
                 const SizedBox(height: 16),
               ],
             ),
@@ -2907,18 +3854,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
         child: Row(
           children: [
-            Icon(icon, size: 26, color: const Color(0xFF262626)),
-            const SizedBox(width: 20),
+            Icon(icon, size: 24, color: const Color(0xFF0F172A)),
+            const SizedBox(width: 18),
             Expanded(
               child: Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 15.5,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF262626),
+                  color: Color(0xFF0F172A),
                 ),
               ),
             ),
+            const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFF94A3B8)),
           ],
         ),
       ),
@@ -2926,46 +3874,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildContactInfoTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String value,
+    bool copyable = true,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF3F2EF),
-            borderRadius: BorderRadius.circular(8),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F4C81).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 20, color: const Color(0xFF0F4C81)),
           ),
-          child: Icon(icon, size: 22, color: const Color(0xFF5E5E5E)),
-        ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF5E5E5E),
-                fontWeight: FontWeight.w500,
-              ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF0F172A),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 15,
-                color: Color(0xFF191919),
-                fontWeight: FontWeight.w600,
-              ),
+          ),
+          if (copyable)
+            IconButton(
+              icon: const Icon(Icons.copy_rounded, size: 18, color: Color(0xFF64748B)),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              tooltip: 'Copy',
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: value));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Copied $title to clipboard!'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: const Color(0xFF0F172A),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
+
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
+import '../services/profile_manager.dart';
+import '../services/profile_pins_manager.dart';
 
 class SettingsWorkExperienceScreen extends StatefulWidget {
   const SettingsWorkExperienceScreen({super.key});
@@ -338,29 +340,67 @@ class _SettingsWorkExperienceScreenState extends State<SettingsWorkExperienceScr
                       onPressed: () async {
                         final org = _selectedOrganisation ?? 'Acadyk Partner';
                         final title = _selectedDesignation ?? 'Software Engineer';
+                        final loc = _locationCtrl.text.trim().isNotEmpty ? _locationCtrl.text.trim() : (_workFromHome ? 'Remote' : 'India');
+                        final duration = _startDateCtrl.text.trim().isNotEmpty
+                            ? '${_startDateCtrl.text.trim()} – ${_currentlyWorking ? "Present" : (_endDateCtrl.text.trim().isNotEmpty ? _endDateCtrl.text.trim() : "Completed")}'
+                            : (_currentlyWorking ? 'Jan 2024 – Present' : 'Completed');
+                        final desc = _descriptionCtrl.text.trim();
+                        final skills = _skillsCtrl.text.trim();
+                        final tagsList = skills.isNotEmpty
+                            ? skills.split(RegExp(r'[,|•]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+                            : <String>[];
 
+                        // 1. Add to ProfileManager
+                        ProfileManager.addExperience({
+                          'title': title,
+                          'company': org,
+                          'organization': org,
+                          'duration': duration,
+                          'location': loc,
+                          'description': desc,
+                          'skills': skills,
+                          'highlight': _currentlyWorking ? 'Active Work' : null,
+                        });
+
+                        // 2. Add to ProfilePinsManager
+                        ProfilePinsManager.addExperiencePin(
+                          title: title,
+                          subtitle: org,
+                          organization: org,
+                          duration: duration,
+                          location: loc,
+                          description: desc,
+                          tags: tagsList,
+                          originStatus: _currentlyWorking ? PinOriginStatus.active : PinOriginStatus.completed,
+                          statusLabel: _currentlyWorking ? 'Active Work' : 'Completed Term',
+                          isPinned: true,
+                        );
+
+                        // 3. Sync to backend gracefully
                         try {
                           await ApiClient.post('/me/experiences', data: {
                             'companyName': org,
                             'title': title,
-                            'location': _locationCtrl.text.trim().isNotEmpty ? _locationCtrl.text.trim() : 'India',
+                            'location': loc,
                             'isRemote': _workFromHome,
                             'isCurrent': _currentlyWorking,
-                            'description': _descriptionCtrl.text.trim(),
-                            'skills': _skillsCtrl.text.trim(),
+                            'description': desc,
+                            'skills': skills,
                           });
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Experience saved successfully!'), backgroundColor: Colors.green),
-                            );
-                            Navigator.of(context).pop(true);
-                          }
                         } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error saving experience: $e'), backgroundColor: Colors.red),
-                            );
-                          }
+                          debugPrint('[WorkExperience] Backend sync note: $e');
+                        }
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Experience at $org added and pinned to profile!'),
+                              backgroundColor: const Color(0xFF10B981),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                          Navigator.of(context).pop(true);
                         }
                       },
                       child: const Text(

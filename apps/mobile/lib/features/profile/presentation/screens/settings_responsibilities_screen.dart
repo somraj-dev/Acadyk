@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
+import '../services/profile_manager.dart';
+import '../services/profile_pins_manager.dart';
 
 class SettingsResponsibilitiesScreen extends StatefulWidget {
   const SettingsResponsibilitiesScreen({super.key});
@@ -292,28 +294,62 @@ class _SettingsResponsibilitiesScreenState extends State<SettingsResponsibilitie
                           return;
                         }
 
+                        final loc = _locationCtrl.text.trim().isNotEmpty ? _locationCtrl.text.trim() : (_workFromHome ? 'Remote' : 'India');
+                        final duration = _startDateCtrl.text.trim().isNotEmpty
+                            ? '${_startDateCtrl.text.trim()} – ${_currentlyWorking ? "Present" : (_endDateCtrl.text.trim().isNotEmpty ? _endDateCtrl.text.trim() : "Completed")}'
+                            : (_currentlyWorking ? 'Ongoing' : 'Completed');
+                        final desc = _descriptionCtrl.text.trim();
+                        final skills = _skillsCtrl.text.trim();
+                        final tagsList = skills.isNotEmpty
+                            ? skills.split(RegExp(r'[,|•]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+                            : <String>[];
+
+                        // 1. Add to ProfileManager
+                        ProfileManager.addResponsibility({
+                          'title': pos,
+                          'organization': org,
+                          'duration': duration,
+                          'location': loc,
+                          'description': desc,
+                          'skills': skills,
+                        });
+
+                        // 2. Add to ProfilePinsManager
+                        ProfilePinsManager.addResponsibilityPin(
+                          title: pos,
+                          organization: org,
+                          duration: duration,
+                          location: loc,
+                          description: desc,
+                          tags: tagsList,
+                          isPinned: true,
+                        );
+
+                        // 3. Sync to backend gracefully
                         try {
                           await ApiClient.post('/me/experiences', data: {
                             'title': pos,
                             'companyName': org,
-                            'location': _locationCtrl.text.trim(),
+                            'location': loc,
                             'isRemote': _workFromHome,
                             'isCurrent': _currentlyWorking,
-                            'description': _descriptionCtrl.text.trim(),
-                            'skills': _skillsCtrl.text.trim(),
+                            'description': desc,
+                            'skills': skills,
                           });
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Responsibility saved successfully!'), backgroundColor: Colors.green),
-                            );
-                            Navigator.of(context).pop(true);
-                          }
                         } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error saving responsibility: $e'), backgroundColor: Colors.red),
-                            );
-                          }
+                          debugPrint('[Responsibilities] Backend sync note: $e');
+                        }
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Position at $org added and pinned to profile!'),
+                              backgroundColor: const Color(0xFF10B981),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                          Navigator.of(context).pop(true);
                         }
                       },
                       child: const Text(

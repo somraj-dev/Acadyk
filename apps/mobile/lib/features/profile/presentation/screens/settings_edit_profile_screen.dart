@@ -341,7 +341,7 @@ class _SettingsEditProfileScreenState extends State<SettingsEditProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildFormInputField(
-                      label: 'Summary',
+                      label: 'Bio',
                       controller: _bioCtrl,
                       maxLines: null,
                     ),
