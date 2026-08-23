@@ -224,7 +224,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           _socialItem('Facebook', _buildFacebookLogo(), 'https://www.facebook.com/sharer/sharer.php?u=https://acadyk.com/team/stella-fernandez'),
-                          _socialItem('X', _buildXLogo(), 'https://twitter.com/intent/tweet?url=https://acadyk.com/team/stella-fernandez&text=Check%20out%20Stella%20Fernandez%20team%20profile%20on%20Acadyk!'),
+                          _socialItem('X', _buildXLogo(), 'https://x.com/intent/post?url=https://acadyk.com/team/stella-fernandez&text=Check%20out%20Stella%20Fernandez%20team%20profile%20on%20Acadyk!'),
                           _socialItem('Whatsapp', _buildWhatsappLogo(), 'https://api.whatsapp.com/send?text=Check%20out%20Stella%20Fernandez%20team%20profile%20on%20Acadyk!%20https://acadyk.com/team/stella-fernandez'),
                           _socialItem('Telegram', _buildTelegramLogo(), 'https://t.me/share/url?url=https://acadyk.com/team/stella-fernandez&text=Check%20out%20Stella%20Fernandez%20team%20profile%20on%20Acadyk!'),
                           _socialItem('Linkedin', _buildLinkedinLogo(), 'https://www.linkedin.com/sharing/share-offsite/?url=https://acadyk.com/team/stella-fernandez'),

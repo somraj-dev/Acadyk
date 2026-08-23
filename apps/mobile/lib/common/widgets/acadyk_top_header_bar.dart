@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:acadyk/features/profile/presentation/services/profile_manager.dart';
 import 'package:acadyk/features/notifications/presentation/screens/notification_screen.dart';
 import 'package:acadyk/features/feed/presentation/screens/home_feed_screen.dart';
+import 'package:acadyk/features/search/presentation/delegates/acadyk_search_delegate.dart';
 import '../services/auth_service.dart';
 
 class AcadykTopHeaderBar extends StatelessWidget implements PreferredSizeWidget {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class InviteFriendsDialog extends StatelessWidget {
   final String teamName;
@@ -30,25 +31,20 @@ class InviteFriendsDialog extends StatelessWidget {
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.topCenter,
-        children: [
-          // White Card Body
-          Container(
-            padding: const EdgeInsets.fromLTRB(24, 38, 24, 28),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
-            child: Column(
+          ],
+        ),
+        child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -196,7 +192,7 @@ class InviteFriendsDialog extends StatelessWidget {
                           height: 1.1,
                         ),
                       ),
-                      onTap: () => _shareToSocial(context, 'X (Twitter)', link),
+                      onTap: () => _shareToSocial(context, 'X', link),
                     ),
                     _buildSocialButton(
                       context,
@@ -245,48 +241,71 @@ class InviteFriendsDialog extends StatelessWidget {
               ],
             ),
           ),
-
-          // Top Floating Link Badge
-          Positioned(
-            top: -24,
-            child: Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.link,
-                size: 26,
-                color: Color(0xFF334155),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
-  void _shareToSocial(BuildContext context, String platform, String link) {
+  Future<void> _shareToSocial(BuildContext context, String platform, String link) async {
     Clipboard.setData(ClipboardData(text: link));
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Invite link opened for $platform (copied to clipboard)'),
-        backgroundColor: const Color(0xFF0F172A),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+
+    Uri? targetUri;
+    Uri? fallbackUri;
+
+    final encodedLink = Uri.encodeComponent(link);
+    final encodedMsg = Uri.encodeComponent("Hey! Join our team '$teamName' on Acadyk: $link");
+
+    switch (platform.toLowerCase()) {
+      case 'facebook':
+        targetUri = Uri.parse('https://www.facebook.com/sharer/sharer.php?u=$encodedLink');
+        break;
+      case 'x':
+      case 'x (twitter)':
+        targetUri = Uri.parse('https://x.com/intent/post?text=$encodedMsg');
+        break;
+      case 'whatsapp':
+        targetUri = Uri.parse('https://api.whatsapp.com/send?text=$encodedMsg');
+        fallbackUri = Uri.parse('whatsapp://send?text=$encodedMsg');
+        break;
+      case 'telegram':
+        targetUri = Uri.parse('https://t.me/share/url?url=$encodedLink&text=${Uri.encodeComponent("Join our team '$teamName' on Acadyk!")}');
+        fallbackUri = Uri.parse('tg://msg_url?url=$encodedLink&text=${Uri.encodeComponent("Join our team '$teamName' on Acadyk!")}');
+        break;
+      case 'linkedin':
+        targetUri = Uri.parse('https://www.linkedin.com/sharing/share-offsite/?url=$encodedLink');
+        break;
+    }
+
+    if (context.mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.open_in_new, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text('Opening $platform (link copied)'),
+            ],
+          ),
+          backgroundColor: const Color(0xFF0F172A),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
+    if (targetUri != null) {
+      try {
+        final launched = await launchUrl(targetUri, mode: LaunchMode.externalApplication);
+        if (!launched && fallbackUri != null) {
+          await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+        }
+      } catch (_) {
+        if (fallbackUri != null) {
+          try {
+            await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+          } catch (_) {}
+        }
+      }
+    }
   }
 
   Widget _buildSocialButton(

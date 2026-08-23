@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import '../../../../common/widgets/acadyk_toggle_switch.dart';
 import 'settings_mentions_screen.dart';
 
 class SettingsSocialPermissionsScreen extends StatefulWidget {
@@ -241,10 +241,9 @@ class _SettingsSocialPermissionsScreenState extends State<SettingsSocialPermissi
             ),
           ),
           const SizedBox(width: 16),
-          CupertinoSwitch(
+          AcadykToggleSwitch(
             value: value,
-            activeTrackColor: activeColor,
-            inactiveTrackColor: const Color(0xFFE2E8F0),
+            activeColor: activeColor,
             onChanged: onChanged,
           ),
         ],

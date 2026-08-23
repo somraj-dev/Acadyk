@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'post_detail_screen.dart';
-import '../../../profile/presentation/screens/profile_screen.dart';
-import '../../../profile/presentation/screens/edit_status_screen.dart';
+import '../../../profile/presentation/services/profile_manager.dart';
+import '../../../../common/services/auth_service.dart';
 
 
 class CompanyProfileScreen extends StatefulWidget {
@@ -27,6 +27,18 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   String? _replyingToName;
 
   final List<Map<String, dynamic>> _customComments = [];
+
+  String get _currentUserName => ProfileManager.name.isNotEmpty
+      ? ProfileManager.name
+      : (AuthService.currentUser?.fullName?.isNotEmpty == true ? AuthService.currentUser!.fullName! : 'Developer');
+
+  String get _currentUserHeadline => ProfileManager.summary.isNotEmpty
+      ? ProfileManager.summary
+      : (ProfileManager.bio.isNotEmpty ? ProfileManager.bio : 'Student @ Acadyk');
+
+  String get _currentUserAvatar => ProfileManager.avatarUrl.isNotEmpty
+      ? ProfileManager.avatarUrl
+      : 'assets/images/somraj_avatar.jpg';
 
   @override
   void dispose() {
@@ -672,114 +684,117 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 46,
-                        child: Align(
-                          alignment: Alignment.topLeft,
-                          child: CircleAvatar(
-                            radius: 18,
-                            backgroundImage: AssetImage(comment['avatar']),
+                  CustomPaint(
+                    painter: _MainCommentThreadPainter(hasReplies: hasReplies),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 46,
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: CircleAvatar(
+                              radius: 18,
+                              backgroundImage: AssetImage(comment['avatar']),
+                            ),
                           ),
                         ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    comment['name'],
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                  ),
-                                  if (comment['isAuthor'] == true) ...[
-                                    const SizedBox(width: 4),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFE0F2FE),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Text(
-                                        'Author',
-                                        style: TextStyle(color: Color(0xFF0369A1), fontSize: 9, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ],
-                                  const Spacer(),
-                                  Text(
-                                    comment['timeText'],
-                                    style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                comment['headline'],
-                                style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 6),
-                              _buildCommentBodyText(comment['body']),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        if (comment['hasLiked'] == true) {
-                                          comment['hasLiked'] = false;
-                                          comment['likes'] = (comment['likes'] as int) - 1;
-                                        } else {
-                                          comment['hasLiked'] = true;
-                                          comment['likes'] = (comment['likes'] as int) + 1;
-                                        }
-                                      });
-                                    },
-                                    child: Text(
-                                      'Like',
-                                      style: TextStyle(
-                                        color: comment['hasLiked'] == true ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  if (comment['likes'] > 0) ...[
-                                    const SizedBox(width: 6),
-                                    const Icon(CupertinoIcons.hand_thumbsup_fill, size: 12, color: Color(0xFF0A66C2)),
-                                    const SizedBox(width: 2),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
                                     Text(
-                                      comment['likes'].toString(),
+                                      comment['name'],
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    ),
+                                    if (comment['isAuthor'] == true) ...[
+                                      const SizedBox(width: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE0F2FE),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: const Text(
+                                          'Author',
+                                          style: TextStyle(color: Color(0xFF0369A1), fontSize: 9, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                    const Spacer(),
+                                    Text(
+                                      comment['timeText'],
                                       style: const TextStyle(color: Colors.grey, fontSize: 11),
                                     ),
                                   ],
-                                  const SizedBox(width: 12),
-                                  GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _replyingToCommentIndex = commentIndex;
-                                        _replyingToName = comment['name'];
-                                        _commentFocusNode.requestFocus();
-                                      });
-                                    },
-                                    child: const Text(
-                                      'Reply',
-                                      style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                                Text(
+                                  comment['headline'],
+                                  style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 6),
+                                _buildCommentBodyText(comment['body']),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          if (comment['hasLiked'] == true) {
+                                            comment['hasLiked'] = false;
+                                            comment['likes'] = (comment['likes'] as int) - 1;
+                                          } else {
+                                            comment['hasLiked'] = true;
+                                            comment['likes'] = (comment['likes'] as int) + 1;
+                                          }
+                                        });
+                                      },
+                                      child: Text(
+                                        'Like',
+                                        style: TextStyle(
+                                          color: comment['hasLiked'] == true ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                    if (comment['likes'] > 0) ...[
+                                      const SizedBox(width: 6),
+                                      const Icon(CupertinoIcons.hand_thumbsup_fill, size: 12, color: Color(0xFF0A66C2)),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        comment['likes'].toString(),
+                                        style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                      ),
+                                    ],
+                                    const SizedBox(width: 12),
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _replyingToCommentIndex = commentIndex;
+                                          _replyingToName = comment['name'];
+                                          _commentFocusNode.requestFocus();
+                                        });
+                                      },
+                                      child: const Text(
+                                        'Reply',
+                                        style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 12, fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
 
                   // Render Replies
@@ -789,109 +804,106 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                       final reply = replyEntry.value;
                       final isLastReply = replyIndex == replies.length - 1;
 
-                      return Padding(
-                        padding: EdgeInsets.only(top: 8, bottom: isLastReply ? 12 : 0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(width: 16),
-                            Container(
-                              width: 2,
-                              height: 32,
-                              color: const Color(0xFFC7C7C7),
-                              margin: const EdgeInsets.only(right: 14),
-                            ),
-                            CircleAvatar(
-                              radius: 14,
-                              backgroundImage: AssetImage(reply['avatar']),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        reply['name'],
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        reply['timeText'],
-                                        style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                      ),
-                                    ],
-                                  ),
-                                          Text(
-                                            reply['headline'],
-                                            style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                      return CustomPaint(
+                        painter: _ReplyThreadPainter(isLast: isLastReply),
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 6, bottom: isLastReply ? 12 : 6),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(width: 46),
+                              CircleAvatar(
+                                radius: 14,
+                                backgroundImage: AssetImage(reply['avatar']),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          reply['name'],
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                                        ),
+                                        const Spacer(),
+                                        Text(
+                                          reply['timeText'],
+                                          style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      reply['headline'],
+                                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    _buildCommentBodyText(reply['body']),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              if (reply['hasLiked'] == true) {
+                                                reply['hasLiked'] = false;
+                                                reply['likes'] = ((reply['likes'] ?? 0) as int) - 1;
+                                              } else {
+                                                reply['hasLiked'] = true;
+                                                reply['likes'] = ((reply['likes'] ?? 0) as int) + 1;
+                                              }
+                                            });
+                                          },
+                                          child: Text(
+                                            'Like',
+                                            style: TextStyle(
+                                              color: reply['hasLiked'] == true ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
-                                          const SizedBox(height: 4),
-                                          _buildCommentBodyText(reply['body']),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              GestureDetector(
-                                                onTap: () {
-                                                  setState(() {
-                                                    if (reply['hasLiked'] == true) {
-                                                      reply['hasLiked'] = false;
-                                                      reply['likes'] = ((reply['likes'] ?? 0) as int) - 1;
-                                                    } else {
-                                                      reply['hasLiked'] = true;
-                                                      reply['likes'] = ((reply['likes'] ?? 0) as int) + 1;
-                                                    }
-                                                  });
-                                                },
-                                                child: Text(
-                                                  'Like',
-                                                  style: TextStyle(
-                                                    color: reply['hasLiked'] == true ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                              if (reply['likes'] != null && reply['likes'] > 0) ...[
-                                                const SizedBox(width: 4),
-                                                const Icon(CupertinoIcons.hand_thumbsup_fill, size: 10, color: Color(0xFF0A66C2)),
-                                                const SizedBox(width: 2),
-                                                Text(
-                                                  reply['likes'].toString(),
-                                                  style: const TextStyle(color: Colors.grey, fontSize: 10),
-                                                ),
-                                              ],
-                                              const SizedBox(width: 12),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  setState(() {
-                                                    _replyingToCommentIndex = commentIndex;
-                                                    _replyingToName = reply['name'];
-                                                    _commentFocusNode.requestFocus();
-                                                  });
-                                                },
-                                                child: const Text(
-                                                  'Reply',
-                                                  style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11, fontWeight: FontWeight.w600),
-                                                ),
-                                              ),
-                                            ],
+                                        ),
+                                        if (reply['likes'] != null && reply['likes'] > 0) ...[
+                                          const SizedBox(width: 4),
+                                          const Icon(CupertinoIcons.hand_thumbsup_fill, size: 10, color: Color(0xFF0A66C2)),
+                                          const SizedBox(width: 2),
+                                          Text(
+                                            reply['likes'].toString(),
+                                            style: const TextStyle(color: Colors.grey, fontSize: 10),
                                           ),
                                         ],
-                                      ),
+                                        const SizedBox(width: 12),
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _replyingToCommentIndex = commentIndex;
+                                              _replyingToName = reply['name'];
+                                              _commentFocusNode.requestFocus();
+                                            });
+                                          },
+                                          child: const Text(
+                                            'Reply',
+                                            style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 11, fontWeight: FontWeight.w600),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              );
-                            }).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
                   ],
                 ],
               ),
             );
-          }).toList(),
+          }),
 
           const Divider(height: 1, color: Color(0xFFECECE8)),
           const SizedBox(height: 8),
@@ -925,9 +937,20 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
           // Add a comment box
           Row(
             children: [
-              const StatusAvatar(
-                avatarAsset: 'assets/images/somraj_avatar.jpg',
-                radius: 18,
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: const Color(0xFF0F4C81),
+                backgroundImage: _currentUserAvatar.isNotEmpty
+                    ? (_currentUserAvatar.startsWith('http')
+                        ? NetworkImage(_currentUserAvatar)
+                        : (_currentUserAvatar.startsWith('assets/') ? AssetImage(_currentUserAvatar) as ImageProvider : null))
+                    : null,
+                child: (_currentUserAvatar.isEmpty || (!_currentUserAvatar.startsWith('http') && !_currentUserAvatar.startsWith('assets/')))
+                    ? Text(
+                        _currentUserName.isNotEmpty ? _currentUserName.substring(0, 1).toUpperCase() : 'U',
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      )
+                    : null,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -952,14 +975,18 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     onSubmitted: (val) {
                       if (val.trim().isNotEmpty) {
                         final text = val.trim();
+                        final currentUserName = _currentUserName;
+                        final currentUserHeadline = _currentUserHeadline;
+                        final currentUserAvatar = _currentUserAvatar;
+
                         setState(() {
                           if (_replyingToCommentIndex != null) {
                             final parentComment = _customComments[_replyingToCommentIndex!];
                             final reps = parentComment['replies'] as List;
                             reps.add({
-                              'name': 'Somraj lodhi',
-                              'headline': 'Founder & Builder @ Acadyk',
-                              'avatar': 'assets/images/somraj_avatar.jpg',
+                              'name': currentUserName,
+                              'headline': currentUserHeadline,
+                              'avatar': currentUserAvatar,
                               'timeText': 'Just now',
                               'body': text,
                               'likes': 0,
@@ -969,9 +996,9 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                             _replyingToName = null;
                           } else {
                             final newComment = {
-                              'name': 'Somraj lodhi',
-                              'headline': 'Founder & Builder @ Acadyk',
-                              'avatar': 'assets/images/somraj_avatar.jpg',
+                              'name': currentUserName,
+                              'headline': currentUserHeadline,
+                              'avatar': currentUserAvatar,
                               'isAuthor': false,
                               'timeText': 'Just now',
                               'body': text,
@@ -994,14 +1021,18 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                   final val = _commentInputCtrl.text;
                   if (val.trim().isNotEmpty) {
                     final text = val.trim();
+                    final currentUserName = _currentUserName;
+                    final currentUserHeadline = _currentUserHeadline;
+                    final currentUserAvatar = _currentUserAvatar;
+
                     setState(() {
                       if (_replyingToCommentIndex != null) {
                         final parentComment = _customComments[_replyingToCommentIndex!];
                         final reps = parentComment['replies'] as List;
                         reps.add({
-                          'name': 'Somraj lodhi',
-                          'headline': 'Founder & Builder @ Acadyk',
-                          'avatar': 'assets/images/somraj_avatar.jpg',
+                          'name': currentUserName,
+                          'headline': currentUserHeadline,
+                          'avatar': currentUserAvatar,
                           'timeText': 'Just now',
                           'body': text,
                           'likes': 0,
@@ -1011,9 +1042,9 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                         _replyingToName = null;
                       } else {
                         final newComment = {
-                          'name': 'Somraj lodhi',
-                          'headline': 'Founder & Builder @ Acadyk',
-                          'avatar': 'assets/images/somraj_avatar.jpg',
+                          'name': currentUserName,
+                          'headline': currentUserHeadline,
+                          'avatar': currentUserAvatar,
                           'isAuthor': false,
                           'timeText': 'Just now',
                           'body': text,
@@ -1102,20 +1133,24 @@ class _MainCommentThreadPainter extends CustomPainter {
     
     final paint = Paint()
       ..color = const Color(0xFFC7C7C7)
-      ..strokeWidth = 2
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
-    final centerX = 18.0; 
-    final startY = 36.0;
+    const double centerX = 18.0; 
+    const double startY = 38.0;
 
-    final path = Path();
-    path.moveTo(centerX, startY);
-    path.lineTo(centerX, size.height);
-    
-    canvas.drawPath(path, paint);
+    if (size.height > startY) {
+      canvas.drawLine(
+        const Offset(centerX, startY),
+        Offset(centerX, size.height),
+        paint,
+      );
+    }
   }
+
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _MainCommentThreadPainter oldDelegate) =>
+      oldDelegate.hasReplies != hasReplies;
 }
 
 class _ReplyThreadPainter extends CustomPainter {
@@ -1126,32 +1161,37 @@ class _ReplyThreadPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = const Color(0xFFC7C7C7)
-      ..strokeWidth = 2
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
-    final centerX = 18.0;
-    final centerY = 23.0; 
+    const double centerX = 18.0;
+    const double centerY = 20.0; 
+    const double radius = 12.0;
+    const double targetX = 46.0;
 
     final elbowPath = Path();
     elbowPath.moveTo(centerX, 0);
-    elbowPath.lineTo(centerX, centerY - 12);
+    elbowPath.lineTo(centerX, centerY - radius);
     elbowPath.arcToPoint(
-      Offset(centerX + 12, centerY),
-      radius: const Radius.circular(12),
+      const Offset(centerX + radius, centerY),
+      radius: const Radius.circular(radius),
       clockwise: false,
     );
-    elbowPath.lineTo(size.width, centerY);
+    elbowPath.lineTo(targetX, centerY);
 
     canvas.drawPath(elbowPath, paint);
 
     if (!isLast) {
       final linePath = Path();
-      linePath.moveTo(centerX, centerY - 12);
+      linePath.moveTo(centerX, centerY - radius);
       linePath.lineTo(centerX, size.height);
       canvas.drawPath(linePath, paint);
     }
   }
+
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _ReplyThreadPainter oldDelegate) =>
+      oldDelegate.isLast != isLast;
 }
+
 

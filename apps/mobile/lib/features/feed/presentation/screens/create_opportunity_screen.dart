@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
 import '../services/opportunities_manager.dart';
+import 'home_feed_screen.dart';
 
 class CreateOpportunityScreen extends StatefulWidget {
-  const CreateOpportunityScreen({super.key});
+  final String? initialType;
+  final String? initialSubType;
+
+  const CreateOpportunityScreen({
+    super.key,
+    this.initialType,
+    this.initialSubType,
+  });
 
   @override
   State<CreateOpportunityScreen> createState() => _CreateOpportunityScreenState();
@@ -39,6 +47,32 @@ class _CreateOpportunityScreenState extends State<CreateOpportunityScreen> {
 
   // Step 2 checklist eligibility
   final Set<String> _selectedEligibility = {'Everyone can apply'};
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialType != null && widget.initialType!.isNotEmpty) {
+      _selectedType = widget.initialType!;
+      _updateSubTypesForCategory(_selectedType);
+    }
+    if (widget.initialSubType != null && widget.initialSubType!.isNotEmpty) {
+      _selectedSubType = widget.initialSubType!;
+    }
+  }
+
+  void _updateSubTypesForCategory(String category) {
+    if (category == 'Hackathons & Coding Challenges') {
+      _selectedSubType = 'Online Coding Challenge';
+    } else if (category == 'Quizzes') {
+      _selectedSubType = 'Domain Knowledge Quiz';
+    } else if (category == 'Webinars, Conferences & Workshops' || category == 'Webinars') {
+      _selectedSubType = 'Interactive Webinar';
+    } else if (category == 'Cultural Events') {
+      _selectedSubType = 'Campus Festival';
+    } else if (category == 'Scholarships & Internships') {
+      _selectedSubType = 'Summer Internship';
+    }
+  }
 
   void _generateAIDescription() {
     setState(() {
@@ -79,7 +113,8 @@ class _CreateOpportunityScreenState extends State<CreateOpportunityScreen> {
       'tags': [
         _isOnline ? 'Online' : 'Offline',
         _isTeamParticipation ? 'Team Event' : 'Individual',
-        'Hackathon',
+        _selectedType,
+        _selectedSubType,
         'Open to All'
       ],
       'prizePool': '₹ 1,50,000',
@@ -101,7 +136,7 @@ class _CreateOpportunityScreenState extends State<CreateOpportunityScreen> {
           {
             'day': '10',
             'month': 'OCT',
-            'title': 'Hackathon Challenge Starts',
+            'title': '$_selectedType Starts',
             'startDate': '10 Oct 25, 10:00 AM IST',
             'endDate': '12 Oct 25, 11:59 PM IST',
             'isLive': true,
@@ -112,6 +147,7 @@ class _CreateOpportunityScreenState extends State<CreateOpportunityScreen> {
     };
 
     OpportunitiesManager.addOpportunity(newOpportunity);
+    HomeFeedScreen.switchTab(1);
 
     // Synchronize with Spring Boot Backend API
     ApiClient.post('/opportunities', data: {
@@ -148,6 +184,7 @@ class _CreateOpportunityScreenState extends State<CreateOpportunityScreen> {
                 Navigator.pop(context); // Close dialog
                 Navigator.pop(context); // Close CreateOpportunityScreen
                 Navigator.pop(context); // Close SelectOpportunityScreen
+                HomeFeedScreen.switchTab(1);
               },
               child: const Text('Go to Opportunities', style: TextStyle(fontWeight: FontWeight.bold)),
             ),

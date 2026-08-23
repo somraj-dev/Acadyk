@@ -17,6 +17,55 @@ class PostService {
   static final Map<String, bool> _likedPosts = {};
   static final Map<String, int> _likeCounts = {};
   static final Map<String, bool> _bookmarkedPosts = {};
+  static final Set<String> _hiddenPostIds = {};
+  static final Set<String> _hiddenAuthors = {};
+
+  static Set<String> get hiddenPostIds => Set.unmodifiable(_hiddenPostIds);
+  static Set<String> get hiddenAuthors => Set.unmodifiable(_hiddenAuthors);
+
+  static bool isPostHidden(Map<String, dynamic> post) {
+    final postId = post['id']?.toString();
+    if (postId != null && _hiddenPostIds.contains(postId)) return true;
+
+    final authorName = (post['authorName'] ?? post['author']?['fullName'] ?? '').toString().trim().toLowerCase();
+    if (authorName.isNotEmpty && _hiddenAuthors.contains(authorName)) return true;
+
+    final authorUsername = (post['author']?['username'] ?? '').toString().trim().toLowerCase();
+    if (authorUsername.isNotEmpty && _hiddenAuthors.contains(authorUsername)) return true;
+
+    final authorId = (post['author']?['id'] ?? post['authorId'] ?? '').toString().trim();
+    if (authorId.isNotEmpty && _hiddenAuthors.contains(authorId)) return true;
+
+    return false;
+  }
+
+  static void hidePost(String postId) {
+    _hiddenPostIds.add(postId);
+    notifyFeedChanged();
+  }
+
+  static void unhidePost(String postId) {
+    _hiddenPostIds.remove(postId);
+    notifyFeedChanged();
+  }
+
+  static void hideAuthor(String authorKey) {
+    if (authorKey.trim().isNotEmpty) {
+      _hiddenAuthors.add(authorKey.trim().toLowerCase());
+      notifyFeedChanged();
+    }
+  }
+
+  static void unhideAuthor(String authorKey) {
+    if (authorKey.trim().isNotEmpty) {
+      _hiddenAuthors.remove(authorKey.trim().toLowerCase());
+      notifyFeedChanged();
+    }
+  }
+
+  static bool isAuthorHidden(String authorKey) {
+    return _hiddenAuthors.contains(authorKey.trim().toLowerCase());
+  }
 
   static void notifyFeedChanged() {
     feedChangeNotifier.value = feedChangeNotifier.value + 1;
@@ -55,6 +104,15 @@ class PostService {
     String? location,
     List<String>? taggedPeople,
     String replyVisibility = 'Everyone can reply',
+    bool isCollab = false,
+    String? collabAuthorName,
+    String? collabAuthorSubtitle,
+    String? collabAuthorAvatar,
+    String? collabAuthorInitials,
+    int? collabAuthorBgColor,
+    String? collabAuthorHandle,
+    String? collabAuthorId,
+    bool? isOfficialCollab,
   }) async {
     final authorName = ProfileManager.name.isNotEmpty
         ? ProfileManager.name
@@ -73,6 +131,8 @@ class PostService {
       'content': content,
       'avatar': authorAvatar,
       'name': authorName,
+      'isCollab': isCollab,
+      'collabAuthorName': collabAuthorName,
     };
 
     String? uploadedImageUrl = imageUrl;
@@ -121,6 +181,17 @@ class PostService {
       'location': location,
       'taggedPeople': taggedPeople,
       'replyVisibility': replyVisibility,
+      'isCollab': isCollab,
+      if (isCollab) ...{
+        'collabAuthorName': collabAuthorName,
+        'collabAuthorSubtitle': collabAuthorSubtitle ?? 'Collaborator @ Acadyk',
+        'collabAuthorAvatar': collabAuthorAvatar ?? '',
+        'collabAuthorInitials': collabAuthorInitials ?? 'CO',
+        'collabAuthorBgColor': collabAuthorBgColor ?? 0xFF0284C7,
+        'collabAuthorHandle': collabAuthorHandle,
+        'collabAuthorId': collabAuthorId,
+        'isOfficial': isOfficialCollab ?? false,
+      },
       'likes': 0,
       'comments': 0,
       'isLiked': false,
@@ -215,7 +286,7 @@ class PostService {
     // Merge any locally created memory posts at the top
     final memoryPostIds = _inMemoryPosts.map((p) => p['id']?.toString()).toSet();
     final nonDuplicateBackend = normalized.where((p) => !memoryPostIds.contains(p['id']?.toString())).toList();
-    return [..._inMemoryPosts, ...nonDuplicateBackend];
+    return [..._inMemoryPosts, ...nonDuplicateBackend].where((p) => !isPostHidden(p)).toList();
   }
 
   /// Get posts authored by a specific user
@@ -239,12 +310,12 @@ class PostService {
     } catch (e) {
       debugPrint('[PostService] Error fetching user posts: $e');
     }
-    return backendPosts.map((p) => _normalizePostData(p)).toList();
+    return backendPosts.map((p) => _normalizePostData(p)).where((p) => !isPostHidden(p)).toList();
   }
 
   /// Get user's own created posts for Profile "Listed"
   static List<Map<String, dynamic>> getUserCreatedPosts() {
-    return List<Map<String, dynamic>>.from(_inMemoryPosts);
+    return _inMemoryPosts.where((p) => !isPostHidden(p)).toList();
   }
 
   /// Normalize post data structure between backend response and UI
@@ -300,6 +371,13 @@ class PostService {
       'timeAgo': formattedTime,
       'type': post['postType'] ?? post['type'] ?? 'student',
       'isCollab': post['isCollab'] == true,
+      'collabAuthorName': post['collabAuthorName'] ?? post['collabName'],
+      'collabAuthorSubtitle': post['collabAuthorSubtitle'] ?? post['collabSubtitle'],
+      'collabAuthorAvatar': post['collabAuthorAvatar'] ?? post['collabAvatar'],
+      'collabAuthorInitials': post['collabAuthorInitials'] ?? post['collabInitials'],
+      'collabAuthorBgColor': post['collabAuthorBgColor'] ?? post['collabBgColor'],
+      'collabAuthorHandle': post['collabAuthorHandle'] ?? post['collabHandle'],
+      'collabAuthorId': post['collabAuthorId'] ?? post['collabId'],
       'raw': post,
     };
   }

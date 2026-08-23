@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/opportunities_manager.dart';
+import 'home_feed_screen.dart';
 
 class CreateQuizPollScreen extends StatefulWidget {
   const CreateQuizPollScreen({super.key});
@@ -48,7 +50,6 @@ class _CreateQuizPollScreenState extends State<CreateQuizPollScreen> {
     const Color textColor = Color(0xFF111827);
     const Color textSecondary = Color(0xFF6B7280);
     const Color borderCol = Color(0xFFE5E7EB);
-    const Color lightBg = Color(0xFFF9FAFB);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -322,17 +323,68 @@ class _CreateQuizPollScreenState extends State<CreateQuizPollScreen> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      if (_questionController.text.trim().isEmpty) {
+                      final question = _questionController.text.trim();
+                      if (question.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Please ask a question first.')),
                         );
                         return;
                       }
-                      Navigator.pop(context);
+
+                      final validOptions = _options.where((o) => (o['text'] ?? '').trim().isNotEmpty).toList();
+                      final optionTagline = validOptions.isNotEmpty
+                          ? validOptions.map((o) => '${o['emoji']} ${o['text']}').join('  •  ')
+                          : 'Interactive Poll & Domain Quiz';
+
+                      final newOpportunity = {
+                        'title': question,
+                        'logoUrl': 'assets/images/mits_logo.png',
+                        'bannerUrl': 'https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=800&auto=format&fit=crop',
+                        'organizer': 'Acadyk Assessment Hub',
+                        'timeAgo': 'Just now',
+                        'tagline': optionTagline,
+                        'dates': 'Active Now · $_selectedDays $_selectedHours',
+                        'location': 'Online\nQuiz & Poll Sandbox',
+                        'teamSizeText': 'Individual\nParticipation',
+                        'tags': ['Quizzes', 'Domain Knowledge', 'Poll', 'Interactive', 'Open to All'],
+                        'prizePool': 'Points & Badges',
+                        'likes': 0,
+                        'comments': 0,
+                        'event': {
+                          'title': question,
+                          'organizer': 'Acadyk Assessment Hub',
+                          'bannerUrl': 'https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=800&auto=format&fit=crop',
+                          'logoUrl': 'assets/images/mits_logo.png',
+                          'teamSize': 'Individual Participation',
+                          'registered': 1,
+                          'prizes': 'Skill Badges & Points',
+                          'eligibility': 'Open to all students & domain learners',
+                          'description': 'Assess your domain knowledge with this live quiz and interactive poll.\n\nQuestion: $question',
+                          'pollOptions': _options,
+                          'timeline': [
+                            {
+                              'day': 'NOW',
+                              'month': 'LIVE',
+                              'title': 'Quiz & Poll Active',
+                              'startDate': 'Live Now',
+                              'endDate': 'Closes in $_selectedDays',
+                              'isLive': true,
+                              'desc': 'Cast your vote and test your domain knowledge.'
+                            }
+                          ]
+                        }
+                      };
+
+                      OpportunitiesManager.addOpportunity(newOpportunity);
+                      HomeFeedScreen.switchTab(1);
+
+                      Navigator.pop(context); // Close CreateQuizPollScreen
+                      Navigator.pop(context); // Close SelectOpportunityScreen
+
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Quiz / Poll created successfully! 🎉'),
-                          backgroundColor: Colors.green,
+                        SnackBar(
+                          content: Text('Quiz "$question" published directly to Opportunities! 🎉'),
+                          backgroundColor: const Color(0xFF10B981),
                         ),
                       );
                     },

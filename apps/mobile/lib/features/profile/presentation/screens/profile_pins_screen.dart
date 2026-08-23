@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../../../common/widgets/acadyk_toggle_switch.dart';
 import '../services/profile_pins_manager.dart';
 import 'project_details.dart';
 import 'experience_details.dart';
@@ -638,9 +639,9 @@ class _ProfilePinsScreenState extends State<ProfilePinsScreen> with SingleTicker
                       ),
                     ),
                     const SizedBox(width: 8),
-                    CupertinoSwitch(
+                    AcadykToggleSwitch(
                       value: item.isPinned,
-                      activeTrackColor: const Color(0xFF0284C7),
+                      activeColor: const Color(0xFF0284C7),
                       onChanged: (val) {
                         if (val && !item.isPinned && ProfilePinsManager.pinnedCount >= ProfilePinsManager.maxPinsAllowed) {
                           _showMaxPinsWarningDialog();

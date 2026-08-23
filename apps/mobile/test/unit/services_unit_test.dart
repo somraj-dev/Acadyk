@@ -24,6 +24,22 @@ void main() {
 
       final bookmarked = await PostService.toggleBookmark('post-123', false);
       expect(bookmarked, isA<bool>());
+
+      // Test hide & unhide post
+      expect(PostService.isPostHidden({'id': 'post-hide-test', 'authorName': 'John Doe'}), false);
+      PostService.hidePost('post-hide-test');
+      expect(PostService.isPostHidden({'id': 'post-hide-test', 'authorName': 'John Doe'}), true);
+      PostService.unhidePost('post-hide-test');
+      expect(PostService.isPostHidden({'id': 'post-hide-test', 'authorName': 'John Doe'}), false);
+
+      // Test hide & unhide author
+      expect(PostService.isAuthorHidden('MITS Gwalior'), false);
+      PostService.hideAuthor('MITS Gwalior');
+      expect(PostService.isAuthorHidden('MITS Gwalior'), true);
+      expect(PostService.isPostHidden({'id': 'post-999', 'authorName': 'MITS Gwalior'}), true);
+      PostService.unhideAuthor('MITS Gwalior');
+      expect(PostService.isAuthorHidden('MITS Gwalior'), false);
+      expect(PostService.isPostHidden({'id': 'post-999', 'authorName': 'MITS Gwalior'}), false);
     });
 
     test('ProfileService methods handle profile fetch and update', () async {

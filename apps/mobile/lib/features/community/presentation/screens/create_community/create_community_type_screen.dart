@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../common/widgets/acadyk_toggle_switch.dart';
 import 'create_community_details_screen.dart';
 
 class CreateCommunityTypeScreen extends StatefulWidget {
@@ -226,17 +227,14 @@ class _CreateCommunityTypeScreenState extends State<CreateCommunityTypeScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          Switch(
+          AcadykToggleSwitch(
             value: _isMature,
+            activeColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0F4C81),
             onChanged: (val) {
               setState(() {
                 _isMature = val;
               });
             },
-            activeThumbColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF09122C),
-            activeTrackColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFCBD5E1),
-            inactiveThumbColor: isDark ? const Color(0xFF8696A0) : const Color(0xFF94A3B8),
-            inactiveTrackColor: isDark ? const Color(0xFF2A3942) : const Color(0xFFF1F5F9),
           ),
         ],
       ),

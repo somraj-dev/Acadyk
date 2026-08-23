@@ -101,33 +101,55 @@ class SelectOpportunityScreen extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    if (item['title'] == 'Quizzes') {
+                    final title = item['title'] as String;
+                    if (title == 'Quizzes') {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const CreateQuizPollScreen(),
                         ),
                       );
-                    } else if (item['title'] == 'Hackathons & Coding Challenges') {
+                    } else if (title == 'Hackathons & Coding Challenges') {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const CreateOpportunityScreen(),
+                          builder: (context) => const CreateOpportunityScreen(
+                            initialType: 'Hackathons & Coding Challenges',
+                          ),
                         ),
                       );
-                    } else if (item['title'] == 'Create Team') {
+                    } else if (title == 'Create Team') {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const CreateTeamScreen(),
                         ),
                       );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Create flow for "${item['title']}" initiated!'),
-                          duration: const Duration(seconds: 2),
-                          backgroundColor: const Color(0xFF1E1F22),
+                    } else if (title == 'Webinars, Conferences & Workshops') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateOpportunityScreen(
+                            initialType: 'Webinars, Conferences & Workshops',
+                          ),
+                        ),
+                      );
+                    } else if (title == 'Cultural Events') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateOpportunityScreen(
+                            initialType: 'Cultural Events',
+                          ),
+                        ),
+                      );
+                    } else if (title == 'Scholarships & Internships') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateOpportunityScreen(
+                            initialType: 'Scholarships & Internships',
+                          ),
                         ),
                       );
                     }

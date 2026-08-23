@@ -3699,7 +3699,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     _buildShareChannelButton(
                       icon: Icons.alternate_email_rounded,
-                      label: 'X (Twitter)',
+                      label: 'X',
                       color: const Color(0xFF0F172A),
                       onTap: () {
                         Clipboard.setData(ClipboardData(text: 'Discover $memberName ($memberBio) on @Acadyk: $profileUrl'));

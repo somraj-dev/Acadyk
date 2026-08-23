@@ -16,6 +16,14 @@ import 'package:acadyk/features/profile/presentation/screens/profile_screen.dart
 import 'package:acadyk/features/profile/presentation/screens/profile_showcase.dart';
 import 'package:acadyk/features/profile/presentation/screens/club_details_screen.dart';
 import 'package:acadyk/features/profile/presentation/screens/club_members_screen.dart';
+import 'package:acadyk/features/feed/presentation/screens/post_detail_screen.dart';
+import 'package:acadyk/features/feed/presentation/screens/create_post_screen.dart';
+import 'package:acadyk/features/feed/presentation/screens/select_opportunity_screen.dart';
+import 'package:acadyk/features/feed/presentation/screens/create_team_screen.dart';
+import 'package:acadyk/features/feed/presentation/screens/edit_team_member_screen.dart';
+import 'package:acadyk/features/feed/presentation/services/opportunities_manager.dart';
+import 'package:acadyk/features/feed/presentation/screens/home_feed_screen.dart';
+import 'package:flutter/cupertino.dart';
 
 void main() {
   Widget createTestWidget(Widget child) {
@@ -260,6 +268,219 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ProfileScreen), findsOneWidget);
+    });
+
+    testWidgets('PostDetailScreen renders author header, comment input, and tree hierarchy', (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget(
+        const PostDetailScreen(
+          authorName: 'Somraj Lodhi',
+          authorHeadline: 'Founder & CEO @ Acadyk',
+          authorAvatar: 'assets/images/somraj_avatar.jpg',
+          timeAgo: '2h',
+          postText: 'Excited to unveil the new recursive nested comments feature!',
+          connectionDegree: '1st',
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.byType(PostDetailScreen), findsOneWidget);
+      expect(find.text('Somraj Lodhi'), findsWidgets);
+      expect(find.text('Founder & CEO @ Acadyk'), findsOneWidget);
+      expect(find.text('Excited to unveil the new recursive nested comments feature!'), findsOneWidget);
+      expect(find.text('Add a comment...'), findsOneWidget);
+      expect(find.byIcon(Icons.send), findsOneWidget);
+
+      // Enter top-level comment
+      await tester.enterText(find.byType(TextField), 'First root comment');
+      await tester.tap(find.byIcon(Icons.send));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('First root comment'), findsOneWidget);
+      expect(find.text('Reply'), findsWidgets);
+      expect(find.text('Like'), findsWidgets);
+
+      // Open Post options and test Hide options modal
+      await tester.tap(find.byIcon(Icons.more_vert).first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hide'), findsOneWidget);
+      expect(find.text('About this account'), findsOneWidget);
+
+      await tester.tap(find.text('Hide'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hide options'), findsOneWidget);
+      expect(find.text('Hide this post'), findsOneWidget);
+      expect(find.text('Hide all posts from Somraj Lodhi'), findsOneWidget);
+    });
+
+    testWidgets('CreatePostScreen allows selecting collaborator and co-authoring posts', (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget(
+        const CreatePostScreen(),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CreatePostScreen), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.person_2), findsOneWidget);
+
+      // Open collaborator picker bottom sheet
+      await tester.tap(find.byIcon(CupertinoIcons.person_2));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Invite Collaborator'), findsOneWidget);
+      expect(find.text('MITS Robotics Club'), findsOneWidget);
+      expect(find.text('Technical Student Society · Innovation & Automation Hub'), findsOneWidget);
+      expect(find.text('@mits_robotics'), findsNothing);
+
+      // Select MITS Robotics Club
+      await tester.tap(find.text('MITS Robotics Club'));
+      await tester.pumpAndSettle();
+
+      // Verify collaborator badge is shown (without @handle)
+      expect(find.text('Co-author: MITS Robotics Club'), findsOneWidget);
+
+      // Enter post content
+      await tester.enterText(find.byType(TextField).first, 'Announcing our joint robotics workshop with MITS Robotics Club!');
+      await tester.pump();
+
+      // Post button is enabled
+      expect(find.text('Post'), findsOneWidget);
+    });
+
+    testWidgets('SelectOpportunityScreen displays all opportunity types and publishes flow directly to OpportunitiesManager', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1200, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      HomeFeedScreen.switchTab(0);
+      await tester.pumpWidget(createTestWidget(
+        const SelectOpportunityScreen(),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SelectOpportunityScreen), findsOneWidget);
+      expect(find.text('Select Opportunity'), findsOneWidget);
+      expect(find.text('Quizzes'), findsOneWidget);
+      expect(find.text('Hackathons & Coding Challenges'), findsOneWidget);
+      expect(find.text('Create Team'), findsOneWidget);
+      expect(find.text('Webinars, Conferences & Workshops'), findsOneWidget);
+      expect(find.text('Cultural Events'), findsOneWidget);
+      expect(find.text('Scholarships & Internships'), findsOneWidget);
+
+      // Tap Quizzes to test opportunity publish flow
+      await tester.tap(find.text('Quizzes'));
+      await tester.pumpAndSettle();
+
+      // Enter question
+      await tester.enterText(find.byType(TextField).first, 'What is the primary concept of React State?');
+      await tester.pump();
+
+      // Tap Done
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+
+      // Verify that it published directly into OpportunitiesManager
+      final topOpp = OpportunitiesManager.opportunitiesNotifier.value.first;
+      expect(topOpp['title'], 'What is the primary concept of React State?');
+      expect(topOpp['tags'], contains('Quizzes'));
+
+      // Verify HomeFeedScreen tab switched to Opportunities tab (index 1)
+      expect(HomeFeedScreen.activeTabNotifier.value, 1);
+    });
+
+    testWidgets('CreateTeamScreen allows editing team name and tagline via pencil icon', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1200, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(createTestWidget(
+        const CreateTeamScreen(),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CreateTeamScreen), findsOneWidget);
+      expect(find.text('Axio Innovators'), findsOneWidget);
+      expect(find.text('Building the future, together.'), findsOneWidget);
+
+      // Tap pencil icon on team title row
+      await tester.tap(find.byIcon(Icons.edit_outlined).first);
+      await tester.pumpAndSettle();
+
+      // Edit Team Info modal appears
+      expect(find.text('Edit Team Information'), findsOneWidget);
+      expect(find.text('Save Team Info'), findsOneWidget);
+
+      // Modify team name
+      final textFields = find.byType(TextField);
+      await tester.enterText(textFields.at(0), 'Nova Innovators');
+      await tester.enterText(textFields.at(1), 'Innovating the impossible.');
+      await tester.pump();
+
+      // Save changes
+      await tester.tap(find.text('Save Team Info'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nova Innovators'), findsOneWidget);
+      expect(find.text('Innovating the impossible.'), findsOneWidget);
+    });
+
+    testWidgets('EditTeamMemberScreen allows updating member details, avatar, and removing member', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1200, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(createTestWidget(
+        const EditTeamMemberScreen(
+          memberIndex: 1,
+          memberData: {
+            'name': 'Ananya Singh',
+            'role': 'ML Engineer',
+            'email': '25AM10SO81@mitsgwl.ac.in',
+            'contact': '+919876543210',
+            'avatar': 'assets/images/alina_avatar.jpg',
+            'isLeader': false,
+          },
+          isLeader: false,
+          totalMembers: 4,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EditTeamMemberScreen), findsOneWidget);
+      expect(find.text('Edit Member Details'), findsOneWidget);
+      expect(find.text('Save Changes'), findsOneWidget);
+      expect(find.text('Remove Member from Team'), findsOneWidget);
+
+      // Change member role
+      final roleField = find.widgetWithText(TextField, 'ML Engineer');
+      if (roleField.evaluate().isNotEmpty) {
+        await tester.enterText(roleField, 'Lead AI Researcher');
+      }
+
+      // Test Remove Member confirmation dialog
+      await tester.tap(find.text('Remove Member from Team'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Are you sure you want to remove "Ananya Singh" from the team roster?'), findsOneWidget);
+      expect(find.descendant(of: find.byType(AlertDialog), matching: find.text('Cancel')), findsOneWidget);
+      expect(find.text('Remove'), findsOneWidget);
+
+      // Cancel dialog
+      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Cancel')));
+      await tester.pumpAndSettle();
+
+      // Tap Save Changes
+      await tester.tap(find.text('Save Changes'));
+      await tester.pumpAndSettle();
     });
   });
 }

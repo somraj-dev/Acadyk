@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../common/providers/theme_provider.dart';
+import '../../../../common/widgets/acadyk_toggle_switch.dart';
 
 class AppearanceScreen extends StatelessWidget {
   const AppearanceScreen({super.key});
@@ -479,9 +480,9 @@ class AppearanceScreen extends StatelessWidget {
           _buildContrastRow(
             title: 'Light mode',
             subtitle: null,
-            trailing: Switch(
+            trailing: AcadykToggleSwitch(
               value: themeProvider.highContrastLight,
-              activeColor: const Color(0xFF238636),
+              activeColor: const Color(0xFF0F4C81),
               onChanged: (val) => themeProvider.setHighContrastLight(val),
             ),
             textColor: textColor,
@@ -490,9 +491,9 @@ class AppearanceScreen extends StatelessWidget {
           _buildContrastRow(
             title: 'Dark mode',
             subtitle: null,
-            trailing: Switch(
+            trailing: AcadykToggleSwitch(
               value: themeProvider.highContrastDark,
-              activeColor: const Color(0xFF238636),
+              activeColor: const Color(0xFF0F4C81),
               onChanged: (val) => themeProvider.setHighContrastDark(val),
             ),
             textColor: textColor,

@@ -81,9 +81,41 @@ class OpportunitiesManager {
     }
   ];
 
+  static final Set<String> _hiddenOpportunityTitles = {};
+  static final Set<String> _hiddenOrganizers = {};
+
   static void addOpportunity(Map<String, dynamic> op) {
     final list = List<Map<String, dynamic>>.from(opportunitiesNotifier.value);
     list.insert(0, op);
+    opportunitiesNotifier.value = list;
+  }
+
+  static void hideOpportunity(String title) {
+    _hiddenOpportunityTitles.add(title.toLowerCase().trim());
+    _filterOutHidden();
+  }
+
+  static void unhideOpportunity(String title) {
+    _hiddenOpportunityTitles.remove(title.toLowerCase().trim());
+    loadFromBackend();
+  }
+
+  static void hideOrganizer(String organizer) {
+    _hiddenOrganizers.add(organizer.toLowerCase().trim());
+    _filterOutHidden();
+  }
+
+  static void unhideOrganizer(String organizer) {
+    _hiddenOrganizers.remove(organizer.toLowerCase().trim());
+    loadFromBackend();
+  }
+
+  static void _filterOutHidden() {
+    final list = opportunitiesNotifier.value.where((op) {
+      final t = (op['title'] ?? '').toString().toLowerCase().trim();
+      final o = (op['organizer'] ?? '').toString().toLowerCase().trim();
+      return !_hiddenOpportunityTitles.contains(t) && !_hiddenOrganizers.contains(o);
+    }).toList();
     opportunitiesNotifier.value = list;
   }
 
@@ -91,7 +123,13 @@ class OpportunitiesManager {
     try {
       final events = await EventService.getEvents();
       if (events.isNotEmpty) {
-        opportunitiesNotifier.value = events;
+        opportunitiesNotifier.value = events.where((op) {
+          final t = (op['title'] ?? '').toString().toLowerCase().trim();
+          final o = (op['organizer'] ?? '').toString().toLowerCase().trim();
+          return !_hiddenOpportunityTitles.contains(t) && !_hiddenOrganizers.contains(o);
+        }).toList();
+      } else {
+        _filterOutHidden();
       }
     } catch (e) {
       debugPrint('[OpportunitiesManager] Backend load note: $e');

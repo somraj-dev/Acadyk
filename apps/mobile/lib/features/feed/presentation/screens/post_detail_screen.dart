@@ -1,9 +1,10 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:acadyk/common/services/post_service.dart';
 import 'package:acadyk/common/services/auth_service.dart';
-import '../../../profile/presentation/screens/edit_status_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../profile/presentation/screens/about_account_screen.dart';
 import '../../../profile/presentation/services/profile_manager.dart';
 
 
@@ -37,13 +38,25 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   bool _isPostBookmarked = false;
 
   // Replying state
-  int? _replyingToCommentIndex;
+  Map<String, dynamic>? _replyingToCommentNode;
   String? _replyingToName;
 
   final TextEditingController _commentInputCtrl = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
 
   late List<Map<String, dynamic>> _comments;
+
+  String get _currentUserName => ProfileManager.name.isNotEmpty
+      ? ProfileManager.name
+      : (AuthService.currentUser?.fullName?.isNotEmpty == true ? AuthService.currentUser!.fullName! : 'Developer');
+
+  String get _currentUserHeadline => ProfileManager.summary.isNotEmpty
+      ? ProfileManager.summary
+      : (ProfileManager.bio.isNotEmpty ? ProfileManager.bio : 'Student @ Acadyk');
+
+  String get _currentUserAvatar => ProfileManager.avatarUrl.isNotEmpty
+      ? ProfileManager.avatarUrl
+      : 'assets/images/somraj_avatar.jpg';
 
   @override
   void initState() {
@@ -62,7 +75,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         return {
           'id': c['id']?.toString() ?? '',
           'name': c['authorName'] ?? 'Acadyk Member',
-          'isAuthor': c['authorId'] != null && c['authorId'] == widget.post!['authorId'],
+          'isAuthor': (c['authorId'] != null && c['authorId'] == widget.post!['authorId']) ||
+              (c['authorName'] != null && c['authorName'] == widget.authorName) ||
+              (c['isAuthor'] == true),
           'headline': c['authorHeadline'] ?? '',
           'avatar': c['authorAvatar'] ?? '',
           'timeAgo': c['timeAgo'] ?? 'Just now',
@@ -80,47 +95,76 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
+  int _countAllComments(List<dynamic> list) {
+    int total = 0;
+    for (final item in list) {
+      if (item is Map) {
+        total += 1;
+        final reps = item['replies'];
+        if (reps is List && reps.isNotEmpty) {
+          total += _countAllComments(reps);
+        }
+      }
+    }
+    return total;
+  }
+
   void _submitComment(String text) async {
+    final currentUserName = _currentUserName;
+    final currentUserHeadline = _currentUserHeadline;
+    final currentUserAvatar = _currentUserAvatar;
+
+    final bool isPostAuthor = (widget.authorName.trim().isNotEmpty && widget.authorName.trim().toLowerCase() == currentUserName.trim().toLowerCase()) ||
+        (widget.authorName.toLowerCase() == 'developer') ||
+        (widget.authorName.toLowerCase() == 'somraj lodhi');
+
     if (widget.post != null) {
       String? parentId;
-      if (_replyingToCommentIndex != null) {
-        parentId = _comments[_replyingToCommentIndex!]['id']?.toString();
+      if (_replyingToCommentNode != null) {
+        parentId = _replyingToCommentNode!['id']?.toString();
       }
-      final replyText = (_replyingToName != null && _replyingToCommentIndex != null && _replyingToName != _comments[_replyingToCommentIndex!]['name'])
+      final replyText = (_replyingToName != null && _replyingToCommentNode != null && _replyingToName != _replyingToCommentNode!['name'])
           ? '$_replyingToName $text'
           : text;
 
       await PostService.addComment(widget.post!['id'].toString(), replyText, parentId: parentId);
       setState(() {
-        _replyingToCommentIndex = null;
+        _replyingToCommentNode = null;
         _replyingToName = null;
       });
       _loadRealComments();
     } else {
       setState(() {
-        if (_replyingToCommentIndex != null) {
-          final parentComment = _comments[_replyingToCommentIndex!];
-          final replies = parentComment['replies'] as List;
-          final replyText = (_replyingToName != null && _replyingToName != parentComment['name'])
+        if (_replyingToCommentNode != null) {
+          if (_replyingToCommentNode!['replies'] == null || _replyingToCommentNode!['replies'] is! List) {
+            _replyingToCommentNode!['replies'] = <Map<String, dynamic>>[];
+          }
+          final replies = _replyingToCommentNode!['replies'] as List;
+          final replyText = (_replyingToName != null && _replyingToName != _replyingToCommentNode!['name'])
               ? '$_replyingToName $text'
               : text;
           replies.add({
-            'name': 'Somraj lodhi',
-            'headline': 'Founder & Builder @ Acadyk',
-            'avatar': 'assets/images/somraj_avatar.jpg',
+            'id': 'reply_${DateTime.now().millisecondsSinceEpoch}',
+            'name': currentUserName,
+            'isAuthor': isPostAuthor,
+            'headline': currentUserHeadline,
+            'avatar': currentUserAvatar,
             'timeAgo': 'Just now',
             'connectionDegree': '1st',
             'body': replyText,
             'likes': 0,
             'hasLiked': false,
+            'replies': <Map<String, dynamic>>[],
           });
-          _replyingToCommentIndex = null;
+          _replyingToCommentNode = null;
           _replyingToName = null;
         } else {
           _comments.add({
-            'name': 'Somraj lodhi',
-            'isAuthor': false,
-            'headline': 'Founder & Builder @ Acadyk',
+            'id': 'comment_${DateTime.now().millisecondsSinceEpoch}',
+            'name': currentUserName,
+            'isAuthor': isPostAuthor,
+            'headline': currentUserHeadline,
+            'avatar': currentUserAvatar,
             'timeAgo': 'Just now',
             'connectionDegree': '1st',
             'body': text,
@@ -142,15 +186,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   int get _totalCommentsCount {
-    int count = 47; // Start offset to match 51 comments initially
-    for (final comment in _comments) {
-      count++;
-      final reps = comment['replies'] as List?;
-      if (reps != null) {
-        count += reps.length;
-      }
-    }
-    return count;
+    return _countAllComments(_comments);
   }
 
   @override
@@ -175,8 +211,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                       const Spacer(),
-                      const Icon(Icons.more_vert, color: Color(0xFF5E5E5E), size: 24),
-                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.more_vert, color: Color(0xFF5E5E5E), size: 24),
+                        onPressed: () => _showPostOptionsBottomSheet(context),
+                      ),
+                      const SizedBox(width: 4),
                     ],
                   ),
                 ),
@@ -523,42 +562,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       ),
 
                       // Comments list builder
-                      ..._comments.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final comment = entry.value;
-                        final repliesList = comment['replies'] as List<dynamic>;
-
-                        return _buildComment(
-                          index: index,
-                          avatarAsset: (comment['avatar'] != null && (comment['avatar'] as String).isNotEmpty) ? (comment['avatar'] as String) : 'assets/images/somraj_avatar.jpg',
-                          name: comment['name'],
-                          isAuthor: comment['isAuthor'] ?? false,
-                          headline: comment['headline'],
-                          timeAgo: comment['timeAgo'],
-                          connectionDegree: comment['connectionDegree'],
-                          commentWidget: _buildCommentBodyText(comment['body']),
-                          likeCount: comment['likes'] > 0 ? comment['likes'].toString() : null,
-                          hasLiked: comment['hasLiked'] ?? false,
-                          replyCount: comment['replies'].isNotEmpty ? comment['replies'].length.toString() : null,
-                          replies: repliesList.asMap().entries.map((replyEntry) {
-                            final replyIndex = replyEntry.key;
-                            final reply = replyEntry.value;
-                            return _buildReply(
-                              commentIndex: index,
-                              replyIndex: replyIndex,
-                              avatarAsset: reply['avatar'] ?? 'assets/images/dharmik_avatar.jpg',
-                              name: reply['name'],
-                              headline: reply['headline'],
-                              timeAgo: reply['timeAgo'],
-                              connectionDegree: reply['connectionDegree'],
-                              commentWidget: _buildCommentBodyText(reply['body']),
-                              likeCount: reply['likes'] > 0 ? reply['likes'].toString() : null,
-                              hasLiked: reply['hasLiked'] ?? false,
-                              isLastReply: replyIndex == repliesList.length - 1,
-                            );
-                          }).toList(),
-                        );
-                      }).toList(),
+                      for (int i = 0; i < _comments.length; i++)
+                        _buildCommentTreeNode(
+                          comment: _comments[i],
+                          depth: 0,
+                          isLast: i == _comments.length - 1,
+                        ),
 
                       const SizedBox(height: 80), // Space for bottom bar
                     ],
@@ -576,21 +585,21 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (_replyingToCommentIndex != null)
+                      if (_replyingToCommentNode != null)
                         Container(
                           color: const Color(0xFFF3F2EF),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           child: Row(
                             children: [
                               Text(
-                                'Replying to $_replyingToName',
+                                'Replying to ${_replyingToName ?? _replyingToCommentNode!['name'] ?? 'comment'}',
                                 style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E), fontWeight: FontWeight.w500),
                               ),
                               const Spacer(),
                               GestureDetector(
                                 onTap: () {
                                   setState(() {
-                                    _replyingToCommentIndex = null;
+                                    _replyingToCommentNode = null;
                                     _replyingToName = null;
                                   });
                                 },
@@ -604,9 +613,20 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         child: Row(
                           children: [
                             // User avatar
-                            const StatusAvatar(
-                              avatarAsset: 'assets/images/somraj_avatar.jpg',
+                            CircleAvatar(
                               radius: 16,
+                              backgroundColor: const Color(0xFF0F4C81),
+                              backgroundImage: _currentUserAvatar.isNotEmpty
+                                  ? (_currentUserAvatar.startsWith('http')
+                                      ? NetworkImage(_currentUserAvatar)
+                                      : (_currentUserAvatar.startsWith('assets/') ? AssetImage(_currentUserAvatar) as ImageProvider : null))
+                                  : null,
+                              child: (_currentUserAvatar.isEmpty || (!_currentUserAvatar.startsWith('http') && !_currentUserAvatar.startsWith('assets/')))
+                                  ? Text(
+                                      _currentUserName.isNotEmpty ? _currentUserName.substring(0, 1).toUpperCase() : 'U',
+                                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                    )
+                                  : null,
                             ),
                             const SizedBox(width: 2),
                             const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF5E5E5E)),
@@ -625,7 +645,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                   controller: _commentInputCtrl,
                                   focusNode: _commentFocusNode,
                                   decoration: InputDecoration(
-                                    hintText: _replyingToCommentIndex != null ? 'Add a reply...' : 'Add a comment...',
+                                    hintText: _replyingToCommentNode != null ? 'Add a reply...' : 'Add a comment...',
                                     hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF5E5E5E)),
                                     border: InputBorder.none,
                                     isDense: true,
@@ -675,310 +695,500 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   // ============================
   // COMMENT BUILDER
   // ============================
-  Widget _buildComment({
-    required int index,
-    required String avatarAsset,
-    required String name,
-    required bool isAuthor,
-    required String headline,
-    required String timeAgo,
-    String? connectionDegree,
-    required Widget commentWidget,
-    String? likeCount,
-    required bool hasLiked,
-    String? replyCount,
-    List<Widget>? replies,
+  Widget _buildCommentTreeNode({
+    required Map<String, dynamic> comment,
+    required int depth,
+    required bool isLast,
   }) {
-    final bool hasReplies = replies != null && replies.isNotEmpty;
+    final replies = (comment['replies'] is List) ? (comment['replies'] as List<dynamic>) : <dynamic>[];
+    final hasReplies = replies.isNotEmpty;
 
-    Widget rightContent = Container(
-      padding: const EdgeInsets.only(bottom: 8),
+    final avatarStr = (comment['avatar'] ?? '') as String;
+    final ImageProvider? commentAvatarProvider = avatarStr.isNotEmpty
+        ? (avatarStr.startsWith('http')
+            ? NetworkImage(avatarStr)
+            : (avatarStr.startsWith('assets/') ? AssetImage(avatarStr) as ImageProvider : null))
+        : null;
+    final commentInitials = (comment['name'] != null && (comment['name'] as String).isNotEmpty)
+        ? (comment['name'] as String).substring(0, 1).toUpperCase()
+        : 'U';
+
+    final double indent = _NestedReplyThreadPainter.getLeftIndent(depth);
+    final double avatarRadius = depth == 0 ? 18.0 : 14.0;
+    final double avatarCenterX = _NestedReplyThreadPainter.getAvatarCenterX(depth);
+
+    Widget nodeContent = Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        depth == 0 ? 8 : 6,
+        16,
+        hasReplies ? 0 : (depth == 0 ? 12.0 : (isLast ? 12.0 : 6.0)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Comment header
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+          CustomPaint(
+            painter: _NodeTrunkPainter(
+              centerX: avatarCenterX,
+              startY: depth == 0 ? 38.0 : 30.0,
+              hasReplies: hasReplies,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (depth > 0) SizedBox(width: indent),
+                SizedBox(
+                  width: depth == 0 ? 46.0 : (avatarRadius * 2 + 8.0),
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: CircleAvatar(
+                      radius: avatarRadius,
+                      backgroundColor: const Color(0xFF0F4C81),
+                      backgroundImage: commentAvatarProvider,
+                      onBackgroundImageError: commentAvatarProvider != null ? (_, __) {} : null,
+                      child: commentAvatarProvider == null
+                          ? Text(
+                              commentInitials,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: depth == 0 ? 13 : 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: Text(
-                            name,
-                            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-
-                        if (connectionDegree != null) ...[
-                          const SizedBox(width: 4),
-                          Text('• $connectionDegree', style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E))),
-                        ],
-                        if (isAuthor) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1B7A2D),
-                              borderRadius: BorderRadius.circular(3),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          comment['name'] ?? _currentUserName,
+                                          style: TextStyle(
+                                            fontSize: depth == 0 ? 13.5 : 12.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFF191919),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (comment['isAuthor'] == true) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE0F2FE),
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: const Color(0xFFBAE6FD), width: 0.8),
+                                          ),
+                                          child: const Text(
+                                            'Author',
+                                            style: TextStyle(
+                                              color: Color(0xFF0369A1),
+                                              fontSize: 9.5,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.3,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  if ((comment['headline'] ?? '').toString().isNotEmpty)
+                                    Text(
+                                      comment['headline'] ?? '',
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E)),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                ],
+                              ),
                             ),
-                            child: const Text('Author', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                          ),
-                        ],
+                            Text(
+                              comment['timeAgo'] ?? 'Just now',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E)),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.more_vert, size: 16, color: Color(0xFF5E5E5E)),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        _buildCommentBodyText(comment['body'] ?? ''),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  if (comment['hasLiked'] == true) {
+                                    comment['hasLiked'] = false;
+                                    comment['likes'] = ((comment['likes'] ?? 1) as int) - 1;
+                                  } else {
+                                    comment['hasLiked'] = true;
+                                    comment['likes'] = ((comment['likes'] ?? 0) as int) + 1;
+                                  }
+                                });
+                              },
+                              child: Text(
+                                'Like',
+                                style: TextStyle(
+                                  fontSize: depth == 0 ? 12 : 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: comment['hasLiked'] == true ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
+                                ),
+                              ),
+                            ),
+                            if (comment['likes'] != null && (comment['likes'] as int) > 0) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                width: 14,
+                                height: 14,
+                                decoration: const BoxDecoration(color: Color(0xFF0A66C2), shape: BoxShape.circle),
+                                child: const Icon(Icons.thumb_up, size: 8, color: Colors.white),
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                comment['likes'].toString(),
+                                style: TextStyle(fontSize: depth == 0 ? 11 : 10, color: const Color(0xFF5E5E5E)),
+                              ),
+                            ],
+                            const SizedBox(width: 14),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _replyingToCommentNode = comment;
+                                  _replyingToName = comment['name'];
+                                  _commentFocusNode.requestFocus();
+                                });
+                              },
+                              child: Text(
+                                'Reply',
+                                style: TextStyle(
+                                  fontSize: depth == 0 ? 12 : 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF5E5E5E),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                    Text(
-                      headline,
-                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF5E5E5E)),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(timeAgo, style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E))),
-              const SizedBox(width: 4),
-              const Icon(Icons.more_vert, size: 18, color: Color(0xFF5E5E5E)),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Comment text
-          commentWidget,
-
-          const SizedBox(height: 10),
-
-          // Like / Reply row
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    final comment = _comments[index];
-                    if (comment['hasLiked'] == true) {
-                      comment['hasLiked'] = false;
-                      comment['likes'] = (comment['likes'] as int) - 1;
-                    } else {
-                      comment['hasLiked'] = true;
-                      comment['likes'] = (comment['likes'] as int) + 1;
-                    }
-                  });
-                },
-                child: Text(
-                  'Like',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: hasLiked ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
                   ),
                 ),
-              ),
-              if (likeCount != null) ...[
-                const SizedBox(width: 8),
-                Container(
-                  width: 16, height: 16,
-                  decoration: const BoxDecoration(color: Color(0xFF0A66C2), shape: BoxShape.circle),
-                  child: const Icon(Icons.thumb_up, size: 9, color: Colors.white),
-                ),
-                if (index == 2) ...[
-                  Container(
-                    width: 16, height: 16,
-                    transform: Matrix4.translationValues(-4, 0, 0),
-                    decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-                    child: const Icon(Icons.favorite, size: 9, color: Colors.white),
-                  ),
-                ],
-                const SizedBox(width: 2),
-                Text(likeCount, style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E))),
               ],
-              const SizedBox(width: 16),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _replyingToCommentIndex = index;
-                    _replyingToName = name;
-                    _commentFocusNode.requestFocus();
-                  });
-                },
-                child: const Text('Reply', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E))),
-              ),
-              if (replyCount != null) ...[
-                const SizedBox(width: 8),
-                Text(replyCount, style: const TextStyle(fontSize: 12, color: Color(0xFF5E5E5E))),
-              ],
-            ],
+            ),
           ),
+
+          // Render Nested Child Replies Recursively
+          if (hasReplies)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (int i = 0; i < replies.length; i++)
+                  _buildCommentTreeNode(
+                    comment: replies[i] as Map<String, dynamic>,
+                    depth: depth + 1,
+                    isLast: i == replies.length - 1,
+                  ),
+              ],
+            ),
         ],
       ),
     );
 
-    Widget mainRow = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 46,
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: AssetImage(avatarAsset),
-                  fit: BoxFit.cover,
+    if (depth > 0) {
+      return CustomPaint(
+        painter: _NestedReplyThreadPainter(depth: depth, isLast: isLast),
+        child: nodeContent,
+      );
+    } else {
+      return nodeContent;
+    }
+  }
+
+  void _showPostOptionsBottomSheet(BuildContext context) {
+    final postId = widget.post?['id']?.toString() ?? 'detail_post';
+    final isSaved = _isPostBookmarked;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 12.0, bottom: 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildTopActionIcon(
+                      isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
+                      'Save',
+                      color: isSaved ? const Color(0xFF1E88E5) : Colors.black,
+                      onTap: () {
+                        setState(() {
+                          _isPostBookmarked = !_isPostBookmarked;
+                        });
+                        PostService.toggleBookmark(postId, _isPostBookmarked);
+                        Navigator.pop(sheetContext);
+                      },
+                    ),
+                    _buildTopActionIcon(
+                      CupertinoIcons.paperplane,
+                      'Share',
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    children: [
+                      _buildListAction(CupertinoIcons.eye_slash, 'Hide', onTap: () {
+                        Navigator.pop(sheetContext);
+                        _showHidePostOptions(context);
+                      }),
+                      const SizedBox(height: 20),
+                      _buildListAction(CupertinoIcons.person, 'About this account', onTap: () {
+                        Navigator.pop(sheetContext);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AboutAccountScreen(
+                              accountData: {
+                                'name': widget.authorName,
+                                'avatarUrl': widget.authorAvatar,
+                                'dateJoined': 'August 2024',
+                                'location': 'Gwalior, India',
+                                'sharedFollowers': 12,
+                              },
+                            ),
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        Expanded(child: rightContent),
-      ],
+        );
+      },
     );
+  }
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, hasReplies ? 0 : 8),
+  void _showHidePostOptions(BuildContext context) {
+    final postId = widget.post?['id']?.toString() ?? 'detail_post';
+    final authorName = widget.authorName;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 12.0, bottom: 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0),
+                  child: Text(
+                    'Hide options',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Text(
+                    'Customize what you see in your feed',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                const SizedBox(height: 8),
+
+                // Option 1: Hide this post
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(CupertinoIcons.eye_slash, color: Color(0xFF374151), size: 22),
+                  ),
+                  title: const Text(
+                    'Hide this post',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+                  ),
+                  subtitle: const Text(
+                    'See fewer posts like this',
+                    style: TextStyle(fontSize: 12.5, color: Color(0xFF6B7280)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    PostService.hidePost(postId);
+                    Navigator.of(context).pop(); // Go back to feed
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Post hidden from your feed', style: TextStyle(color: Colors.white, fontSize: 13.5)),
+                        backgroundColor: const Color(0xFF1F2937),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        action: SnackBarAction(
+                          label: 'Undo',
+                          textColor: const Color(0xFF60A5FA),
+                          onPressed: () {
+                            PostService.unhidePost(postId);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                // Option 2: Hide all posts from this account
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(CupertinoIcons.person_crop_circle_badge_minus, color: Color(0xFFDC2626), size: 22),
+                  ),
+                  title: Text(
+                    'Hide all posts from $authorName',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+                  ),
+                  subtitle: Text(
+                    'You won\'t see any posts from this account',
+                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B7280)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    PostService.hideAuthor(authorName);
+                    Navigator.of(context).pop(); // Go back to feed
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('All posts from $authorName hidden', style: const TextStyle(color: Colors.white, fontSize: 13.5)),
+                        backgroundColor: const Color(0xFF1F2937),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        action: SnackBarAction(
+                          label: 'Undo',
+                          textColor: const Color(0xFF60A5FA),
+                          onPressed: () {
+                            PostService.unhideAuthor(authorName);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTopActionIcon(IconData icon, String label, {Color color = Colors.black, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          mainRow,
-          if (hasReplies) ...replies,
+          Container(
+            width: 65,
+            height: 65,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2F2F2),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(icon, color: color, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w400),
+          ),
         ],
       ),
     );
   }
 
-  // ============================
-  // REPLY (INDENTED COMMENT)
-  // ============================
-  Widget _buildReply({
-    required int commentIndex,
-    required int replyIndex,
-    required String avatarAsset,
-    required String name,
-    required String headline,
-    required String timeAgo,
-    String? connectionDegree,
-    required Widget commentWidget,
-    String? likeCount,
-    required bool hasLiked,
-    bool isLastReply = true,
-  }) {
-    return Padding(
-      padding: EdgeInsets.only(top: 8, bottom: isLastReply ? 8 : 0),
+  Widget _buildListAction(IconData icon, String label, {Color color = Colors.black, VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Icon(icon, color: color, size: 26),
           const SizedBox(width: 16),
-          Container(
-            width: 2,
-            height: 30,
-            color: const Color(0xFFC7C7C7),
-            margin: const EdgeInsets.only(right: 14),
-          ),
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              image: DecorationImage(
-                image: AssetImage(avatarAsset),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF191919)), overflow: TextOverflow.ellipsis),
-                                ),
-                                if (connectionDegree != null) ...[
-                                  const SizedBox(width: 4),
-                                  Text('• $connectionDegree', style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E))),
-                                ],
-                              ],
-                            ),
-                            Text(headline, style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                          ],
-                        ),
-                      ),
-                      Text(timeAgo, style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E))),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.more_vert, size: 16, color: Color(0xFF5E5E5E)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  commentWidget,
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            final reply = (_comments[commentIndex]['replies'] as List)[replyIndex];
-                            if (reply['hasLiked'] == true) {
-                              reply['hasLiked'] = false;
-                              reply['likes'] = (reply['likes'] as int) - 1;
-                            } else {
-                              reply['hasLiked'] = true;
-                              reply['likes'] = (reply['likes'] as int) + 1;
-                            }
-                          });
-                        },
-                        child: Text(
-                          'Like',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: hasLiked ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
-                          ),
-                        ),
-                      ),
-                      if (likeCount != null) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          width: 14, height: 14,
-                          decoration: const BoxDecoration(color: Color(0xFF0A66C2), shape: BoxShape.circle),
-                          child: const Icon(Icons.thumb_up, size: 8, color: Colors.white),
-                        ),
-                        const SizedBox(width: 2),
-                        Text(likeCount, style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E))),
-                      ],
-                      const SizedBox(width: 14),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _replyingToCommentIndex = commentIndex;
-                            _replyingToName = name;
-                            _commentFocusNode.requestFocus();
-                          });
-                        },
-                        child: const Text('Reply', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E))),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: color,
             ),
           ),
         ],
@@ -987,9 +1197,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 }
 
-class _MainCommentThreadPainter extends CustomPainter {
+class _NodeTrunkPainter extends CustomPainter {
+  final double centerX;
+  final double startY;
   final bool hasReplies;
-  _MainCommentThreadPainter({required this.hasReplies});
+
+  const _NodeTrunkPainter({
+    required this.centerX,
+    this.startY = 38.0,
+    required this.hasReplies,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -997,55 +1214,79 @@ class _MainCommentThreadPainter extends CustomPainter {
     
     final paint = Paint()
       ..color = const Color(0xFFC7C7C7)
-      ..strokeWidth = 2
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
-    final centerX = 18.0; 
-    final startY = 36.0;
-
-    final path = Path();
-    path.moveTo(centerX, startY);
-    path.lineTo(centerX, size.height);
-    
-    canvas.drawPath(path, paint);
+    if (size.height > startY) {
+      canvas.drawLine(
+        Offset(centerX, startY),
+        Offset(centerX, size.height),
+        paint,
+      );
+    }
   }
+
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _NodeTrunkPainter oldDelegate) =>
+      oldDelegate.hasReplies != hasReplies ||
+      oldDelegate.centerX != centerX ||
+      oldDelegate.startY != startY;
 }
 
-class _ReplyThreadPainter extends CustomPainter {
+class _NestedReplyThreadPainter extends CustomPainter {
+  final int depth;
   final bool isLast;
-  _ReplyThreadPainter({required this.isLast});
+
+  const _NestedReplyThreadPainter({
+    required this.depth,
+    required this.isLast,
+  });
+
+  static double getAvatarCenterX(int d) {
+    if (d <= 0) return 18.0;
+    return getLeftIndent(d) + 14.0;
+  }
+
+  static double getLeftIndent(int d) {
+    if (d <= 0) return 0.0;
+    if (d == 1) return 46.0;
+    return 46.0 + (min(d - 1, 3)) * 32.0;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = const Color(0xFFC7C7C7)
-      ..strokeWidth = 2
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
-    final centerX = 18.0;
-    final centerY = 23.0; 
+    final double parentX = getAvatarCenterX(depth - 1);
+    final double targetX = getLeftIndent(depth);
+    const double centerY = 20.0;
+    final double radius = min(12.0, (targetX - parentX) > 0 ? (targetX - parentX) : 12.0);
 
     final elbowPath = Path();
-    elbowPath.moveTo(centerX, 0);
-    elbowPath.lineTo(centerX, centerY - 12);
+    elbowPath.moveTo(parentX, 0);
+    elbowPath.lineTo(parentX, centerY - radius);
     elbowPath.arcToPoint(
-      Offset(centerX + 12, centerY),
-      radius: const Radius.circular(12),
+      Offset(parentX + radius, centerY),
+      radius: Radius.circular(radius),
       clockwise: false,
     );
-    elbowPath.lineTo(size.width, centerY);
+    elbowPath.lineTo(targetX, centerY);
 
     canvas.drawPath(elbowPath, paint);
 
     if (!isLast) {
       final linePath = Path();
-      linePath.moveTo(centerX, centerY - 12);
-      linePath.lineTo(centerX, size.height);
+      linePath.moveTo(parentX, centerY - radius);
+      linePath.lineTo(parentX, size.height);
       canvas.drawPath(linePath, paint);
     }
   }
+
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _NestedReplyThreadPainter oldDelegate) =>
+      oldDelegate.isLast != isLast || oldDelegate.depth != depth;
 }
+

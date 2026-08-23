@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import '../../../../common/widgets/acadyk_toggle_switch.dart';
 import '../../../../common/providers/theme_provider.dart';
 import '../../../../common/providers/auth_provider.dart';
 import 'settings_edit_profile_screen.dart';
@@ -355,9 +356,9 @@ class _SettingsAccountManagementScreenState extends State<SettingsAccountManagem
             ),
           ),
           const SizedBox(width: 12),
-          CupertinoSwitch(
+          AcadykToggleSwitch(
             value: _appSoundsEnabled,
-            activeTrackColor: const Color(0xFF0F4C81),
+            activeColor: const Color(0xFF0F4C81),
             onChanged: (val) {
               setState(() {
                 _appSoundsEnabled = val;

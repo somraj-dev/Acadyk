@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../common/services/notification_service.dart';
+import '../../../../common/widgets/acadyk_toggle_switch.dart';
 import '../../../../shared/widgets/skeleton/skeleton.dart';
 
 class SettingsNotificationsScreen extends StatefulWidget {
@@ -226,55 +227,6 @@ class _SettingsNotificationsScreenState extends State<SettingsNotificationsScree
       height: 1,
       thickness: 1,
       color: Color(0xFFF3F3F3),
-    );
-  }
-}
-
-class AcadykToggleSwitch extends StatelessWidget {
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const AcadykToggleSwitch({
-    super.key,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        width: 48,
-        height: 28,
-        padding: const EdgeInsets.all(2.5),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          color: value ? const Color(0xFF0F4C81) : const Color(0xFFE2E8F0),
-        ),
-        child: AnimatedAlign(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            width: 23,
-            height: 23,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 3,
-                  offset: const Offset(0, 1.5),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

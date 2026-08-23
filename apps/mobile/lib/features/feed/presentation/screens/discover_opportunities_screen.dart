@@ -697,6 +697,7 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
                     children: [
                       _buildListAction(CupertinoIcons.eye_slash, 'Hide', onTap: () {
                         Navigator.pop(context);
+                        _showHideOpportunityOptions(context, title, company);
                       }),
                       const SizedBox(height: 20),
                       _buildListAction(CupertinoIcons.person, 'About this account', onTap: () {
@@ -715,6 +716,143 @@ class _DiscoverOpportunitiesScreenState extends State<DiscoverOpportunitiesScree
                       const SizedBox(height: 8),
                     ],
                   ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showHideOpportunityOptions(BuildContext context, String title, String company) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 12.0, bottom: 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0),
+                  child: Text(
+                    'Hide options',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Text(
+                    'Customize what you see in your feed',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                const SizedBox(height: 8),
+
+                // Option 1: Hide this opportunity
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(CupertinoIcons.eye_slash, color: Color(0xFF374151), size: 22),
+                  ),
+                  title: const Text(
+                    'Hide this opportunity',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+                  ),
+                  subtitle: const Text(
+                    'See fewer opportunities like this',
+                    style: TextStyle(fontSize: 12.5, color: Color(0xFF6B7280)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    OpportunitiesManager.hideOpportunity(title);
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Opportunity hidden', style: TextStyle(color: Colors.white, fontSize: 13.5)),
+                        backgroundColor: const Color(0xFF1F2937),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        action: SnackBarAction(
+                          label: 'Undo',
+                          textColor: const Color(0xFF60A5FA),
+                          onPressed: () {
+                            OpportunitiesManager.unhideOpportunity(title);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                // Option 2: Hide all from this organizer
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(CupertinoIcons.person_crop_circle_badge_minus, color: Color(0xFFDC2626), size: 22),
+                  ),
+                  title: Text(
+                    'Hide all opportunities from $company',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+                  ),
+                  subtitle: Text(
+                    'You won\'t see any opportunities from this organizer',
+                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B7280)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    OpportunitiesManager.hideOrganizer(company);
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('All opportunities from $company hidden', style: const TextStyle(color: Colors.white, fontSize: 13.5)),
+                        backgroundColor: const Color(0xFF1F2937),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        action: SnackBarAction(
+                          label: 'Undo',
+                          textColor: const Color(0xFF60A5FA),
+                          onPressed: () {
+                            OpportunitiesManager.unhideOrganizer(company);
+                          },
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
