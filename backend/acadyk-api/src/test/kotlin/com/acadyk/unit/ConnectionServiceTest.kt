@@ -26,6 +26,7 @@ class ConnectionServiceTest {
     private lateinit var connectionRequestRepository: ConnectionRequestRepository
     private lateinit var followRepository: FollowRepository
     private lateinit var profileRepository: ProfileRepository
+    private lateinit var userRepository: com.acadyk.modules.users.repository.UserRepository
     private lateinit var connectionMapper: ConnectionMapper
     private lateinit var profileMapper: ProfileMapper
     private lateinit var currentUserProvider: CurrentUserProvider
@@ -47,6 +48,7 @@ class ConnectionServiceTest {
         connectionRequestRepository = mock(ConnectionRequestRepository::class.java)
         followRepository = mock(FollowRepository::class.java)
         profileRepository = mock(ProfileRepository::class.java)
+        userRepository = mock(com.acadyk.modules.users.repository.UserRepository::class.java)
         connectionMapper = ConnectionMapper(ProfileMapper())
         profileMapper = ProfileMapper()
         currentUserProvider = mock(CurrentUserProvider::class.java)
@@ -59,6 +61,7 @@ class ConnectionServiceTest {
             connectionRequestRepository = connectionRequestRepository,
             followRepository = followRepository,
             profileRepository = profileRepository,
+            userRepository = userRepository,
             connectionMapper = connectionMapper,
             profileMapper = profileMapper,
             currentUserProvider = currentUserProvider,

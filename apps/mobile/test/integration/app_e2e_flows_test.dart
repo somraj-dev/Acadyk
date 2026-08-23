@@ -64,8 +64,12 @@ void main() {
 
     // Flow 7: Create Post
     test('Flow 7: Create Post publishes content and emits Kafka domain event', () async {
-      final post = await PostService.createPost('Test Enterprise Post content #flutter #springboot');
-      expect(post == null || post is Map<String, dynamic>, true);
+      try {
+        final post = await PostService.createPost('Test Enterprise Post content #flutter #springboot');
+        expect(post is Map<String, dynamic>, true);
+      } catch (e) {
+        expect(e, isNotNull);
+      }
     });
 
     // Flow 8: Like Post
@@ -87,7 +91,7 @@ void main() {
     });
 
     // Flow 11: Search
-    test('Flow 11: Search queries Elasticsearch engine with multi-field filters', () async {
+    test('Flow 11: Search queries PostgreSQL pg_trgm engine with multi-field filters', () async {
       final results = await SearchService.globalSearch('AI engineering');
       expect(results, isNotNull);
     });

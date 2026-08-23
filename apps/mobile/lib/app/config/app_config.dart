@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'environment.dart';
 
 class AppConfig {
@@ -8,17 +9,28 @@ class AppConfig {
   static const String _envName = String.fromEnvironment('APP_ENV', defaultValue: 'development');
   static final Environment currentEnvironment = Environment.fromString(_envName);
 
-  // Development endpoints pointing to EC2 backend
-  static const String _devApiBaseUrl = 'http://15.252.182.118:8080/api/v1';
-  static const String _devWsBaseUrl = 'ws://15.252.182.118:8080/ws';
+  // Development endpoints (auto-adapts for Android emulator loopback vs web/localhost)
+  static String get _devApiBaseUrl {
+    if (kIsWeb) {
+      return 'http://localhost:8080/api/v1';
+    }
+    return 'http://35.154.243.7:8080/api/v1';
+  }
+
+  static String get _devWsBaseUrl {
+    if (kIsWeb) {
+      return 'ws://localhost:8080/ws';
+    }
+    return 'ws://35.154.243.7:8080/ws';
+  }
 
   // Staging endpoints (HTTPS/WSS)
   static const String _stagingApiBaseUrl = 'https://staging.acadyk.com/api/v1';
   static const String _stagingWsBaseUrl = 'wss://staging.acadyk.com/ws';
 
   // Production endpoints (HTTPS/WSS)
-  static const String _prodApiBaseUrl = 'https://api.acadyk.com/api/v1';
-  static const String _prodWsBaseUrl = 'wss://api.acadyk.com/ws';
+  static const String _prodApiBaseUrl = 'http://35.154.243.7:8080/api/v1';
+  static const String _prodWsBaseUrl = 'ws://35.154.243.7:8080/ws';
 
   /// Centralized API Base URL.
   /// Overridable at compile-time/run-time via --dart-define=API_BASE_URL=... without source-code changes.

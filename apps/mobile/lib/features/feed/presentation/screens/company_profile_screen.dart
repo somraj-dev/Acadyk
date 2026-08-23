@@ -26,51 +26,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   int? _replyingToCommentIndex;
   String? _replyingToName;
 
-  final List<Map<String, dynamic>> _customComments = [
-    {
-      'name': 'Christian Pickett',
-      'headline': 'Co-founder @ Orthogonal (YC W26)',
-      'avatar': 'assets/images/dharmik_avatar.jpg',
-      'isAuthor': true,
-      'timeText': '1d',
-      'body': 'Read more:\nhttps://www.thestreet.com/crypto/newsroom/orthogonal-is-betting-the-agent-economy-needs-better-infrastructure',
-      'likes': 10,
-      'hasLiked': false,
-      'replies': <Map<String, dynamic>>[],
-    },
-    {
-      'name': 'Aryan Gandhi',
-      'headline': 'Building the Future with AI 0->1 | Gen ...',
-      'avatar': 'assets/images/alina_avatar.jpg',
-      'isAuthor': false,
-      'timeText': '15h',
-      'body': 'Congratulations on the raise! The idea of agents dynamically discovering and orchestrating capabilities feels like a missing layer in today\'s agent stack. Excited to see where Orthogonal goes from here. Christian Pickett 👏',
-      'likes': 0,
-      'hasLiked': false,
-      'replies': <Map<String, dynamic>>[],
-    },
-    {
-      'name': 'Ryan Widgeon',
-      'headline': 'Founder | AI/ML | AI Agents |GTM| Forb...',
-      'avatar': 'assets/images/somraj_avatar.jpg',
-      'isAuthor': false,
-      'timeText': '1d',
-      'body': 'Congrats! This is a reallyyy interesting layer to build.\n\nMost agents today are only as useful as the tools they were pre-wired with. The moment the task requires a new capability, they either hallucinate a workaround, fail silently, or punt back to a human.\n\nDynamic capability discovery...',
-      'likes': 9,
-      'hasLiked': false,
-      'replies': <Map<String, dynamic>>[
-        {
-          'name': 'Dr. Xi Zeng',
-          'headline': 'Founder and CEO of Chance A...',
-          'avatar': 'assets/images/dharmik_avatar.jpg',
-          'timeText': '18h',
-          'body': 'Ryan Widgeon The safety point is where this gets interesting. Tool discovery is easy to describe as routing, but the agent also needs a reason to stop....',
-          'likes': 1,
-          'hasLiked': false,
-        }
-      ],
-    }
-  ];
+  final List<Map<String, dynamic>> _customComments = [];
 
   @override
   void dispose() {
@@ -461,9 +417,9 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                                 ..onTap = () {
                                   Navigator.of(context).push(MaterialPageRoute(
                                     builder: (_) => const PostDetailScreen(
-                                      authorName: 'Christian Pickett',
-                                      authorHeadline: 'Co-founder @ Orthogonal (YC W26)',
-                                      authorAvatar: 'assets/images/dharmik_avatar.jpg',
+                                      authorName: 'Orthogonal Updates',
+                                      authorHeadline: 'Official Announcement',
+                                      authorAvatar: 'assets/images/mits_logo.png',
                                       timeAgo: '1d',
                                       postText: '',
                                       connectionDegree: '3rd+',
@@ -1081,41 +1037,9 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   }
 
   Widget _buildCommentBodyText(String body) {
-    final words = ['Christian Pickett', 'Ryan Widgeon'];
-    String? foundWord;
-    for (final w in words) {
-      if (body.contains(w)) {
-        foundWord = w;
-        break;
-      }
-    }
-
-    if (foundWord == null) {
-      return Text(
-        body,
-        style: const TextStyle(color: Color(0xFF374151), fontSize: 13, height: 1.4),
-      );
-    }
-
-    final parts = body.split(foundWord);
-    return RichText(
-      text: TextSpan(
-        style: const TextStyle(color: Color(0xFF374151), fontSize: 13, height: 1.4),
-        children: [
-          TextSpan(text: parts[0]),
-          TextSpan(
-            text: foundWord,
-            style: const TextStyle(color: Color(0xFF0A66C2), fontWeight: FontWeight.bold),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const ProfileScreen(isOwnProfile: false),
-                ));
-              },
-          ),
-          if (parts.length > 1) TextSpan(text: parts[1]),
-        ],
-      ),
+    return Text(
+      body,
+      style: const TextStyle(color: Color(0xFF374151), fontSize: 13, height: 1.4),
     );
   }
 }

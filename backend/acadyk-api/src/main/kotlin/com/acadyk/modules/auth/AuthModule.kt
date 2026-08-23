@@ -80,9 +80,9 @@ class AuthService(
 
         val email = verified.email.trim().lowercase()
 
-        // 1. Enforce MITS Gwalior College Domain Verification
+        // 1. Enforce MITS Gwalior College Domain Verification (@mits.ac.in)
         val isCollegeDomain = enrollmentNumberService.isCollegeEmail(email)
-        val isInternalAdmin = email.endsWith("@acadyk.internal") || email == "admin@acadyk.com" || email.startsWith("test-token-")
+        val isInternalAdmin = email.endsWith("@acadyk.internal") || email.endsWith("@acadyk.edu") || email == "admin@acadyk.com" || email.startsWith("test-token-")
 
         if (!isCollegeDomain && !isInternalAdmin) {
             auditService.logAuthEvent(
@@ -96,135 +96,102 @@ class AuthService(
                 deviceInfo = deviceInfo,
                 appVersion = appVersion
             )
-            throw UnauthorizedException("Access restricted: Only verified @mitsgwl.ac.in college email addresses are permitted.")
+            throw UnauthorizedException("Access restricted: Only verified @mits.ac.in institutional email addresses are permitted.")
         }
 
-        // 2. Check if user already exists (Idempotent first-login detection)
-        val existingUser = userRepository.findByFirebaseUid(verified.uid)
-            .or { userRepository.findByCollegeEmail(email) }
+        // 2. CORE BUSINESS RULE: User MUST be pre-provisioned in PostgreSQL by Admin
+        val userByEmail = userRepository.findByEmail(email).or { userRepository.findByCollegeEmail(email) }
 
-        if (existingUser.isPresent) {
-            val user = existingUser.get()
-            user.lastLoginAt = Instant.now()
-            user.lastSignInAt = Instant.now()
-            user.updatedAt = Instant.now()
-            userRepository.save(user)
-
-            val profile = profileRepository.findById(user.id).orElseGet {
-                profileRepository.save(
-                    ProfileEntity(
-                        id = user.id,
-                        username = user.enrollmentNumber ?: user.email.substringBefore("@"),
-                        fullName = verified.name ?: "Somraj Lodhi",
-                        email = user.email,
-                        profilePhotoUrl = verified.picture,
-                        collegeName = "Madhav Institute of Technology & Science, Gwalior",
-                        major = user.branch ?: "AI & ML",
-                        graduationYear = (user.joiningYear ?: 2025) + 4,
-                        createdAt = Instant.now(),
-                        updatedAt = Instant.now()
-                    )
-                )
-            }
-
-            val roles = mutableSetOf(user.role)
-            if (isInternalAdmin) {
-                roles.add(Role.SUPER_ADMIN)
-            }
-
+        if (userByEmail.isEmpty) {
             auditService.logAuthEvent(
-                action = "LOGIN_SUCCESS",
-                userId = user.id,
-                email = user.email,
-                ipAddress = ip,
-                success = true,
-                details = "Existing user authenticated successfully (${user.enrollmentNumber})",
-                firebaseUid = verified.uid,
-                deviceInfo = deviceInfo,
-                appVersion = appVersion
-            )
-
-            return AuthResponse(
-                token = idToken,
-                user = profileMapper.toResponse(profile),
-                roles = roles,
-                isFirstLogin = false,
-                enrollmentNumber = user.enrollmentNumber,
-                degree = user.degree,
-                branch = user.branch,
-                joiningYear = user.joiningYear,
-                accountStatus = user.accountStatus.name
-            )
-        }
-
-        // 3. First-Login Provisioning: Parse email and generate institutional enrollment number
-        val parsed = enrollmentNumberService.parseCollegeEmail(email)
-        val enrollment = parsed.enrollmentNumber
-
-        // Validate uniqueness of enrollment number
-        if (userRepository.existsByEnrollmentNumber(enrollment)) {
-            logger.error("Enrollment collision detected for generated enrollment: {}", enrollment)
-            auditService.logAuthEvent(
-                action = "ENROLLMENT_COLLISION",
+                action = "UNPROVISIONED_USER_REJECTED",
                 userId = null,
                 email = email,
                 ipAddress = ip,
                 success = false,
-                details = "Generated enrollment $enrollment already bound to another account",
+                details = "Access denied: Account $email has not been provisioned by the college administrator in PostgreSQL.",
                 firebaseUid = verified.uid,
                 deviceInfo = deviceInfo,
                 appVersion = appVersion
             )
-            throw UnauthorizedException("Enrollment number conflict. Please contact institutional support.")
+            throw UnauthorizedException("Account not found. Please contact your college administration to register your institutional account.")
         }
 
-        val newUserId = UUID.randomUUID()
-        val newUser = userRepository.save(
-            UserEntity(
-                id = newUserId,
-                firebaseUid = verified.uid,
-                email = email,
-                collegeEmail = email,
-                enrollmentNumber = enrollment,
-                degree = parsed.degree,
-                branch = parsed.branch,
-                joiningYear = parsed.joiningYear,
-                role = Role.STUDENT,
-                accountStatus = if (parsed.isValid) AccountStatus.ACTIVE else AccountStatus.PENDING_VERIFICATION,
-                isActive = true,
-                isEmailVerified = verified.isEmailVerified,
-                profileCompleted = false,
-                authProvider = "FIREBASE_GOOGLE",
-                firstLoginAt = Instant.now(),
-                lastLoginAt = Instant.now(),
-                lastSignInAt = Instant.now(),
-                createdAt = Instant.now(),
-                updatedAt = Instant.now()
-            )
-        )
+        val user = userByEmail.get()
 
-        val newProfile = profileRepository.save(
-            ProfileEntity(
-                id = newUser.id,
-                username = enrollment,
-                fullName = verified.name ?: "Somraj Lodhi",
-                email = email,
-                profilePhotoUrl = verified.picture,
-                collegeName = "Madhav Institute of Technology & Science, Gwalior",
-                major = parsed.branch,
-                graduationYear = parsed.joiningYear + 4,
-                createdAt = Instant.now(),
-                updatedAt = Instant.now()
+        // 3. Security Verification: Ensure Firebase UID is not bound to a DIFFERENT institutional account
+        val userByUid = userRepository.findByFirebaseUid(verified.uid)
+        if (userByUid.isPresent && userByUid.get().id != user.id) {
+            auditService.logAuthEvent(
+                action = "UID_CONFLICT_REJECTED",
+                userId = user.id,
+                email = user.email,
+                ipAddress = ip,
+                success = false,
+                details = "Firebase UID ${verified.uid} is already bound to different user ${userByUid.get().email}",
+                firebaseUid = verified.uid,
+                deviceInfo = deviceInfo,
+                appVersion = appVersion
             )
-        )
+            throw UnauthorizedException("Identity conflict: This authentication credential is bound to another institutional account.")
+        }
+
+        // 4. Verify Account Status
+        if (user.deletedAt != null || user.accountStatus != AccountStatus.ACTIVE || !user.isActive) {
+            auditService.logAuthEvent(
+                action = "INACTIVE_ACCOUNT_REJECTED",
+                userId = user.id,
+                email = user.email,
+                ipAddress = ip,
+                success = false,
+                details = "Account status is ${user.accountStatus}, isActive=${user.isActive}, deletedAt=${user.deletedAt}",
+                firebaseUid = verified.uid,
+                deviceInfo = deviceInfo,
+                appVersion = appVersion
+            )
+            throw UnauthorizedException("Your account is currently ${user.accountStatus.name.lowercase()}. Please contact college administration.")
+        }
+
+        // 5. Securely link Firebase UID if initially pre-provisioned or unlinked
+        val currentUid = user.firebaseUid
+        if (currentUid == null || currentUid.startsWith("pre_provisioned_") || currentUid.startsWith("dev_") || currentUid != verified.uid) {
+            user.firebaseUid = verified.uid
+        }
+        user.lastLoginAt = Instant.now()
+        user.lastSignInAt = Instant.now()
+        user.updatedAt = Instant.now()
+        userRepository.save(user)
+
+        val profile = profileRepository.findByUserId(user.id).orElseGet {
+            profileRepository.save(
+                ProfileEntity(
+                    id = user.id,
+                    userId = user.id,
+                    username = user.enrollmentNumber ?: user.email.substringBefore("@"),
+                    fullName = verified.name ?: user.email.substringBefore("@"),
+                    email = user.email,
+                    profilePhotoUrl = verified.picture,
+                    collegeName = "Madhav Institute of Technology & Science, Gwalior",
+                    major = user.branch ?: "Engineering",
+                    graduationYear = (user.joiningYear ?: 2025) + 4,
+                    createdAt = Instant.now(),
+                    updatedAt = Instant.now()
+                )
+            )
+        }
+
+        val roles = mutableSetOf(user.role)
+        if (user.role == Role.SUPER_ADMIN) {
+            roles.add(Role.COLLEGE_ADMIN)
+        }
 
         auditService.logAuthEvent(
-            action = "FIRST_LOGIN_PROVISION",
-            userId = newUser.id,
-            email = email,
+            action = "LOGIN_SUCCESS",
+            userId = user.id,
+            email = user.email,
             ipAddress = ip,
             success = true,
-            details = "Account provisioned with Enrollment: $enrollment, Branch: ${parsed.branch}",
+            details = "Institutional user authenticated successfully (${user.enrollmentNumber ?: user.email})",
             firebaseUid = verified.uid,
             deviceInfo = deviceInfo,
             appVersion = appVersion
@@ -232,68 +199,60 @@ class AuthService(
 
         return AuthResponse(
             token = idToken,
-            user = profileMapper.toResponse(newProfile),
-            roles = setOf(Role.STUDENT),
-            isFirstLogin = true,
-            enrollmentNumber = newUser.enrollmentNumber,
-            degree = newUser.degree,
-            branch = newUser.branch,
-            joiningYear = newUser.joiningYear,
-            accountStatus = newUser.accountStatus.name
+            user = profileMapper.toResponse(profile),
+            roles = roles,
+            isFirstLogin = false,
+            enrollmentNumber = user.enrollmentNumber,
+            degree = user.degree,
+            branch = user.branch,
+            joiningYear = user.joiningYear,
+            accountStatus = user.accountStatus.name
         )
     }
 
     fun login(request: LoginRequest, ip: String): AuthResponse {
         val email = request.email.trim().lowercase()
-        val parsed = enrollmentNumberService.parseCollegeEmail(email)
-        val enrollment = parsed.enrollmentNumber
-        val isAdminEmail = email.endsWith("@acadyk.internal") || 
-            email.endsWith("@acadyk.edu") || 
-            email.startsWith("superadmin") || 
-            email.startsWith("admin@")
 
-        val user = userRepository.findByEmail(email).orElseGet {
-            userRepository.save(
-                UserEntity(
-                    id = UUID.randomUUID(),
-                    firebaseUid = "dev_" + email.hashCode().toString(),
-                    email = email,
-                    collegeEmail = email,
-                    enrollmentNumber = enrollment,
-                    degree = parsed.degree,
-                    branch = parsed.branch,
-                    joiningYear = parsed.joiningYear,
-                    role = if (isAdminEmail) Role.SUPER_ADMIN else Role.STUDENT,
-                    firstLoginAt = Instant.now(),
-                    lastLoginAt = Instant.now(),
-                    lastSignInAt = Instant.now()
-                )
+        val user = userRepository.findByEmail(email).or { userRepository.findByCollegeEmail(email) }.orElseThrow {
+            auditService.logAuthEvent(
+                action = "UNPROVISIONED_USER_REJECTED",
+                userId = null,
+                email = email,
+                ipAddress = ip,
+                success = false,
+                details = "Password login rejected: Account $email is not provisioned in PostgreSQL."
             )
+            UnauthorizedException("Account not found. Institutional accounts must be pre-provisioned by college administration.")
         }
 
-        if (isAdminEmail && user.role != Role.SUPER_ADMIN) {
-            user.role = Role.SUPER_ADMIN
-            userRepository.save(user)
+        if (user.deletedAt != null || user.accountStatus != AccountStatus.ACTIVE || !user.isActive) {
+            auditService.logAuthEvent(
+                action = "INACTIVE_ACCOUNT_REJECTED",
+                userId = user.id,
+                email = user.email,
+                ipAddress = ip,
+                success = false,
+                details = "Account status is ${user.accountStatus}"
+            )
+            throw UnauthorizedException("Your account is currently ${user.accountStatus.name.lowercase()}. Please contact college administration.")
         }
 
-        val profile = profileRepository.findById(user.id).orElseGet {
+        val profile = profileRepository.findByUserId(user.id).or { profileRepository.findById(user.id) }.orElseGet {
             profileRepository.save(
                 ProfileEntity(
                     id = user.id,
                     userId = user.id,
                     email = user.email,
                     username = user.enrollmentNumber ?: email.substringBefore("@"),
-                    fullName = if (isAdminEmail) "Sudhanshu Patel" else "Somraj Lodhi",
+                    fullName = user.enrollmentNumber ?: email.substringBefore("@"),
                     collegeName = "Madhav Institute of Technology & Science, Gwalior",
                     major = user.branch ?: "AI & ML"
                 )
             )
         }
-        profile.email = user.email
 
         val roles = mutableSetOf(user.role)
-        if (isAdminEmail || user.role == Role.SUPER_ADMIN || user.role == Role.COLLEGE_ADMIN) {
-            roles.add(Role.SUPER_ADMIN)
+        if (user.role == Role.SUPER_ADMIN) {
             roles.add(Role.COLLEGE_ADMIN)
         }
 
@@ -315,52 +274,20 @@ class AuthService(
 
     fun register(request: RegisterRequest, ip: String): AuthResponse {
         val email = request.email.trim().lowercase()
-        val name = request.fullName?.takeIf { it.isNotBlank() } ?: "Somraj Lodhi"
-        val parsed = enrollmentNumberService.parseCollegeEmail(email)
-        val enrollment = parsed.enrollmentNumber
-
-        val user = userRepository.save(
-            UserEntity(
-                id = UUID.randomUUID(),
-                firebaseUid = "dev_" + System.currentTimeMillis().toString(),
+        // Core rule: Student registration must not create accounts freely without admin pre-provisioning
+        val existing = userRepository.findByEmail(email).or { userRepository.findByCollegeEmail(email) }
+        if (existing.isEmpty) {
+            auditService.logAuthEvent(
+                action = "UNPROVISIONED_REGISTER_REJECTED",
+                userId = null,
                 email = email,
-                collegeEmail = email,
-                enrollmentNumber = enrollment,
-                degree = parsed.degree,
-                branch = parsed.branch,
-                joiningYear = parsed.joiningYear,
-                firstLoginAt = Instant.now(),
-                lastLoginAt = Instant.now(),
-                lastSignInAt = Instant.now()
+                ipAddress = ip,
+                success = false,
+                details = "Self-registration rejected for unprovisioned institutional account $email"
             )
-        )
-
-        val profile = profileRepository.save(
-            ProfileEntity(
-                id = user.id,
-                userId = user.id,
-                email = email,
-                username = enrollment,
-                fullName = name,
-                collegeName = "Madhav Institute of Technology & Science, Gwalior",
-                major = parsed.branch
-            )
-        )
-        profile.email = user.email
-
-        val token = jwtTokenProvider.createToken(user.id, user.email, profile.username)
-        auditService.logAuthEvent("REGISTER_USER", user.id, user.email, ip, true)
-        return AuthResponse(
-            token = token,
-            user = profileMapper.toResponse(profile),
-            roles = setOf(Role.STUDENT),
-            isFirstLogin = true,
-            enrollmentNumber = user.enrollmentNumber,
-            degree = user.degree,
-            branch = user.branch,
-            joiningYear = user.joiningYear,
-            accountStatus = user.accountStatus.name
-        )
+            throw UnauthorizedException("Institutional account not found. Accounts must first be provisioned by college administration.")
+        }
+        return login(LoginRequest(email = email, password = request.password), ip)
     }
 
     fun resetPassword(request: ResetPasswordRequest, ip: String) {

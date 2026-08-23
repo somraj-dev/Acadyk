@@ -30,16 +30,25 @@ class ApiClient {
             token = await FirebaseAuthService.getIdToken();
           } catch (_) {}
 
-          if (token != null && token.isNotEmpty) {
+          final hasAuth = token != null && token.isNotEmpty;
+          if (hasAuth) {
             options.headers['Authorization'] = 'Bearer $token';
           } else {
-            // Unauthenticated/public requests must not attach invalid auth headers
             options.headers.remove('Authorization');
           }
+
+          debugPrint('[ApiClient Request] ${options.method} ${options.baseUrl}${options.path} (Auth Header: ${hasAuth ? "PRESENT" : "ABSENT"})');
           return handler.next(options);
         },
+        onResponse: (response, handler) {
+          final reqId = response.headers.value('X-Request-ID') ?? response.headers.value('X-Correlation-ID');
+          debugPrint('[ApiClient Response] ${response.statusCode} ${response.requestOptions.path}${reqId != null ? " [ReqID: $reqId]" : ""}');
+          return handler.next(response);
+        },
         onError: (DioException error, handler) async {
-          debugPrint('[ApiClient Error] ${error.response?.statusCode}: ${error.message}');
+          final reqId = error.response?.headers.value('X-Request-ID') ?? error.response?.headers.value('X-Correlation-ID');
+          debugPrint('[ApiClient Error] ${error.response?.statusCode} ${error.requestOptions.path}: ${error.message}${reqId != null ? " [ReqID: $reqId]" : ""}');
+
           // If 401 Unauthorized, force-refresh the Firebase ID token and retry the request once
           if (error.response?.statusCode == 401 && error.requestOptions.extra['retry_attempted'] != true) {
             try {

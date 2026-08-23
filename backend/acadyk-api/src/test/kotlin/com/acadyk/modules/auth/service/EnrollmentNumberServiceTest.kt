@@ -9,7 +9,7 @@ class EnrollmentNumberServiceTest {
 
     @Test
     fun `should parse MITS AI ML student email into exact expected enrollment number`() {
-        val email = "25am10so80@mitsgwl.ac.in"
+        val email = "25am10so80@mits.ac.in"
         assertTrue(service.isCollegeEmail(email), "Email domain should be verified as MITS")
 
         val result = service.parseCollegeEmail(email)
@@ -22,7 +22,7 @@ class EnrollmentNumberServiceTest {
 
     @Test
     fun `should parse standard CSE student email`() {
-        val email = "22cs1001@mitsgwl.ac.in"
+        val email = "22cs1001@mits.ac.in"
         assertTrue(service.isCollegeEmail(email))
 
         val result = service.parseCollegeEmail(email)
@@ -34,7 +34,7 @@ class EnrollmentNumberServiceTest {
 
     @Test
     fun `should parse IT student email with SO roll token`() {
-        val email = "24it10so45@mitsgwl.ac.in"
+        val email = "24it10so45@mits.ac.in"
         assertTrue(service.isCollegeEmail(email))
 
         val result = service.parseCollegeEmail(email)
@@ -49,11 +49,15 @@ class EnrollmentNumberServiceTest {
         assertFalse(service.isCollegeEmail("somraj@gmail.com"))
         assertFalse(service.isCollegeEmail("student@yahoo.com"))
         assertFalse(service.isCollegeEmail("user@otheruniv.edu.in"))
+        assertTrue(service.isCollegeEmail("student@mitsgwl.ac.in"))
+        assertTrue(service.isCollegeEmail("student@mits.ac.in"))
+        assertFalse(service.isCollegeEmail("student@mits.edu.in"))
+        assertFalse(service.isCollegeEmail("student@mits.ac.in.example.com"))
     }
 
     @Test
     fun `should handle malformed email without generating incorrect enrollment`() {
-        val malformedEmail = "invalid.faculty@mitsgwl.ac.in"
+        val malformedEmail = "invalid.faculty@mits.ac.in"
         assertTrue(service.isCollegeEmail(malformedEmail))
 
         val result = service.parseCollegeEmail(malformedEmail)

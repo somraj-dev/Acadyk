@@ -28,6 +28,7 @@ data class PostAuthorDto(
     val id: String,
     val username: String,
     val fullName: String,
+    val email: String? = null,
     val headline: String?,
     val profilePhotoUrl: String?
 )

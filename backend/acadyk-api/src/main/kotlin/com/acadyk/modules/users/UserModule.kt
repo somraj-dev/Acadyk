@@ -17,7 +17,7 @@ import com.acadyk.modules.profiles.service.ProfileService
 
 data class UserIdentityResponse(
     val userId: String,
-    val firebaseUid: String,
+    val firebaseUid: String?,
     val collegeEmail: String?,
     val enrollmentNumber: String?,
     val degree: String,

@@ -38,9 +38,6 @@ dependencies {
     // Apache Kafka
     implementation("org.springframework.kafka:spring-kafka")
 
-    // Elasticsearch
-    implementation("org.springframework.boot:spring-boot-starter-data-elasticsearch")
-
     // Firebase Admin SDK
     implementation("com.google.firebase:firebase-admin:9.3.0")
 
@@ -78,4 +75,10 @@ tasks.withType<Test> {
         "-Dnet.bytebuddy.experimental=true",
         "-Djdk.attach.allowAttachSelf=true"
     )
+}
+
+tasks.register("printClasspath") {
+    doLast {
+        println(sourceSets["main"].runtimeClasspath.asPath)
+    }
 }

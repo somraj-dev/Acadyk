@@ -57,6 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _profilePhotoUrl;
   String? _coverPhotoUrl;
   bool _isAudioPlaying = false;
+  List<Map<String, dynamic>> _userPosts = [];
 
   Timer? _bannerHoldTimer;
   Timer? _avatarHoldTimer;
@@ -623,12 +624,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _loadProfileData() async {
     if (widget.userData != null) {
-      _profileName = widget.userData!['name'] ?? widget.userData!['full_name'] ?? widget.userData!['authorName'];
+      _profileName = widget.userData!['name'] ?? widget.userData!['fullName'] ?? widget.userData!['full_name'] ?? widget.userData!['authorName'];
       _profileBio = widget.userData!['headline'] ?? widget.userData!['bio'] ?? widget.userData!['authorSubtitle'];
       _profileSummary = widget.userData!['summary'] ?? widget.userData!['about'];
       _profileLocation = widget.userData!['location'];
-      _profilePhotoUrl = widget.userData!['avatar'] ?? widget.userData!['avatarUrl'] ?? widget.userData!['profile_photo_url'];
-      _coverPhotoUrl = widget.userData!['cover_photo_url'] ?? widget.userData!['banner'];
+      _profilePhotoUrl = widget.userData!['avatar'] ?? widget.userData!['avatarUrl'] ?? widget.userData!['profilePhotoUrl'] ?? widget.userData!['profile_photo_url'];
+      _coverPhotoUrl = widget.userData!['cover_photo_url'] ?? widget.userData!['coverPhotoUrl'] ?? widget.userData!['banner'];
     } else {
       _profileName = widget.isOwnProfile ? (ProfileManager.name.isNotEmpty ? ProfileManager.name : (AuthService.currentUser?.fullName ?? '')) : '';
       _profileBio = widget.isOwnProfile ? ProfileManager.bio : '';
@@ -652,7 +653,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
           setState(() {
             _profileName = data['fullName'] ?? data['full_name'] ?? _profileName;
-            _profileBio = data['bio'] ?? _profileBio;
+            _profileBio = data['bio'] ?? data['headline'] ?? _profileBio;
             _profileLocation = data['location'] ?? _profileLocation;
             _profilePhotoUrl = data['profilePhotoUrl'] ?? data['profile_photo_url'] ?? _profilePhotoUrl;
             _coverPhotoUrl = data['coverPhotoUrl'] ?? data['cover_photo_url'] ?? _coverPhotoUrl;
@@ -662,6 +663,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _isFollowing = isFol;
               }
             }
+          });
+        }
+
+        // Fetch real posts authored by this user from backend
+        final posts = await PostService.getUserPosts(userId);
+        if (mounted) {
+          setState(() {
+            _userPosts = posts;
           });
         }
       }
@@ -1206,6 +1215,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     GestureDetector(
                       onTap: () {
+                        final targetUid = widget.isOwnProfile
+                            ? (AuthService.currentUser?.id.isNotEmpty == true ? AuthService.currentUser!.id : ProfileManager.id)
+                            : (widget.userData?['id']?.toString() ?? widget.userData?['userId']?.toString());
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -1213,6 +1225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               initialTab: 'following',
                               userName: name,
                               userHandle: '',
+                              userId: targetUid?.toString(),
                             ),
                           ),
                         );
@@ -1243,6 +1256,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(width: 24),
                     GestureDetector(
                       onTap: () {
+                        final targetUid = widget.isOwnProfile
+                            ? (AuthService.currentUser?.id.isNotEmpty == true ? AuthService.currentUser!.id : ProfileManager.id)
+                            : (widget.userData?['id']?.toString() ?? widget.userData?['userId']?.toString());
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -1250,6 +1266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               initialTab: 'followers',
                               userName: name,
                               userHandle: '',
+                              userId: targetUid?.toString(),
                             ),
                           ),
                         );
@@ -1439,12 +1456,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // SECTION 3: Listed / Featured
   // =============================================================
   List<Map<String, dynamic>> _getFeaturedItems() {
-    final String name = _profileName ?? widget.userData?['name'] ?? (widget.isOwnProfile ? (ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Acadyk Member') : 'Member');
+    final String name = _profileName ?? widget.userData?['name'] ?? widget.userData?['fullName'] ?? (widget.isOwnProfile ? (ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Acadyk Member') : 'Member');
     final String bio = _profileBio ?? widget.userData?['headline'] ?? (widget.isOwnProfile ? ProfileManager.bio : '');
-    final String avatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : '');
+    final String avatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? widget.userData?['profilePhotoUrl'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : '');
 
     final List<Map<String, dynamic>> userCreatedItems = [];
-    if (widget.isOwnProfile) {
+    if (_userPosts.isNotEmpty) {
+      for (final p in _userPosts) {
+        userCreatedItems.add({
+          'category': p['category'] ?? 'Post',
+          'text': p['content'] ?? p['text'] ?? '',
+          'imageAsset': (p['imageUrl'] != null && (p['imageUrl'] as String).isNotEmpty) ? p['imageUrl'] : (p['imageAsset'] ?? ''),
+          'reactions': p['likes'] ?? p['reactions'] ?? 0,
+          'authorName': p['authorName'] ?? name,
+          'authorHeadline': p['authorHeadline'] ?? bio,
+          'authorAvatar': p['authorAvatar'] ?? avatar,
+          'timeAgo': p['timeAgo'] ?? 'Recently',
+        });
+      }
+    } else if (widget.isOwnProfile) {
       final userPosts = PostService.getUserCreatedPosts();
       for (final p in userPosts) {
         userCreatedItems.add({
@@ -1483,6 +1513,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildFeaturedSection() {
     final items = _getFeaturedItems();
+
+    if (items.isEmpty) {
+      return Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Listed',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.article_outlined, size: 36, color: Colors.black26),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.isOwnProfile ? "You haven't listed any posts yet." : "No listed posts yet.",
+                    style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       color: Colors.white,

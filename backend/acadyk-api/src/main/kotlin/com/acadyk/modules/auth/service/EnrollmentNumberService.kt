@@ -18,9 +18,12 @@ class EnrollmentNumberService {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     companion object {
-        const val REQUIRED_DOMAIN = "mitsgwl.ac.in"
+        const val REQUIRED_DOMAIN = "mits.ac.in"
         const val DEFAULT_DEGREE = "B.Tech"
         const val DEFAULT_DEGREE_PREFIX = "BT"
+
+        // Strict Regex for standard MITS email format ending in @mits.ac.in or @mitsgwl.ac.in
+        private val MITS_EMAIL_FULL_REGEX = Regex("""^[a-zA-Z0-9._%+-]+@(mits|mitsgwl)\.ac\.in$""", RegexOption.IGNORE_CASE)
 
         // Comprehensive MITS Gwalior Branch code mappings
         private val BRANCH_MAP = mapOf(
@@ -52,13 +55,19 @@ class EnrollmentNumberService {
     }
 
     /**
-     * Checks if the email belongs to MITS Gwalior college domain.
+     * Checks if the email belongs strictly to the MITS institutional domain (@mits.ac.in).
+     * Case-insensitive, rejects any other domain (gmail, outlook, mits.edu.in, fake domains, bypass attempts).
      */
     fun isCollegeEmail(email: String): Boolean {
-        if (email.isBlank()) return false
-        val domain = email.trim().lowercase().substringAfter("@", "")
-        return domain == REQUIRED_DOMAIN || domain == "mits.ac.in" || domain == "internal.mitsgwl.ac.in"
+        if (email.isBlank() || !email.contains("@")) return false
+        val normalized = email.trim().lowercase()
+        return MITS_EMAIL_FULL_REGEX.matches(normalized)
     }
+
+    /**
+     * Normalizes institutional email to lowercase trimmed format.
+     */
+    fun normalizeEmail(email: String): String = email.trim().lowercase()
 
     /**
      * Automatically converts a verified MITS college email into an institutional enrollment number

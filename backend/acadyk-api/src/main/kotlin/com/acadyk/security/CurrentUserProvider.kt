@@ -25,5 +25,18 @@ class CurrentUserProvider {
 
     fun getCurrentUserEmail(): String = getCurrentUser().email
 
-    fun hasRole(role: Role): Boolean = getCurrentUser().hasRole(role)
+    fun hasRole(role: Role): Boolean = try { getCurrentUser().hasRole(role) } catch (_: Exception) { false }
+
+    fun hasAnyRole(vararg roles: Role): Boolean = try {
+        val user = getCurrentUser()
+        roles.any { user.hasRole(it) }
+    } catch (_: Exception) { false }
+
+    fun hasAnyRole(vararg roleNames: String): Boolean = try {
+        val user = getCurrentUser()
+        val userRoles = (user.roles + listOfNotNull(user.role)).map { it.name }
+        roleNames.any { it in userRoles }
+    } catch (_: Exception) { false }
+
+    fun isCurrentAdmin(): Boolean = hasAnyRole("SUPER_ADMIN", "COLLEGE_ADMIN")
 }

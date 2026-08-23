@@ -7,14 +7,10 @@ import com.acadyk.modules.notifications.entity.NotificationEntity
 import com.acadyk.modules.notifications.repository.NotificationPreferenceRepository
 import com.acadyk.modules.notifications.repository.NotificationRepository
 import com.acadyk.modules.profiles.repository.ProfileRepository
-import com.acadyk.modules.search.document.OpportunitySearchDocument
-import com.acadyk.modules.search.document.PostSearchDocument
-import com.acadyk.modules.search.service.SearchService
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
-import java.time.Instant
 
 @Component
 class DomainEventConsumers(
@@ -22,7 +18,6 @@ class DomainEventConsumers(
     private val notificationPreferenceRepository: NotificationPreferenceRepository,
     private val profileRepository: ProfileRepository,
     private val redisCacheService: RedisCacheService,
-    private val searchService: SearchService,
     private val fcmService: FcmService,
     private val objectMapper: ObjectMapper
 ) {
@@ -34,22 +29,9 @@ class DomainEventConsumers(
             val event = objectMapper.readValue(message, PostCreatedEvent::class.java)
             logger.info("Kafka async consumer: Processing PostCreatedEvent for post ${event.postId}")
 
-            // 1. Invalidate Redis caches
+            // Invalidate Redis caches
             redisCacheService.evictPattern("feed:")
             redisCacheService.evict("posts:${event.postId}")
-
-            // 2. Index in Elasticsearch asynchronously
-            val author = event.authorId.toUUIDOrNull()?.let { profileRepository.findById(it).orElse(null) }
-            searchService.indexPost(
-                PostSearchDocument(
-                    id = event.postId,
-                    content = event.contentSnippet,
-                    authorId = event.authorId,
-                    authorName = author?.fullName ?: "Acadyk Member",
-                    postType = event.postType,
-                    createdAt = Instant.now()
-                )
-            )
         } catch (e: Exception) {
             logger.debug("PostCreated event consumed: $message")
         }
@@ -188,17 +170,9 @@ class DomainEventConsumers(
     fun handleOpportunityCreated(message: String) {
         try {
             val event = objectMapper.readValue(message, OpportunityCreatedEvent::class.java)
-            searchService.indexOpportunity(
-                OpportunitySearchDocument(
-                    id = event.opportunityId,
-                    title = event.title,
-                    companyName = event.companyName,
-                    opportunityType = event.opportunityType,
-                    description = event.title,
-                    location = "Remote / Onsite",
-                    isRemote = true
-                )
-            )
+            logger.info("Kafka async consumer: Processing OpportunityCreatedEvent for ${event.title}")
+            // Opportunity data is already persisted in PostgreSQL by the service layer.
+            // No additional indexing needed — search queries PostgreSQL directly.
         } catch (e: Exception) {
             logger.debug("OpportunityCreated event consumed: $message")
         }

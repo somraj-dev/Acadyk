@@ -36,78 +36,43 @@ class FirebaseAuthFilter(
             if (verifiedUser != null) {
                 val email = verifiedUser.email.trim().lowercase()
 
-                // Look up or provision verified user in DB - strictly using token verified identity
+                // Look up verified user in DB - strictly requiring pre-provisioning
                 val user = userRepository.findByFirebaseUid(verifiedUser.uid)
                     .or { userRepository.findByEmail(email) }
                     .or { userRepository.findByCollegeEmail(email) }
-                    .orElseGet {
-                        val parsed = enrollmentNumberService.parseCollegeEmail(email)
-                        userRepository.save(
-                            UserEntity(
-                                id = java.util.UUID.randomUUID(),
-                                firebaseUid = verifiedUser.uid,
-                                email = email,
-                                collegeEmail = email,
-                                enrollmentNumber = parsed.enrollmentNumber,
-                                degree = parsed.degree,
-                                branch = parsed.branch,
-                                joiningYear = parsed.joiningYear,
-                                role = Role.STUDENT,
-                                accountStatus = if (parsed.isValid) AccountStatus.ACTIVE else AccountStatus.PENDING_VERIFICATION,
-                                isActive = true,
-                                isEmailVerified = verifiedUser.isEmailVerified,
-                                authProvider = "FIREBASE_GOOGLE",
-                                firstLoginAt = Instant.now(),
-                                lastLoginAt = Instant.now(),
-                                lastSignInAt = Instant.now(),
-                                createdAt = Instant.now(),
-                                updatedAt = Instant.now()
-                            )
-                        )
+                    .orElse(null)
+
+                if (user != null && user.deletedAt == null && user.isActive && user.accountStatus == AccountStatus.ACTIVE) {
+                    val curUid = user.firebaseUid
+                    if (curUid != verifiedUser.uid) {
+                        val existingWithUid = userRepository.findByFirebaseUid(verifiedUser.uid)
+                        if (existingWithUid.isEmpty || existingWithUid.get().id == user.id) {
+                            user.firebaseUid = verifiedUser.uid
+                            userRepository.save(user)
+                        }
                     }
 
-                val profile = profileRepository.findByUserId(user.id).orElseGet {
-                    profileRepository.save(
-                        ProfileEntity(
-                            id = java.util.UUID.randomUUID(),
-                            userId = user.id,
-                            username = user.enrollmentNumber ?: email.substringBefore("@"),
-                            fullName = verifiedUser.name ?: "Acadyk Admin",
-                            email = email,
-                            profilePhotoUrl = verifiedUser.picture,
-                            collegeName = "Madhav Institute of Technology & Science, Gwalior",
-                            major = user.branch ?: "AI & ML",
-                            graduationYear = (user.joiningYear ?: 2025) + 4,
-                            createdAt = Instant.now(),
-                            updatedAt = Instant.now()
-                        )
+                    val profile = profileRepository.findByUserId(user.id).orElse(null)
+
+                    // Determine user roles securely from backend (derive STRICTLY from database user.role)
+                    val userEmail = user.email.trim().lowercase()
+                    val roles = mutableSetOf(user.role)
+                    if (user.role == Role.SUPER_ADMIN) {
+                        roles.add(Role.COLLEGE_ADMIN)
+                    }
+
+                    val principal = UserPrincipal(
+                        id = user.id,
+                        email = userEmail,
+                        role = user.role,
+                        roles = roles,
+                        isEmailVerified = verifiedUser.isEmailVerified,
+                        _username = profile?.username ?: user.enrollmentNumber ?: userEmail.substringBefore("@")
                     )
+
+                    val auth = UsernamePasswordAuthenticationToken(principal, null, principal.authorities)
+                    SecurityContextHolder.getContext().authentication = auth
                 }
-
-                // Determine user roles securely from backend
-                val userEmail = user.email.trim().lowercase()
-                val roles = mutableSetOf(user.role)
-                if (userEmail.endsWith("@acadyk.internal") || 
-                    userEmail.endsWith("@acadyk.edu") ||
-                    userEmail.startsWith("superadmin") ||
-                    userEmail.startsWith("admin@") ||
-                    user.role == Role.SUPER_ADMIN ||
-                    user.role == Role.COLLEGE_ADMIN) {
-                    roles.add(Role.SUPER_ADMIN)
-                    roles.add(Role.COLLEGE_ADMIN)
-                }
-
-                val principal = UserPrincipal(
-                    id = user.id,
-                    email = userEmail,
-                    role = roles.firstOrNull() ?: Role.STUDENT,
-                    roles = roles,
-                    isEmailVerified = verifiedUser.isEmailVerified,
-                    _username = profile.username
-                )
-
-                val auth = UsernamePasswordAuthenticationToken(principal, null, principal.authorities)
-                SecurityContextHolder.getContext().authentication = auth
             }
         }
         filterChain.doFilter(request, response)

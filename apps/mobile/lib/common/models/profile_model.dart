@@ -45,26 +45,32 @@ class ProfileModel {
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
     return ProfileModel(
-      id: json['id'] ?? '',
-      username: json['username'] ?? '',
-      fullName: json['full_name'] ?? '',
-      email: json['email'] ?? '',
-      bio: json['bio'] ?? '',
-      profilePhotoUrl: json['profile_photo_url'] ?? '',
-      coverPhotoUrl: json['cover_photo_url'] ?? '',
-      college: json['college'] ?? '',
+      id: json['id']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+      fullName: json['fullName'] ?? json['full_name'] ?? '',
+      email: json['email']?.toString() ?? '',
+      bio: json['bio'] ?? json['headline'] ?? '',
+      profilePhotoUrl: json['profilePhotoUrl'] ?? json['profile_photo_url'] ?? '',
+      coverPhotoUrl: json['coverPhotoUrl'] ?? json['cover_photo_url'] ?? '',
+      college: json['collegeName'] ?? json['college'] ?? '',
       skills: List<String>.from(json['skills'] ?? []),
-      location: json['location'] ?? '',
-      website: json['website'] ?? '',
-      socialLinks: Map<String, dynamic>.from(json['social_links'] ?? {}),
-      isVerified: json['is_verified'] ?? false,
-      isPremium: json['is_premium'] ?? false,
-      followersCount: json['followers_count'] ?? 0,
-      followingCount: json['following_count'] ?? 0,
-      postsCount: json['posts_count'] ?? 0,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
-      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now(),
-      lastActive: json['last_active'] != null ? DateTime.parse(json['last_active']) : DateTime.now(),
+      location: json['location']?.toString() ?? '',
+      website: json['website']?.toString() ?? '',
+      socialLinks: Map<String, dynamic>.from(json['social_links'] ?? json['socialLinks'] ?? {}),
+      isVerified: json['is_verified'] ?? json['isVerified'] ?? false,
+      isPremium: json['is_premium'] ?? json['isPremium'] ?? false,
+      followersCount: json['followersCount'] ?? json['followers_count'] ?? 0,
+      followingCount: json['followingCount'] ?? json['following_count'] ?? 0,
+      postsCount: json['postCount'] ?? json['posts_count'] ?? 0,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+          : (json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now() : DateTime.now()),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
+          : (json['updated_at'] != null ? DateTime.tryParse(json['updated_at'].toString()) ?? DateTime.now() : DateTime.now()),
+      lastActive: json['lastActive'] != null
+          ? DateTime.tryParse(json['lastActive'].toString()) ?? DateTime.now()
+          : (json['last_active'] != null ? DateTime.tryParse(json['last_active'].toString()) ?? DateTime.now() : DateTime.now()),
     );
   }
 

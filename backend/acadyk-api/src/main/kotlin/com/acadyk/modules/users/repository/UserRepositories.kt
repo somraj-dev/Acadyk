@@ -3,12 +3,13 @@ package com.acadyk.modules.users.repository
 import com.acadyk.modules.users.entity.AuthAuditLogEntity
 import com.acadyk.modules.users.entity.UserEntity
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.stereotype.Repository
 import java.util.Optional
 import java.util.UUID
 
 @Repository
-interface UserRepository : JpaRepository<UserEntity, UUID> {
+interface UserRepository : JpaRepository<UserEntity, UUID>, JpaSpecificationExecutor<UserEntity> {
     fun findByFirebaseUid(firebaseUid: String): Optional<UserEntity>
     fun findByEmail(email: String): Optional<UserEntity>
     fun findByCollegeEmail(collegeEmail: String): Optional<UserEntity>
@@ -21,6 +22,7 @@ interface UserRepository : JpaRepository<UserEntity, UUID> {
     fun existsByEmployeeId(employeeId: String): Boolean
 
     fun findAllByDeletedAtIsNullOrderByCreatedAtDesc(): List<UserEntity>
+    fun findAllByDeletedAtIsNull(pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<UserEntity>
     fun countByDeletedAtIsNull(): Long
     fun countByRoleAndDeletedAtIsNull(role: com.acadyk.security.Role): Long
     fun countByAccountStatusAndDeletedAtIsNull(accountStatus: com.acadyk.modules.users.entity.AccountStatus): Long
