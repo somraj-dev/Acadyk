@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:acadyk/features/search/presentation/delegates/acadyk_search_delegate.dart';
 export 'package:acadyk/features/search/presentation/delegates/acadyk_search_delegate.dart';
 import 'dart:math';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:acadyk/common/services/post_service.dart';
 import 'discover_opportunities_screen.dart';
@@ -1542,121 +1543,116 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SizedBox(
-                          width: 46,
-                          child: CustomPaint(
-                            painter: _MainCommentThreadPainter(hasReplies: hasReplies),
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: CircleAvatar(
-                                radius: 18,
-                                backgroundImage: AssetImage(comment['avatar']),
-                              ),
-                            ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 46,
+                        child: Align(
+                          alignment: Alignment.topLeft,
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundImage: AssetImage(comment['avatar']),
                           ),
                         ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      comment['name'],
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                                    ),
-                                    if (comment['isAuthor'] == true) ...[
-                                      const SizedBox(width: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE0F2FE),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: const Text(
-                                          'Author',
-                                          style: TextStyle(color: Color(0xFF0369A1), fontSize: 9, fontWeight: FontWeight.bold),
-                                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    comment['name'],
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                                  ),
+                                  if (comment['isAuthor'] == true) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE0F2FE),
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
-                                    ],
-                                    const Spacer(),
+                                      child: const Text(
+                                        'Author',
+                                        style: TextStyle(color: Color(0xFF0369A1), fontSize: 9, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                  const Spacer(),
+                                  Text(
+                                    comment['timeText'],
+                                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                comment['headline'],
+                                style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              _buildCommentBodyText(comment['body']),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        if (comment['hasLiked'] == true) {
+                                          comment['hasLiked'] = false;
+                                          comment['likes'] = (comment['likes'] as int) - 1;
+                                        } else {
+                                          comment['hasLiked'] = true;
+                                          comment['likes'] = (comment['likes'] as int) + 1;
+                                        }
+                                        _customComments[postId] = comments;
+                                      });
+                                    },
+                                    child: Text(
+                                      'Like',
+                                      style: TextStyle(
+                                        color: comment['hasLiked'] == true ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  if (comment['likes'] > 0) ...[
+                                    const SizedBox(width: 6),
+                                    const Icon(CupertinoIcons.hand_thumbsup_fill, size: 12, color: Color(0xFF0A66C2)),
+                                    const SizedBox(width: 2),
                                     Text(
-                                      comment['timeText'],
+                                      comment['likes'].toString(),
                                       style: const TextStyle(color: Colors.grey, fontSize: 11),
                                     ),
                                   ],
-                                ),
-                                Text(
-                                  comment['headline'],
-                                  style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 6),
-                                _buildCommentBodyText(comment['body']),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          if (comment['hasLiked'] == true) {
-                                            comment['hasLiked'] = false;
-                                            comment['likes'] = (comment['likes'] as int) - 1;
-                                          } else {
-                                            comment['hasLiked'] = true;
-                                            comment['likes'] = (comment['likes'] as int) + 1;
-                                          }
-                                          _customComments[postId] = comments;
-                                        });
-                                      },
-                                      child: Text(
-                                        'Like',
-                                        style: TextStyle(
-                                          color: comment['hasLiked'] == true ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                                  const SizedBox(width: 12),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _replyingToPostId = postId;
+                                        _replyingToCommentIndex = commentIndex;
+                                        _replyingToName = comment['name'];
+                                        _commentFocusNode.requestFocus();
+                                      });
+                                    },
+                                    child: Text(
+                                      'Reply',
+                                      style: TextStyle(color: textSub, fontSize: 12, fontWeight: FontWeight.w600),
                                     ),
-                                    if (comment['likes'] > 0) ...[
-                                      const SizedBox(width: 6),
-                                      const Icon(CupertinoIcons.hand_thumbsup_fill, size: 12, color: Color(0xFF0A66C2)),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        comment['likes'].toString(),
-                                        style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                      ),
-                                    ],
-                                    const SizedBox(width: 12),
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _replyingToPostId = postId;
-                                          _replyingToCommentIndex = commentIndex;
-                                          _replyingToName = comment['name'];
-                                          _commentFocusNode.requestFocus();
-                                        });
-                                      },
-                                      child: Text(
-                                        'Reply',
-                                        style: TextStyle(color: textSub, fontSize: 12, fontWeight: FontWeight.w600),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
 
                   // Render Replies
@@ -1666,114 +1662,106 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       final reply = replyEntry.value;
                       final isLastReply = replyIndex == replies.length - 1;
 
-                      return IntrinsicHeight(
+                      return Padding(
+                        padding: EdgeInsets.only(top: 8, bottom: isLastReply ? 12 : 0),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(
-                              width: 46,
-                              child: CustomPaint(
-                                painter: _ReplyThreadPainter(isLast: isLastReply),
-                              ),
+                            const SizedBox(width: 16),
+                            Container(
+                              width: 2,
+                              height: 32,
+                              color: const Color(0xFFC7C7C7),
+                              margin: const EdgeInsets.only(right: 14),
                             ),
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundImage: AssetImage(reply['avatar']),
+                            ),
+                            const SizedBox(width: 8),
                             Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.only(top: 8, bottom: isLastReply ? 12 : 0),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 14,
-                                      backgroundImage: AssetImage(reply['avatar']),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text(
-                                                reply['name'],
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
-                                              ),
-                                              const Spacer(),
-                                              Text(
-                                                reply['timeText'],
-                                                style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                              ),
-                                            ],
-                                          ),
-                                          Text(
-                                            reply['headline'],
-                                            style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          _buildCommentBodyText(reply['body']),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              GestureDetector(
-                                                onTap: () {
-                                                  setState(() {
-                                                    if (reply['hasLiked'] == true) {
-                                                      reply['hasLiked'] = false;
-                                                      reply['likes'] = ((reply['likes'] ?? 0) as int) - 1;
-                                                    } else {
-                                                      reply['hasLiked'] = true;
-                                                      reply['likes'] = ((reply['likes'] ?? 0) as int) + 1;
-                                                    }
-                                                    _customComments[postId] = comments;
-                                                  });
-                                                },
-                                                child: Text(
-                                                  'Like',
-                                                  style: TextStyle(
-                                                    color: reply['hasLiked'] == true ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                              if (reply['likes'] != null && reply['likes'] > 0) ...[
-                                                const SizedBox(width: 4),
-                                                const Icon(CupertinoIcons.hand_thumbsup_fill, size: 10, color: Color(0xFF0A66C2)),
-                                                const SizedBox(width: 2),
-                                                Text(
-                                                  reply['likes'].toString(),
-                                                  style: const TextStyle(color: Colors.grey, fontSize: 10),
-                                                ),
-                                              ],
-                                              const SizedBox(width: 12),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  setState(() {
-                                                    _replyingToPostId = postId;
-                                                    _replyingToCommentIndex = commentIndex;
-                                                    _replyingToName = reply['name'];
-                                                    _commentFocusNode.requestFocus();
-                                                  });
-                                                },
-                                                child: Text(
-                                                  'Reply',
-                                                  style: TextStyle(color: textSub, fontSize: 11, fontWeight: FontWeight.w600),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        reply['name'],
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                                       ),
-                                    ),
-                                  ],
-                                ),
+                                      const Spacer(),
+                                      Text(
+                                        reply['timeText'],
+                                        style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    reply['headline'],
+                                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  _buildCommentBodyText(reply['body']),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            if (reply['hasLiked'] == true) {
+                                              reply['hasLiked'] = false;
+                                              reply['likes'] = ((reply['likes'] ?? 0) as int) - 1;
+                                            } else {
+                                              reply['hasLiked'] = true;
+                                              reply['likes'] = ((reply['likes'] ?? 0) as int) + 1;
+                                            }
+                                            _customComments[postId] = comments;
+                                          });
+                                        },
+                                        child: Text(
+                                          'Like',
+                                          style: TextStyle(
+                                            color: reply['hasLiked'] == true ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      if (reply['likes'] != null && reply['likes'] > 0) ...[
+                                        const SizedBox(width: 4),
+                                        const Icon(CupertinoIcons.hand_thumbsup_fill, size: 10, color: Color(0xFF0A66C2)),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          reply['likes'].toString(),
+                                          style: const TextStyle(color: Colors.grey, fontSize: 10),
+                                        ),
+                                      ],
+                                      const SizedBox(width: 12),
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            _replyingToPostId = postId;
+                                            _replyingToCommentIndex = commentIndex;
+                                            _replyingToName = reply['name'];
+                                            _commentFocusNode.requestFocus();
+                                          });
+                                        },
+                                        child: Text(
+                                          'Reply',
+                                          style: TextStyle(color: textSub, fontSize: 11, fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       );
-                    }).toList(),
+                    }),
                   ],
                 ],
               ),
@@ -2897,22 +2885,17 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   // ------------------------------------------------------------------
-  // INTERACTIVE POLL CARD BUILDER
+  // INTERACTIVE POLL CARD BUILDER (Twitter / X Style)
   // ------------------------------------------------------------------
   Widget _buildPollCard(String postId, Map<String, dynamic> poll) {
     final options = (poll['options'] as List<dynamic>?) ?? [];
     final int totalVotes = (poll['totalVotes'] as num?)?.toInt() ?? 0;
     final int userVotedIndex = (poll['userVotedIndex'] as num?)?.toInt() ?? -1;
-    final String duration = poll['duration']?.toString() ?? '1 day';
+    final String duration = poll['duration']?.toString() ?? '24 hours';
     final bool hasVoted = userVotedIndex >= 0;
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _isDark ? const Color(0xFF16181C) : const Color(0xFFF7F9F9),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _isDark ? const Color(0xFF2F3336) : const Color(0xFFE2E8F0)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 4.0, bottom: 2.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2924,93 +2907,105 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               final double percent = totalVotes > 0 ? (optVotes / totalVotes) : 0.0;
               final bool isSelected = userVotedIndex == i;
 
-              return GestureDetector(
-                onTap: () {
-                  if (!hasVoted) {
-                    PostService.votePoll(postId, i);
-                    setState(() {});
-                  }
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  height: 42,
-                  child: Stack(
-                    children: [
-                      // Background progress bar if voted
-                      if (hasVoted)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: LinearProgressIndicator(
-                            value: percent,
-                            minHeight: 42,
-                            backgroundColor: _isDark ? const Color(0xFF202327) : const Color(0xFFE5E7EB),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              isSelected ? const Color(0xFF1D9BF0).withValues(alpha: 0.35) : const Color(0xFF1D9BF0).withValues(alpha: 0.15),
-                            ),
-                          ),
-                        )
-                      else
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFF1D9BF0), width: 1.2),
-                          ),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      if (!hasVoted) {
+                        PostService.votePoll(postId, i);
+                        setState(() {});
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: _isDark ? const Color(0xFF16181C) : const Color(0xFFF7F9F9),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isSelected
+                              ? const Color(0xFF1D9BF0)
+                              : (_isDark ? const Color(0xFF2F3336) : const Color(0xFFCFD9DE)),
+                          width: isSelected ? 1.5 : 1.0,
                         ),
-
-                      // Option Text and percentage
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(9),
+                        child: Stack(
+                          fit: StackFit.expand,
                           children: [
-                            Row(
-                              children: [
-                                if (isSelected) ...[
-                                  const Icon(Icons.check_circle, size: 16, color: Color(0xFF1D9BF0)),
-                                  const SizedBox(width: 6),
-                                ],
-                                Text(
-                                  optText,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                    color: _isDark ? Colors.white : const Color(0xFF0F1419),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (hasVoted)
-                              Text(
-                                '${(percent * 100).toStringAsFixed(0)}%',
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected ? const Color(0xFF1D9BF0) : textSub,
+                            // Progress bar fill when voted
+                            if (hasVoted && percent > 0)
+                              FractionallySizedBox(
+                                widthFactor: percent,
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  color: isSelected
+                                      ? const Color(0xFF1D9BF0).withValues(alpha: 0.28)
+                                      : (_isDark ? const Color(0xFF2F3336) : const Color(0xFFE1E8ED)),
                                 ),
                               ),
+
+                            // Perfectly centered text and percentage row
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        if (isSelected) ...[
+                                          const Icon(Icons.check_circle, size: 16, color: Color(0xFF1D9BF0)),
+                                          const SizedBox(width: 8),
+                                        ],
+                                        Flexible(
+                                          child: Text(
+                                            optText,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 14.5,
+                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                              color: textMain,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    hasVoted ? '${(percent * 100).toStringAsFixed(0)}%' : '0%',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: hasVoted && isSelected ? FontWeight.bold : FontWeight.w600,
+                                      color: isSelected ? const Color(0xFF1D9BF0) : textSub,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               );
             }),
           ],
-          const SizedBox(height: 2),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '$totalVotes vote${totalVotes == 1 ? '' : 's'} • $duration left',
-                style: TextStyle(fontSize: 12, color: textSub, fontWeight: FontWeight.w500),
-              ),
-              if (!hasVoted)
-                const Text(
-                  'Tap choice to vote',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF1D9BF0), fontWeight: FontWeight.w600),
-                ),
-            ],
+          const SizedBox(height: 4),
+          Text(
+            '$totalVotes vote${totalVotes == 1 ? '' : 's'} • ${duration.contains('left') ? duration : '$duration left'}',
+            style: TextStyle(
+              fontSize: 13,
+              color: textSub,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         ],
       ),
@@ -3048,6 +3043,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
     final String mainAvatarAsset = post['authorAvatar'] ?? (isMITSOfficial ? 'assets/images/mits_logo.png' : '');
     final String? postImageUrl = post['imageUrl'] ?? post['image'] ?? post['gifUrl'];
+    final dynamic imageBytes = post['imageBytes'];
     final String? milestone = post['milestone']?.toString();
     final String? location = post['location']?.toString();
     final dynamic pollData = post['poll'];
@@ -3322,22 +3318,30 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             const SizedBox(height: 10),
           ],
 
-          if (postImageUrl != null && postImageUrl.isNotEmpty) ...[
+          if (imageBytes != null || (postImageUrl != null && postImageUrl.isNotEmpty)) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: postImageUrl.startsWith('http')
-                    ? Image.network(
-                        postImageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      )
-                    : Image.asset(
-                        postImageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      ),
+                child: imageBytes != null
+                    ? (imageBytes is Uint8List
+                        ? Image.memory(
+                            imageBytes,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          )
+                        : const SizedBox.shrink())
+                    : (postImageUrl!.startsWith('http')
+                        ? Image.network(
+                            postImageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          )
+                        : Image.asset(
+                            postImageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          )),
               ),
             ),
             const SizedBox(height: 10),

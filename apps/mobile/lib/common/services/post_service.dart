@@ -91,8 +91,9 @@ class PostService {
       'badgeType': 'gold',
       'timeAgo': 'Just now',
       'content': content,
-      'postType': postType ?? (poll != null ? 'poll' : (gifUrl != null ? 'gif' : (uploadedImageUrl != null ? 'image' : 'text'))),
+      'postType': postType ?? (poll != null ? 'poll' : (gifUrl != null ? 'gif' : (uploadedImageUrl != null || imageBytes != null ? 'image' : 'text'))),
       'imageUrl': uploadedImageUrl,
+      'imageBytes': imageBytes,
       'gifUrl': gifUrl,
       'poll': poll,
       'milestone': milestone,
@@ -223,6 +224,13 @@ class PostService {
     final content = post['content']?.toString() ?? '';
     final imageUrl = post['imageUrl']?.toString() ?? (post['mediaUrls'] is List && (post['mediaUrls'] as List).isNotEmpty ? post['mediaUrls'][0]?.toString() : null);
 
+    final imageBytes = post['imageBytes'] as Uint8List?;
+    final poll = post['poll'] as Map<String, dynamic>?;
+    final milestone = post['milestone']?.toString();
+    final location = post['location']?.toString();
+    final taggedPeople = post['taggedPeople'] as List<dynamic>?;
+    final postType = post['postType']?.toString() ?? post['type']?.toString() ?? (poll != null ? 'poll' : (imageUrl != null || imageBytes != null ? 'image' : 'text'));
+
     final rawLikes = _likeCounts[id] ?? post['likesCount'] ?? post['likes'] ?? 0;
     final int likes = (rawLikes is num) ? rawLikes.toInt() : (int.tryParse(rawLikes.toString()) ?? 0);
 
@@ -236,8 +244,18 @@ class PostService {
       'authorName': authorName,
       'authorSubtitle': authorSubtitle,
       'authorAvatar': authorAvatar,
+      'authorInitials': post['authorInitials'] ?? (authorName.isNotEmpty ? authorName.substring(0, min(2, authorName.length)).toUpperCase() : 'U'),
+      'authorBgColor': post['authorBgColor'] ?? 0xFF0F4C81,
+      'isVerified': post['isVerified'] ?? true,
+      'badgeType': post['badgeType'] ?? 'gold',
       'content': content,
       'imageUrl': imageUrl,
+      'imageBytes': imageBytes,
+      'poll': poll,
+      'milestone': milestone,
+      'location': location,
+      'taggedPeople': taggedPeople,
+      'postType': postType,
       'likes': likes,
       'comments': comments,
       'isLiked': isLiked,

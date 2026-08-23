@@ -716,119 +716,114 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SizedBox(
-                          width: 46,
-                          child: CustomPaint(
-                            painter: _MainCommentThreadPainter(hasReplies: hasReplies),
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: CircleAvatar(
-                                radius: 18,
-                                backgroundImage: AssetImage(comment['avatar']),
-                              ),
-                            ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 46,
+                        child: Align(
+                          alignment: Alignment.topLeft,
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundImage: AssetImage(comment['avatar']),
                           ),
                         ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      comment['name'],
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                    ),
-                                    if (comment['isAuthor'] == true) ...[
-                                      const SizedBox(width: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE0F2FE),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: const Text(
-                                          'Author',
-                                          style: TextStyle(color: Color(0xFF0369A1), fontSize: 9, fontWeight: FontWeight.bold),
-                                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    comment['name'],
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                  if (comment['isAuthor'] == true) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE0F2FE),
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
-                                    ],
-                                    const Spacer(),
+                                      child: const Text(
+                                        'Author',
+                                        style: TextStyle(color: Color(0xFF0369A1), fontSize: 9, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                  const Spacer(),
+                                  Text(
+                                    comment['timeText'],
+                                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                comment['headline'],
+                                style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              _buildCommentBodyText(comment['body']),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        if (comment['hasLiked'] == true) {
+                                          comment['hasLiked'] = false;
+                                          comment['likes'] = (comment['likes'] as int) - 1;
+                                        } else {
+                                          comment['hasLiked'] = true;
+                                          comment['likes'] = (comment['likes'] as int) + 1;
+                                        }
+                                      });
+                                    },
+                                    child: Text(
+                                      'Like',
+                                      style: TextStyle(
+                                        color: comment['hasLiked'] == true ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  if (comment['likes'] > 0) ...[
+                                    const SizedBox(width: 6),
+                                    const Icon(CupertinoIcons.hand_thumbsup_fill, size: 12, color: Color(0xFF0A66C2)),
+                                    const SizedBox(width: 2),
                                     Text(
-                                      comment['timeText'],
+                                      comment['likes'].toString(),
                                       style: const TextStyle(color: Colors.grey, fontSize: 11),
                                     ),
                                   ],
-                                ),
-                                Text(
-                                  comment['headline'],
-                                  style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 6),
-                                _buildCommentBodyText(comment['body']),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          if (comment['hasLiked'] == true) {
-                                            comment['hasLiked'] = false;
-                                            comment['likes'] = (comment['likes'] as int) - 1;
-                                          } else {
-                                            comment['hasLiked'] = true;
-                                            comment['likes'] = (comment['likes'] as int) + 1;
-                                          }
-                                        });
-                                      },
-                                      child: Text(
-                                        'Like',
-                                        style: TextStyle(
-                                          color: comment['hasLiked'] == true ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                                  const SizedBox(width: 12),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _replyingToCommentIndex = commentIndex;
+                                        _replyingToName = comment['name'];
+                                        _commentFocusNode.requestFocus();
+                                      });
+                                    },
+                                    child: const Text(
+                                      'Reply',
+                                      style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 12, fontWeight: FontWeight.w600),
                                     ),
-                                    if (comment['likes'] > 0) ...[
-                                      const SizedBox(width: 6),
-                                      const Icon(CupertinoIcons.hand_thumbsup_fill, size: 12, color: Color(0xFF0A66C2)),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        comment['likes'].toString(),
-                                        style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                      ),
-                                    ],
-                                    const SizedBox(width: 12),
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _replyingToCommentIndex = commentIndex;
-                                          _replyingToName = comment['name'];
-                                          _commentFocusNode.requestFocus();
-                                        });
-                                      },
-                                      child: const Text(
-                                        'Reply',
-                                        style: TextStyle(color: Color(0xFF5E5E5E), fontSize: 12, fontWeight: FontWeight.w600),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
 
                   // Render Replies
@@ -838,44 +833,40 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                       final reply = replyEntry.value;
                       final isLastReply = replyIndex == replies.length - 1;
 
-                      return IntrinsicHeight(
+                      return Padding(
+                        padding: EdgeInsets.only(top: 8, bottom: isLastReply ? 12 : 0),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(
-                              width: 46,
-                              child: CustomPaint(
-                                painter: _ReplyThreadPainter(isLast: isLastReply),
-                              ),
+                            const SizedBox(width: 16),
+                            Container(
+                              width: 2,
+                              height: 32,
+                              color: const Color(0xFFC7C7C7),
+                              margin: const EdgeInsets.only(right: 14),
                             ),
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundImage: AssetImage(reply['avatar']),
+                            ),
+                            const SizedBox(width: 8),
                             Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.only(top: 8, bottom: isLastReply ? 12 : 0),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 14,
-                                      backgroundImage: AssetImage(reply['avatar']),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text(
-                                                reply['name'],
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
-                                              ),
-                                              const Spacer(),
-                                              Text(
-                                                reply['timeText'],
-                                                style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                              ),
-                                            ],
-                                          ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        reply['name'],
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        reply['timeText'],
+                                        style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
                                           Text(
                                             reply['headline'],
                                             style: const TextStyle(color: Colors.grey, fontSize: 11),
@@ -938,12 +929,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                                     ),
                                   ],
                                 ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                              );
+                            }).toList(),
                   ],
                 ],
               ),

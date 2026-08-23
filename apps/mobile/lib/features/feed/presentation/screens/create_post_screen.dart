@@ -40,7 +40,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   // Visibility / Who can reply
   String _replyVisibility = 'Everyone can reply';
-  IconData _replyVisibilityIcon = CupertinoIcons.globe;
 
   @override
   void initState() {
@@ -418,38 +417,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   ),
                 ),
 
-                // 3. Bottom Controls Area (Reply visibility + Toolbar icons)
+                // 3. Bottom Controls Area (Toolbar icons)
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Divider(height: 1, color: _borderColor),
-
-                    // Reply permission pill (Image 1, 2)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: InkWell(
-                        onTap: _openVisibilityPicker,
-                        borderRadius: BorderRadius.circular(16),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(_replyVisibilityIcon, color: const Color(0xFF1D9BF0), size: 17),
-                              const SizedBox(width: 8),
-                              Text(
-                                _replyVisibility,
-                                style: const TextStyle(
-                                  color: Color(0xFF1D9BF0),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
                     Divider(height: 1, color: _borderColor),
 
                     // Bottom Icons Toolbar (Photo, Poll, Location, Milestone)
@@ -739,10 +710,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               ),
               child: Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Icon(CupertinoIcons.photo, size: 18, color: _subTextColor),
-                  ),
                   Expanded(
                     child: TextField(
                       controller: _pollControllers[i],
@@ -752,7 +719,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         hintStyle: TextStyle(color: _subTextColor, fontSize: 14),
                         border: InputBorder.none,
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
                   ),
@@ -1020,7 +987,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 onTap: () {
                   setState(() {
                     _replyVisibility = opt['title'] as String;
-                    _replyVisibilityIcon = opt['icon'] as IconData;
                   });
                   Navigator.pop(ctx);
                 },

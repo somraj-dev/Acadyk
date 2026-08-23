@@ -921,33 +921,28 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       ),
     );
 
-    Widget mainRow = IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            width: 46,
-            child: CustomPaint(
-              painter: _MainCommentThreadPainter(hasReplies: hasReplies),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: AssetImage(avatarAsset),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+    Widget mainRow = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 46,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: AssetImage(avatarAsset),
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
           ),
-          Expanded(child: rightContent),
-        ],
-      ),
+        ),
+        Expanded(child: rightContent),
+      ],
     );
 
     return Padding(
@@ -978,120 +973,112 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     required bool hasLiked,
     bool isLastReply = true,
   }) {
-    return IntrinsicHeight(
+    return Padding(
+      padding: EdgeInsets.only(top: 8, bottom: isLastReply ? 8 : 0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 46, // width of parent avatar (36) + gap (10)
-            child: CustomPaint(
-              painter: _ReplyThreadPainter(isLast: isLastReply),
+          const SizedBox(width: 16),
+          Container(
+            width: 2,
+            height: 30,
+            color: const Color(0xFFC7C7C7),
+            margin: const EdgeInsets.only(right: 14),
+          ),
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              image: DecorationImage(
+                image: AssetImage(avatarAsset),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
+          const SizedBox(width: 8),
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(top: 8, bottom: isLastReply ? 8 : 0),
-              child: Row(
+            child: Container(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: AssetImage(avatarAsset),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Flexible(
-                                          child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF191919)), overflow: TextOverflow.ellipsis),
-                                        ),
-                                        if (connectionDegree != null) ...[
-                                          const SizedBox(width: 4),
-                                          Text('• $connectionDegree', style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E))),
-                                        ],
-                                      ],
-                                    ),
-                                    Text(headline, style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  ],
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF191919)), overflow: TextOverflow.ellipsis),
                                 ),
-                              ),
-                              Text(timeAgo, style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E))),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.more_vert, size: 16, color: Color(0xFF5E5E5E)),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          commentWidget,
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    final reply = (_comments[commentIndex]['replies'] as List)[replyIndex];
-                                    if (reply['hasLiked'] == true) {
-                                      reply['hasLiked'] = false;
-                                      reply['likes'] = (reply['likes'] as int) - 1;
-                                    } else {
-                                      reply['hasLiked'] = true;
-                                      reply['likes'] = (reply['likes'] as int) + 1;
-                                    }
-                                  });
-                                },
-                                child: Text(
-                                  'Like',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: hasLiked ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
-                                  ),
-                                ),
-                              ),
-                              if (likeCount != null) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  width: 14, height: 14,
-                                  decoration: const BoxDecoration(color: Color(0xFF0A66C2), shape: BoxShape.circle),
-                                  child: const Icon(Icons.thumb_up, size: 8, color: Colors.white),
-                                ),
-                                const SizedBox(width: 2),
-                                Text(likeCount, style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E))),
+                                if (connectionDegree != null) ...[
+                                  const SizedBox(width: 4),
+                                  Text('• $connectionDegree', style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E))),
+                                ],
                               ],
-                              const SizedBox(width: 14),
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _replyingToCommentIndex = commentIndex;
-                                    _replyingToName = name;
-                                    _commentFocusNode.requestFocus();
-                                  });
-                                },
-                                child: const Text('Reply', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E))),
-                              ),
-                            ],
-                          ),
-                        ],
+                            ),
+                            Text(headline, style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
                       ),
-                    ),
+                      Text(timeAgo, style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E))),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.more_vert, size: 16, color: Color(0xFF5E5E5E)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  commentWidget,
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            final reply = (_comments[commentIndex]['replies'] as List)[replyIndex];
+                            if (reply['hasLiked'] == true) {
+                              reply['hasLiked'] = false;
+                              reply['likes'] = (reply['likes'] as int) - 1;
+                            } else {
+                              reply['hasLiked'] = true;
+                              reply['likes'] = (reply['likes'] as int) + 1;
+                            }
+                          });
+                        },
+                        child: Text(
+                          'Like',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: hasLiked ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
+                          ),
+                        ),
+                      ),
+                      if (likeCount != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          width: 14, height: 14,
+                          decoration: const BoxDecoration(color: Color(0xFF0A66C2), shape: BoxShape.circle),
+                          child: const Icon(Icons.thumb_up, size: 8, color: Colors.white),
+                        ),
+                        const SizedBox(width: 2),
+                        Text(likeCount, style: const TextStyle(fontSize: 11, color: Color(0xFF5E5E5E))),
+                      ],
+                      const SizedBox(width: 14),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _replyingToCommentIndex = commentIndex;
+                            _replyingToName = name;
+                            _commentFocusNode.requestFocus();
+                          });
+                        },
+                        child: const Text('Reply', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF5E5E5E))),
+                      ),
+                    ],
                   ),
                 ],
               ),
