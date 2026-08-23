@@ -204,9 +204,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                   child: ListView(
                                     physics: const AlwaysScrollableScrollPhysics(),
                                     children: [
-                                      // Live Twitter-style Posting Progress Card
-                                      _buildPostingProgressCard(),
-
                                       if (_isLoading)
                                         const FeedSkeleton()
                                       else if (_feedPosts.isEmpty)
@@ -235,6 +232,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       ],
                     ),
                   ),
+
+                  // Live Twitter/X Bottom Posting Banner
+                  _buildBottomUploadingBanner(),
 
                   // 3. Bottom Tab Bar
                   Divider(height: 1, color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E0E0)),
@@ -416,18 +416,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               ),
             )
           else ...[
-            // Header
-            Row(
-              children: const [
-                Text(
-                  'Most relevant',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF374151)),
-                ),
-                Icon(Icons.arrow_drop_down, size: 18, color: Color(0xFF374151)),
-              ],
-            ),
-            const SizedBox(height: 12),
-
             // Recursive Nested Comments List
             for (int i = 0; i < comments.length; i++)
               _buildCommentTreeNode(
@@ -872,12 +860,116 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     required String postText,
     required String? postImage,
     required Map<String, dynamic> accountData,
+    bool isAuthor = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF000000) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final iconColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563);
+    final handleColor = isDark ? const Color(0xFF333639) : const Color(0xFFE2E8F0);
+
+    // If current user is the author of this post, show author management menu (Twitter / X style)
+    if (isAuthor) {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: sheetBg,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (BuildContext sheetContext) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10.0, bottom: 16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Top drag handle
+                  Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: handleColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  _buildAuthorMenuOption(
+                    title: 'Pin to profile',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Pinned to your profile'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                  _buildAuthorMenuOption(
+                    title: 'Content disclosure',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _showContentDisclosureDialog(context);
+                    },
+                  ),
+                  _buildAuthorMenuOption(
+                    title: 'Delete post',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _confirmDeletePost(context, postId);
+                    },
+                  ),
+                  _buildAuthorMenuOption(
+                    title: 'Change who can reply',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _showChangeWhoCanReplyDialog(context, postId);
+                    },
+                  ),
+                  _buildAuthorMenuOption(
+                    title: 'Request Community Note',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Community Note request submitted'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                  _buildAuthorMenuOption(
+                    title: 'View Hidden Replies',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('No hidden replies on this post'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+      return;
+    }
+
     final isSaved = _bookmarkedPosts[postId] ?? false;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white, // Bright theme matching the app
+      backgroundColor: sheetBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -894,7 +986,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: handleColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -905,7 +997,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     _buildTopActionIcon(
                       isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
                       'Save',
-                      color: isSaved ? const Color(0xFF1E88E5) : Colors.black,
+                      color: isSaved ? const Color(0xFF1E88E5) : (isDark ? Colors.white : Colors.black),
                       onTap: () {
                         setState(() {
                           _bookmarkedPosts[postId] = !isSaved;
@@ -916,6 +1008,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     _buildTopActionIcon(
                       CupertinoIcons.repeat,
                       'Repost',
+                      color: isDark ? Colors.white : Colors.black,
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
@@ -942,6 +1035,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     _buildTopActionIcon(
                       CupertinoIcons.paperplane,
                       'Share',
+                      color: isDark ? Colors.white : Colors.black,
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
@@ -991,6 +1085,241 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       const SizedBox(height: 8),
                     ],
                   ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAuthorMenuOption({
+    required String title,
+    required Color textColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16.0,
+            fontWeight: FontWeight.w500,
+            color: textColor,
+            letterSpacing: -0.2,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeletePost(BuildContext context, String postId) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF16181C) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Delete post?',
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        content: Text(
+          'This can’t be undone and it will be removed from your profile, the timeline of any accounts that follow you, and from search results.',
+          style: TextStyle(
+            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+            fontSize: 14,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B), fontWeight: FontWeight.w600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              setState(() {
+                _feedPosts.removeWhere((p) => p['id']?.toString() == postId);
+              });
+              await PostService.deletePost(postId);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Your post was deleted', style: TextStyle(color: Colors.white)),
+                    backgroundColor: Color(0xFF1F2937),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangeWhoCanReplyDialog(BuildContext context, String postId) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF000000) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF333639) : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Text(
+                  'Who can reply?',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Choose who can reply to this post. Anyone mentioned can always reply.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  title: Text('Everyone', style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Anyone can reply to this post'), behavior: SnackBarBehavior.floating));
+                  },
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  title: Text('People you follow', style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Only people you follow can reply'), behavior: SnackBarBehavior.floating));
+                  },
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  title: Text('Only people you mention', style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Only mentioned users can reply'), behavior: SnackBarBehavior.floating));
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showContentDisclosureDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF000000) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF333639) : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Text(
+                  'Content disclosure',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Mark this post if it contains promotional content, AI-generated media, or academic research.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  title: Text('Academic / Research Project', style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marked as Academic Research'), behavior: SnackBarBehavior.floating));
+                  },
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  title: Text('AI-Generated Media', style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marked as AI-Generated'), behavior: SnackBarBehavior.floating));
+                  },
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  title: Text('Promotional / Opportunity', style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marked as Promotional Opportunity'), behavior: SnackBarBehavior.floating));
+                  },
                 ),
               ],
             ),
@@ -1834,100 +2163,85 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   // ------------------------------------------------------------------
-  // LIVE POSTING PROGRESS CARD (Twitter / X Animated Banner)
+  // LIVE POSTING PROGRESS BANNER (Twitter / X Bottom Bar Animation)
   // ------------------------------------------------------------------
-  Widget _buildPostingProgressCard() {
+  Widget _buildBottomUploadingBanner() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bannerBg = isDark ? const Color(0xFF000000) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    const accentBlue = Color(0xFF1D9BF0);
+
     return ValueListenableBuilder<Map<String, dynamic>?>(
       valueListenable: PostService.activePostingNotifier,
       builder: (context, postingState, _) {
         if (postingState == null) return const SizedBox.shrink();
 
         final status = postingState['status']?.toString() ?? 'posting';
-        final isPosting = status == 'posting';
         final isDone = status == 'done';
-        final avatar = postingState['avatar']?.toString() ?? ProfileManager.avatarUrl;
-        final name = postingState['name']?.toString() ?? ProfileManager.name;
-        final initials = name.isNotEmpty ? name.substring(0, min(2, name.length)).toUpperCase() : 'U';
 
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
-            color: _isDark ? const Color(0xFF16181C) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDone ? const Color(0xFF10B981) : const Color(0xFF1D9BF0).withValues(alpha: 0.3),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: (isDone ? const Color(0xFF10B981) : const Color(0xFF1D9BF0)).withValues(alpha: 0.08),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+            color: bannerBg,
+            border: Border(
+              top: BorderSide(
+                color: isDark ? const Color(0xFF2F3336) : const Color(0xFFEFF3F4),
+                width: 1.0,
               ),
-            ],
+            ),
           ),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // User avatar with mini loader
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  _buildAvatar(
-                    initials: initials,
-                    bgColor: const Color(0xFF0F4C81),
-                    size: 38,
-                    isMITS: false,
-                    avatarAsset: avatar,
-                  ),
-                  if (isPosting)
-                    const Positioned.fill(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1D9BF0)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      isDone ? 'Your post was sent' : 'Sending post...',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.2,
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          isDone ? 'Post sent!' : 'Posting to your feed...',
-                          style: TextStyle(
-                            color: isDone ? const Color(0xFF10B981) : textMain,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.5,
-                          ),
+                    GestureDetector(
+                      onTap: () {
+                        if (isDone) {
+                          _pageController.jumpToPage(0);
+                        }
+                        PostService.activePostingNotifier.value = null;
+                      },
+                      child: Text(
+                        isDone ? 'View' : 'Cancel',
+                        style: const TextStyle(
+                          color: accentBlue,
+                          fontSize: 14.0,
+                          fontWeight: FontWeight.w700,
                         ),
-                        if (isDone) ...[
-                          const SizedBox(width: 6),
-                          const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 16),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      isDone ? 'Visible to your connections & feed' : 'Uploading media & synchronizing...',
-                      style: TextStyle(
-                        color: textSub,
-                        fontSize: 12.5,
                       ),
                     ),
                   ],
                 ),
               ),
-              if (isPosting)
+              // Animated horizontal bottom progress bar
+              if (!isDone)
                 const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1D9BF0))),
+                  height: 2.5,
+                  child: LinearProgressIndicator(
+                    backgroundColor: Color(0x261D9BF0),
+                    valueColor: AlwaysStoppedAnimation<Color>(accentBlue),
+                    minHeight: 2.5,
+                  ),
+                )
+              else
+                Container(
+                  height: 2.5,
+                  color: const Color(0xFF10B981),
                 ),
             ],
           ),
@@ -2273,15 +2587,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (authorSubtitle.isNotEmpty &&
-                            authorSubtitle.trim().toLowerCase() != 'just now' &&
-                            authorSubtitle.trim().toLowerCase() != timeAgo.trim().toLowerCase())
-                          Text(
-                            authorSubtitle,
-                            style: TextStyle(color: textSub, fontSize: 11.5),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
                         if (!isNotification && timeAgo.isNotEmpty)
                           Text(
                             timeAgo,
@@ -2297,24 +2602,41 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   authorId: post['author']?['id']?.toString() ?? post['authorId']?.toString(),
                 ),
                 const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: () => _showPostOptionsBottomSheet(
-                    context: context,
-                    postId: postId,
-                    authorName: authorName,
-                    authorHeadline: authorSubtitle,
-                    authorAvatar: mainAvatarAsset,
-                    postText: content,
-                    postImage: postImageUrl,
-                    accountData: {
-                      'name': authorName,
-                      'avatarUrl': mainAvatarAsset,
-                      'dateJoined': 'August 2024',
-                      'location': 'Gwalior, India',
-                      'sharedFollowers': 12,
-                    },
-                  ),
-                  child: Icon(Icons.more_vert, color: textSub, size: 20),
+                Builder(
+                  builder: (context) {
+                    final currentUserId = AuthService.currentUser?.id;
+                    final currentUsername = AuthService.currentUser?.username?.replaceAll('@', '').toLowerCase();
+                    final currentProfileName = ProfileManager.name.trim().toLowerCase();
+                    
+                    final postAuthorId = post['author']?['id']?.toString() ?? post['authorId']?.toString();
+                    final postAuthorUsername = (post['author']?['username'] ?? post['authorHandle'] ?? '').toString().replaceAll('@', '').toLowerCase();
+                    final postAuthorName = (post['authorName'] ?? post['author']?['fullName'] ?? '').toString().trim().toLowerCase();
+
+                    final bool isAuthor = (currentUserId != null && postAuthorId != null && currentUserId == postAuthorId) ||
+                        (currentUsername != null && currentUsername.isNotEmpty && postAuthorUsername == currentUsername) ||
+                        (currentProfileName.isNotEmpty && postAuthorName == currentProfileName);
+
+                    return GestureDetector(
+                      onTap: () => _showPostOptionsBottomSheet(
+                        context: context,
+                        postId: postId,
+                        authorName: authorName,
+                        authorHeadline: authorSubtitle,
+                        authorAvatar: mainAvatarAsset,
+                        postText: content,
+                        postImage: postImageUrl,
+                        isAuthor: isAuthor,
+                        accountData: {
+                          'name': authorName,
+                          'avatarUrl': mainAvatarAsset,
+                          'dateJoined': 'August 2024',
+                          'location': 'Gwalior, India',
+                          'sharedFollowers': 12,
+                        },
+                      ),
+                      child: Icon(Icons.more_vert, color: textSub, size: 20),
+                    );
+                  },
                 ),
               ],
             ),

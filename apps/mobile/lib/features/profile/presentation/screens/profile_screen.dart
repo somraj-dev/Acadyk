@@ -23,6 +23,7 @@ import 'package:path/path.dart' as p;
 import 'add_cover_image_screen.dart';
 import 'profile_showcase.dart';
 import 'club_details_screen.dart';
+import 'user_all_posts_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:acadyk/features/search/presentation/delegates/acadyk_search_delegate.dart';
 import '../../../chat/presentation/screens/direct_message_screen.dart';
@@ -1511,6 +1512,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return userCreatedItems;
   }
 
+  void _openAllUserPostsScreen() {
+    final String name = _profileName ?? widget.userData?['name'] ?? widget.userData?['fullName'] ?? (widget.isOwnProfile ? (ProfileManager.name.isNotEmpty ? ProfileManager.name : 'Acadyk Member') : 'Member');
+    final String bio = _profileBio ?? widget.userData?['headline'] ?? (widget.isOwnProfile ? ProfileManager.bio : '');
+    final String avatar = _profilePhotoUrl ?? widget.userData?['avatar'] ?? widget.userData?['profilePhotoUrl'] ?? (widget.isOwnProfile ? ProfileManager.avatarUrl : '');
+    final String? userId = widget.userData?['id']?.toString() ?? widget.userData?['userId']?.toString();
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => UserAllPostsScreen(
+          userName: name,
+          userBio: bio,
+          userAvatar: avatar,
+          userId: userId,
+          isOwnProfile: widget.isOwnProfile,
+          initialPosts: _userPosts,
+        ),
+      ),
+    );
+  }
+
   Widget _buildFeaturedSection() {
     final items = _getFeaturedItems();
 
@@ -1521,14 +1542,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Listed',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
-                letterSpacing: -0.3,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  'Listed',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _openAllUserPostsScreen,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0A66C2).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text(
+                          'All posts',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0A66C2),
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(Icons.arrow_forward_ios, size: 11, color: Color(0xFF0A66C2)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             Container(
@@ -1564,14 +1616,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Row(
-              children: const [
-                Text(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
                   'Listed',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF0F172A),
                     letterSpacing: -0.3,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _openAllUserPostsScreen,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0A66C2).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text(
+                          'All posts',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0A66C2),
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(Icons.arrow_forward_ios, size: 11, color: Color(0xFF0A66C2)),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1678,53 +1757,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: const Icon(Icons.image, color: Color(0xFF94A3B8), size: 36),
                       ),
                     ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        final nowLiked = !isLiked;
-                        _featuredLikedMap[index] = nowLiked;
-                        _featuredLikesMap[index] = nowLiked ? currentLikes + 1 : currentLikes - 1;
-                      });
-                    },
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: isLiked ? const Color(0xFF0A66C2) : const Color(0xFF64748B),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.thumb_up, size: 11, color: Colors.white),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$currentLikes',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: isLiked ? const Color(0xFF0A66C2) : const Color(0xFF5E5E5E),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  const Text(
-                    'Review post →',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: Color(0xFF0A66C2),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),

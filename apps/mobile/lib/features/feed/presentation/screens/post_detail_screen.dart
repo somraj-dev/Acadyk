@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:acadyk/common/services/post_service.dart';
 import 'package:acadyk/common/services/auth_service.dart';
+import 'package:acadyk/common/services/follow_service.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../profile/presentation/screens/about_account_screen.dart';
 import '../../../profile/presentation/services/profile_manager.dart';
@@ -327,12 +328,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       ],
                                     ],
                                   ),
-                                  Text(
-                                    widget.authorHeadline,
-                                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF5E5E5E)),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
                                   Row(
                                     children: [
                                       Text(
@@ -346,18 +341,49 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 ],
                               ),
                             ),
-                            // Follow button
-                            TextButton.icon(
-                              onPressed: () {},
-                              icon: const Icon(Icons.add, size: 18, color: Color(0xFF0A66C2)),
-                              label: const Text(
-                                'Follow',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0A66C2),
-                                ),
-                              ),
+                            // Follow button (hidden if user is the author of this post)
+                            Builder(
+                              builder: (context) {
+                                final currentUserId = AuthService.currentUser?.id;
+                                final currentUsername = AuthService.currentUser?.username?.replaceAll('@', '').toLowerCase();
+                                final currentProfileName = ProfileManager.name.trim().toLowerCase();
+
+                                final postAuthorId = widget.post?['author']?['id']?.toString() ?? widget.post?['authorId']?.toString();
+                                final postAuthorUsername = (widget.post?['author']?['username'] ?? widget.post?['authorHandle'] ?? '').toString().replaceAll('@', '').toLowerCase();
+                                final postAuthorName = (widget.authorName).trim().toLowerCase();
+
+                                final bool isAuthor = (currentUserId != null && postAuthorId != null && currentUserId == postAuthorId) ||
+                                    (currentUsername != null && currentUsername.isNotEmpty && postAuthorUsername == currentUsername) ||
+                                    (currentProfileName.isNotEmpty && postAuthorName == currentProfileName);
+
+                                if (isAuthor) {
+                                  return const SizedBox.shrink();
+                                }
+
+                                final targetAuthorId = postAuthorId ?? (postAuthorUsername.isNotEmpty ? postAuthorUsername : widget.authorName);
+                                final bool isFollowing = FollowService.getFollowState(targetAuthorId);
+
+                                return TextButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      FollowService.toggleFollow(targetAuthorId, isFollowing);
+                                    });
+                                  },
+                                  icon: Icon(
+                                    isFollowing ? Icons.check : Icons.add,
+                                    size: 16,
+                                    color: isFollowing ? const Color(0xFF64748B) : const Color(0xFF0A66C2),
+                                  ),
+                                  label: Text(
+                                    isFollowing ? 'Following' : 'Follow',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: isFollowing ? const Color(0xFF64748B) : const Color(0xFF0A66C2),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -557,20 +583,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       // ============================
                       // COMMENTS SECTION
                       // ============================
-
-                      // Most relevant dropdown
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                        child: Row(
-                          children: const [
-                            Text(
-                              'Most relevant',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF191919)),
-                            ),
-                            Icon(Icons.arrow_drop_down, size: 20, color: Color(0xFF191919)),
-                          ],
-                        ),
-                      ),
+                      const SizedBox(height: 8),
 
                       // Comments list builder
                       for (int i = 0; i < _comments.length; i++)
@@ -934,10 +947,132 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   void _showPostOptionsBottomSheet(BuildContext context) {
     final postId = widget.post?['id']?.toString() ?? 'detail_post';
     final isSaved = _isPostBookmarked;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF000000) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final iconColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563);
+    final handleColor = isDark ? const Color(0xFF333639) : const Color(0xFFE2E8F0);
+
+    final currentUserId = AuthService.currentUser?.id;
+    final currentUsername = AuthService.currentUser?.username?.replaceAll('@', '').toLowerCase();
+    final currentProfileName = ProfileManager.name.trim().toLowerCase();
+
+    final postAuthorId = widget.post?['author']?['id']?.toString() ?? widget.post?['authorId']?.toString();
+    final postAuthorUsername = (widget.post?['author']?['username'] ?? widget.post?['authorHandle'] ?? '').toString().replaceAll('@', '').toLowerCase();
+    final postAuthorName = (widget.authorName).trim().toLowerCase();
+
+    final bool isAuthor = (currentUserId != null && postAuthorId != null && currentUserId == postAuthorId) ||
+        (currentUsername != null && currentUsername.isNotEmpty && postAuthorUsername == currentUsername) ||
+        (currentProfileName.isNotEmpty && postAuthorName == currentProfileName);
+
+    if (isAuthor) {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: sheetBg,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (BuildContext sheetContext) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10.0, bottom: 16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: handleColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  _buildAuthorMenuTile(
+                    title: 'Pin to profile',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Pinned to your profile'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                  _buildAuthorMenuTile(
+                    title: 'Content disclosure',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Content disclosure settings updated'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                  _buildAuthorMenuTile(
+                    title: 'Delete post',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _confirmDeleteFromDetail(context, postId);
+                    },
+                  ),
+                  _buildAuthorMenuTile(
+                    title: 'Change who can reply',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Reply permissions set to Everyone'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                  _buildAuthorMenuTile(
+                    title: 'Request Community Note',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Community Note request submitted'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                  _buildAuthorMenuTile(
+                    title: 'View Hidden Replies',
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('No hidden replies on this post'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+      return;
+    }
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: sheetBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -953,7 +1088,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: handleColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -963,7 +1098,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     _buildTopActionIcon(
                       isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
                       'Save',
-                      color: isSaved ? const Color(0xFF1E88E5) : Colors.black,
+                      color: isSaved ? const Color(0xFF1E88E5) : (isDark ? Colors.white : Colors.black),
                       onTap: () {
                         setState(() {
                           _isPostBookmarked = !_isPostBookmarked;
@@ -975,6 +1110,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     _buildTopActionIcon(
                       CupertinoIcons.paperplane,
                       'Share',
+                      color: isDark ? Colors.white : Colors.black,
                       onTap: () {
                         Navigator.pop(sheetContext);
                       },
@@ -1016,6 +1152,87 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAuthorMenuTile({
+    required String title,
+    required Color textColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16.0,
+            fontWeight: FontWeight.w500,
+            color: textColor,
+            letterSpacing: -0.2,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteFromDetail(BuildContext context, String postId) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF16181C) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Delete post?',
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        content: Text(
+          'This can’t be undone and it will be removed from your profile, the timeline of any accounts that follow you, and from search results.',
+          style: TextStyle(
+            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+            fontSize: 14,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B), fontWeight: FontWeight.w600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await PostService.deletePost(postId);
+              if (context.mounted) {
+                Navigator.of(context).pop(); // Exit PostDetailScreen
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Your post was deleted', style: TextStyle(color: Colors.white)),
+                    backgroundColor: Color(0xFF1F2937),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
 

@@ -285,7 +285,6 @@ void main() {
 
       expect(find.byType(PostDetailScreen), findsOneWidget);
       expect(find.text('Somraj Lodhi'), findsWidgets);
-      expect(find.text('Founder & CEO @ Acadyk'), findsOneWidget);
       expect(find.text('Excited to unveil the new recursive nested comments feature!'), findsOneWidget);
       expect(find.text('Add a comment...'), findsOneWidget);
       expect(find.byIcon(Icons.send), findsOneWidget);

@@ -1077,14 +1077,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             const SizedBox(height: 16),
             for (final opt in options)
               ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1D9BF0).withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(opt['icon'] as IconData, color: const Color(0xFF1D9BF0), size: 20),
-                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
                 title: Text(opt['title'] as String, style: TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 15)),
                 subtitle: Text(opt['desc'] as String, style: TextStyle(color: _subTextColor, fontSize: 12.5)),
                 trailing: _replyVisibility == opt['title'] ? const Icon(Icons.check, color: Color(0xFF1D9BF0)) : null,

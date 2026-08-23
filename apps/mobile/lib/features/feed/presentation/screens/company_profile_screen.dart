@@ -661,17 +661,6 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: const [
-              Text(
-                'Most relevant',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF374151)),
-              ),
-              Icon(Icons.arrow_drop_down, size: 18, color: Color(0xFF374151)),
-            ],
-          ),
-          const SizedBox(height: 12),
-
           // Comments list
           ..._customComments.asMap().entries.map((entry) {
             final commentIndex = entry.key;
