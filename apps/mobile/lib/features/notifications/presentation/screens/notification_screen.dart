@@ -11,101 +11,30 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   List<Map<String, dynamic>> _notifications = [];
-  bool _isLoading = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _notifications = List.from(_mockNotifications);
     _loadNotifications();
   }
 
-  final List<Map<String, dynamic>> _mockNotifications = const [
-    {
-      'id': 'notif_1',
-      'title': 'Campus Announcement',
-      'body': 'MITS Gwalior released the official timetable for 2026 End-Sem Practicals.',
-      'is_read': false,
-      'created_at': '15m ago',
-      'category': 'Mentions',
-      'sender': {
-        'full_name': 'MITS Gwalior',
-        'username': 'mitsgwalior',
-        'profile_photo_url': 'assets/images/mits_logo.png',
-      }
-    },
-    {
-      'id': 'notif_2',
-      'title': 'New Connection',
-      'body': 'Arjun Patel (GDSC Lead) started following your profile.',
-      'is_read': false,
-      'created_at': '1h ago',
-      'category': 'Followers',
-      'sender': {
-        'full_name': 'Arjun Patel',
-        'username': 'arjunpatel',
-        'profile_photo_url': 'assets/images/somraj_avatar.jpg',
-      }
-    },
-    {
-      'id': 'notif_3',
-      'title': 'Event Invitation',
-      'body': 'You are invited to join MITS HackInit 2026 as a Lead Developer.',
-      'is_read': true,
-      'created_at': '3h ago',
-      'category': 'Invites',
-      'sender': {
-        'full_name': 'GDG Gwalior',
-        'username': 'gdggwalior',
-        'profile_photo_url': 'assets/images/young_entrepreneur.jpg',
-      }
-    },
-    {
-      'id': 'notif_4',
-      'title': 'New Mention',
-      'body': 'Sneha Verma mentioned you in a post: "Big shoutout to @somraj.lodhi for the Quant framework!"',
-      'is_read': true,
-      'created_at': '5h ago',
-      'category': 'Mentions',
-      'sender': {
-        'full_name': 'Sneha Verma',
-        'username': 'snehaverma',
-        'profile_photo_url': 'assets/images/alina_avatar.jpg',
-      }
-    },
-    {
-      'id': 'notif_5',
-      'title': 'Placement Update',
-      'body': 'Your resume was shortlisted by Quantaforze Corp for Senior Software Engineer.',
-      'is_read': true,
-      'created_at': '1d ago',
-      'category': 'Invites',
-      'sender': {
-        'full_name': 'Placement Cell MITS',
-        'username': 'placementcell',
-        'profile_photo_url': 'assets/images/mits_logo.png',
-      }
-    },
-  ];
-
   Future<void> _loadNotifications() async {
-    if (_notifications.isEmpty) {
-      setState(() {
-        _isLoading = true;
-      });
-    }
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final data = await NotificationService.getNotifications();
       if (mounted) {
         setState(() {
-          _notifications = data.isNotEmpty ? data : _mockNotifications;
+          _notifications = data;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _notifications = _mockNotifications;
+          _notifications = [];
           _isLoading = false;
         });
       }
@@ -235,7 +164,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 final item = _notifications[index];
                                 final sender = item['sender'] as Map<String, dynamic>? ?? {};
                                 final senderName = sender['full_name'] ?? 'Acadyk User';
-                                final senderAvatar = sender['profile_photo_url'] ?? 'assets/images/somraj_avatar.jpg';
+                                final senderAvatar = sender['profile_photo_url'] ?? '';
                                 final senderUsername = sender['username'] ?? 'user';
                                 final isUnread = !(item['is_read'] ?? false);
                                 final title = item['title'] ?? 'Notification';

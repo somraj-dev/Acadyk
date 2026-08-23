@@ -247,12 +247,13 @@ class PublicCommunityScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
+                  const CircleAvatar(
                     radius: 15,
-                    backgroundImage: const AssetImage('assets/images/somraj_avatar.jpg'),
+                    backgroundColor: Color(0xFF0F4C81),
+                    child: Text('M', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 8),
-                  Text('somrajlodhi', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text('Community Member', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14)),
                   const SizedBox(width: 6),
                   Text('4h • 1.2k views', style: TextStyle(color: secondaryTextColor, fontSize: 12.5)),
                 ],

@@ -3195,43 +3195,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final Set<String> sentToHandles = {};
     String filterText = '';
 
-    final List<Map<String, dynamic>> mockConnections = [
-      {
-        'name': 'Somraj Dev',
-        'handle': 'somraj_dev',
-        'headline': 'Founder @ Nexure Agents & Black Torque',
-        'avatar': 'assets/images/user_avatar.jpg',
-        'color': const Color(0xFF1565C0),
-      },
-      {
-        'name': 'Dharmik Patel',
-        'handle': 'dharmik_patel',
-        'headline': 'Full Stack Developer | Open Source Contributor',
-        'avatar': 'assets/images/dharmik_avatar.jpg',
-        'color': const Color(0xFF0D9488),
-      },
-      {
-        'name': 'Alina Sprongole',
-        'handle': 'alina_sprongole',
-        'headline': 'Tech Lead & Engineer @ Google',
-        'avatar': 'assets/images/alina_avatar.jpg',
-        'color': const Color(0xFF7C3AED),
-      },
-      {
-        'name': 'Christian Pickett',
-        'handle': 'christian_pickett',
-        'headline': 'Co-founder @ Orthogonal (YC W26)',
-        'avatar': 'assets/images/dharmik_avatar.jpg',
-        'color': const Color(0xFFEA580C),
-      },
-      {
-        'name': 'Somraj Ghosh',
-        'handle': 'somraj_ghosh',
-        'headline': 'Founder & CEO @ Layrda',
-        'avatar': 'assets/images/somraj_avatar.jpg',
-        'color': const Color(0xFF0284C7),
-      },
-    ];
+    List<Map<String, dynamic>> connections = [];
+    FollowService.getFollowing('me').then((following) {
+      if (following.isNotEmpty) {
+        connections = following.map((f) => {
+          'name': f['fullName'] ?? f['full_name'] ?? f['username'] ?? 'Member',
+          'handle': f['username'] ?? 'user',
+          'headline': f['headline'] ?? f['bio'] ?? 'Student @ Acadyk',
+          'avatar': f['profilePhotoUrl'] ?? f['profile_photo_url'] ?? '',
+          'color': const Color(0xFF1565C0),
+        }).toList();
+      }
+    }).catchError((_) {});
 
     showModalBottomSheet(
       context: context,
@@ -3243,7 +3218,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (BuildContext ctx) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            final filteredList = mockConnections.where((c) {
+            final filteredList = connections.where((c) {
               final n = (c['name'] as String).toLowerCase();
               final h = (c['handle'] as String).toLowerCase();
               return n.contains(filterText) || h.contains(filterText);

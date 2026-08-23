@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/auth/firebase_auth_service.dart';
 import '../../features/profile/presentation/services/profile_manager.dart';
 import 'profile_service.dart';
+import 'post_service.dart';
 
 class AuthUser {
   final String id;
@@ -237,6 +238,7 @@ class AuthService {
     } catch (_) {}
     _currentUser = null;
     ProfileManager.resetToDefaults();
+    PostService.clearAllCaches();
   }
 
   static Future<void> deleteAccount() async {
@@ -246,5 +248,6 @@ class AuthService {
     } catch (_) {}
     _currentUser = null;
     ProfileManager.resetToDefaults();
+    PostService.clearAllCaches();
   }
 }

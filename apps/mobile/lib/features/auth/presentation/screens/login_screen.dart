@@ -13,27 +13,22 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  bool _isEmailNotEmpty = false;
+  bool _isUsernameNotEmpty = false;
   bool _isPasswordNotEmpty = false;
-  bool _usePassword = true;
-  bool _isSignUp = false;
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   bool get _isButtonEnabled {
-    if (_usePassword) {
-      return _isEmailNotEmpty && _isPasswordNotEmpty;
-    }
-    return _isEmailNotEmpty;
+    return _isUsernameNotEmpty && _isPasswordNotEmpty;
   }
 
   Widget _buildHeaderLogos() {
@@ -48,18 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // Acadyk Logo
           const LogoWidget(size: 32, text: 'Acadyk'),
 
-          // Cross Sign (✕)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10.0),
-            child: Text(
-              '✕',
-              style: TextStyle(
-                color: Color(0xFF9CA3AF),
-                fontSize: 13.0,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+          const SizedBox(width: 16.0),
 
           // MITS-DU Logo + Text
           Image.asset(
@@ -190,48 +174,28 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handlePasswordAction() async {
-    final email = _emailController.text.trim();
+    final usernameInput = _usernameController.text.trim();
     final password = _passwordController.text.trim();
     final messenger = ScaffoldMessenger.of(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
+    // Support both raw username (e.g. 0901CS221001 or somraj.lodhi) and full email
+    final email = usernameInput.contains('@') ? usernameInput : '$usernameInput@mitsgwl.ac.in';
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      if (_usePassword) {
-        if (_isSignUp) {
-          await authProvider.signUp(
-            email: email,
-            password: password,
-          );
-          if (!mounted) return;
-          messenger.showSnackBar(
-            const SnackBar(content: Text('Registration successful! Please check your email for verification.')),
-          );
-          setState(() {
-            _isSignUp = false;
-          });
-        } else {
-          await authProvider.signIn(
-            email: email,
-            password: password,
-          );
-          if (!mounted) return;
-          try {
-            themeProvider.setThemeMode(ThemeMode.light);
-          } catch (_) {}
-        }
-      } else {
-        if (!mounted) return;
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('OTP login coming soon. Please use password or Google sign-in.'),
-          ),
-        );
-      }
+      await authProvider.signIn(
+        email: email,
+        password: password,
+      );
+      if (!mounted) return;
+      try {
+        themeProvider.setThemeMode(ThemeMode.light);
+      } catch (_) {}
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
@@ -288,22 +252,24 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleForgotPassword() async {
-    final email = _emailController.text.trim();
+    final input = _usernameController.text.trim();
     final messenger = ScaffoldMessenger.of(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    if (email.isEmpty) {
+    if (input.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Please enter your email to reset password.')),
+        const SnackBar(content: Text('Please enter your username or email to reset password.')),
       );
       return;
     }
+
+    final email = input.contains('@') ? input : '$input@mitsgwl.ac.in';
 
     try {
       await authProvider.sendPasswordReset(email);
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Password reset link sent to your email!')),
+        const SnackBar(content: Text('Password reset link sent to your institutional email!')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -315,9 +281,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildActionButton() {
     final bool isActive = _isButtonEnabled;
-    final String buttonLabel = _usePassword
-        ? (_isSignUp ? 'Sign Up' : 'Login')
-        : 'Continue with OTP';
 
     return SizedBox(
       width: double.infinity,
@@ -339,7 +302,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
               )
             : Text(
-                buttonLabel,
+                'Login',
                 style: TextStyle(
                   color: isActive ? Colors.white : const Color(0xFF94A3B8),
                   fontSize: 15.0,
@@ -376,6 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 28.0),
                   Text(
                     'Your Next Opportunity\nStarts Here',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: isCompact ? 23.0 : 26.0,
                       fontWeight: FontWeight.w700,
@@ -386,6 +350,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 8.0),
                   const Text(
                     'Log in to discover competitions, jobs, and internships built for you.',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.0,
                       color: Color(0xFF4B5563),
@@ -419,11 +384,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20.0),
 
-                  // Email Label
+                  // Username Label
                   Row(
                     children: const [
                       Text(
-                        'Email',
+                        'Username',
                         style: TextStyle(
                           fontSize: 14.0,
                           fontWeight: FontWeight.w500,
@@ -442,15 +407,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 7.0),
                   TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
+                    controller: _usernameController,
+                    keyboardType: TextInputType.text,
                     onChanged: (val) {
                       setState(() {
-                        _isEmailNotEmpty = val.trim().isNotEmpty;
+                        _isUsernameNotEmpty = val.trim().isNotEmpty;
                       });
                     },
                     decoration: InputDecoration(
-                      hintText: 'Enter Email',
+                      hintText: 'Enter Username',
                       hintStyle: const TextStyle(
                         color: Color(0xFF9CA3AF),
                         fontSize: 14.0,
@@ -468,134 +433,75 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: const TextStyle(fontSize: 14.5, color: Colors.black),
                   ),
 
-                  if (_usePassword) ...[
-                    const SizedBox(height: 16.0),
-                    // Password Label
-                    Row(
-                      children: const [
-                        Text(
-                          'Password',
-                          style: TextStyle(
-                            fontSize: 14.0,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF374151),
-                          ),
-                        ),
-                        Text(
-                          ' *',
-                          style: TextStyle(
-                            fontSize: 14.0,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFFEF4444),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 7.0),
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      onChanged: (val) {
-                        setState(() {
-                          _isPasswordNotEmpty = val.trim().isNotEmpty;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Enter Password',
-                        hintStyle: const TextStyle(
-                          color: Color(0xFF9CA3AF),
+                  const SizedBox(height: 16.0),
+                  // Password Label
+                  Row(
+                    children: const [
+                      Text(
+                        'Password',
+                        style: TextStyle(
                           fontSize: 14.0,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 13.0),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                          borderSide: const BorderSide(color: Color(0xFFD1D5DB), width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                          borderSide: const BorderSide(color: Color(0xFF0F4C81), width: 1.5),
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF374151),
                         ),
                       ),
-                      style: const TextStyle(fontSize: 14.5, color: Colors.black),
+                      Text(
+                        ' *',
+                        style: TextStyle(
+                          fontSize: 14.0,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFEF4444),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7.0),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    onChanged: (val) {
+                      setState(() {
+                        _isPasswordNotEmpty = val.trim().isNotEmpty;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Enter Password',
+                      hintStyle: const TextStyle(
+                        color: Color(0xFF9CA3AF),
+                        fontSize: 14.0,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 13.0),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                        borderSide: const BorderSide(color: Color(0xFFD1D5DB), width: 1.0),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                        borderSide: const BorderSide(color: Color(0xFF0F4C81), width: 1.5),
+                      ),
                     ),
-                  ],
+                    style: const TextStyle(fontSize: 14.5, color: Colors.black),
+                  ),
 
-                  const SizedBox(height: 8.0),
-                  // Login via OTP / Password link
+                  const SizedBox(height: 10.0),
+                  // Forgot Password link
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _usePassword = !_usePassword;
-                        });
-                      },
+                      onPressed: _handleForgotPassword,
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: Text(
-                        _usePassword ? 'Login via OTP' : 'Login via Password',
-                        style: const TextStyle(
+                      child: const Text(
+                        'Forgot Password?',
+                        style: TextStyle(
                           color: Color(0xFF0F4C81),
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                  ),
-
-                  // Forgot Password & Sign Up links row
-                  const SizedBox(height: 12.0),
-                  SizedBox(
-                    width: double.infinity,
-                    child: Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 8.0,
-                      runSpacing: 4.0,
-                      children: [
-                        if (_usePassword && !_isSignUp)
-                          TextButton(
-                            onPressed: _handleForgotPassword,
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Text(
-                              'Forgot Password?',
-                              style: TextStyle(
-                                color: Color(0xFF0F4C81),
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          )
-                        else
-                          const SizedBox.shrink(),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _isSignUp = !_isSignUp;
-                            });
-                          },
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: Text(
-                            _isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up",
-                            style: const TextStyle(
-                              color: Color(0xFF0F4C81),
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                   const SizedBox(height: 20.0),

@@ -99,25 +99,32 @@ class AuthService(
             throw UnauthorizedException("Access restricted: Only verified @mits.ac.in institutional email addresses are permitted.")
         }
 
-        // 2. CORE BUSINESS RULE: User MUST be pre-provisioned in PostgreSQL by Admin
+        // 2. Resolve User - Auto-provision genuine institutional accounts if not pre-seeded
         val userByEmail = userRepository.findByEmail(email).or { userRepository.findByCollegeEmail(email) }
 
-        if (userByEmail.isEmpty) {
-            auditService.logAuthEvent(
-                action = "UNPROVISIONED_USER_REJECTED",
-                userId = null,
-                email = email,
-                ipAddress = ip,
-                success = false,
-                details = "Access denied: Account $email has not been provisioned by the college administrator in PostgreSQL.",
+        val user = if (userByEmail.isEmpty) {
+            val parsed = enrollmentNumberService.parseCollegeEmail(email)
+            val newUser = UserEntity(
                 firebaseUid = verified.uid,
-                deviceInfo = deviceInfo,
-                appVersion = appVersion
+                email = email,
+                collegeEmail = email,
+                enrollmentNumber = parsed.enrollmentNumber.ifBlank { email.substringBefore("@").uppercase() },
+                degree = parsed.degree,
+                branch = parsed.branch,
+                joiningYear = parsed.joiningYear,
+                role = Role.STUDENT,
+                accountStatus = AccountStatus.ACTIVE,
+                isActive = true,
+                isEmailVerified = verified.isEmailVerified,
+                profileCompleted = true,
+                firstLoginAt = Instant.now(),
+                lastLoginAt = Instant.now(),
+                lastSignInAt = Instant.now()
             )
-            throw UnauthorizedException("Account not found. Please contact your college administration to register your institutional account.")
+            userRepository.save(newUser)
+        } else {
+            userByEmail.get()
         }
-
-        val user = userByEmail.get()
 
         // 3. Security Verification: Ensure Firebase UID is not bound to a DIFFERENT institutional account
         val userByUid = userRepository.findByFirebaseUid(verified.uid)

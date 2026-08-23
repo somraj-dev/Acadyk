@@ -21,6 +21,7 @@ import '../../../profile/presentation/screens/student_id_card_screen.dart';
 import '../../../profile/presentation/services/profile_manager.dart';
 import '../../../../common/services/auth_service.dart';
 import '../../../../common/services/follow_service.dart';
+import '../../../../common/services/search_service.dart';
 import '../../../chat/presentation/screens/message_center_screen.dart';
 import '../../../../common/widgets/acadyk_top_header_bar.dart';
 import '../../../../shared/widgets/skeleton/skeleton.dart';
@@ -396,7 +397,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         : (ProfileManager.bio.isNotEmpty ? ProfileManager.bio : 'Student @ Acadyk');
     final currentUserAvatar = ProfileManager.avatarUrl.isNotEmpty
         ? ProfileManager.avatarUrl
-        : 'assets/images/somraj_avatar.jpg';
+        : '';
 
     return Container(
       color: const Color(0xFFF9FAFB),
@@ -516,7 +517,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         final text = val.trim();
                         final String pName = (postAuthorName ?? '').trim().toLowerCase();
                         final String cName = currentUserName.trim().toLowerCase();
-                        final bool isPostAuthor = pName.isEmpty || pName == cName || pName == 'developer' || pName == 'somraj lodhi';
+                        final bool isPostAuthor = pName.isNotEmpty && (pName == cName || pName == AuthService.currentUser?.username?.toLowerCase());
                         final bool isReplying = _replyingToPostId == postId && _replyingToCommentNode != null;
                         final String? parentId = isReplying ? _replyingToCommentNode!['id']?.toString() : null;
                         final String replyText = (isReplying && _replyingToName != null && _replyingToName != _replyingToCommentNode!['name'])
@@ -578,7 +579,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     final text = val.trim();
                     final String pName = (postAuthorName ?? '').trim().toLowerCase();
                     final String cName = currentUserName.trim().toLowerCase();
-                    final bool isPostAuthor = pName.isEmpty || pName == cName || pName == 'developer' || pName == 'somraj lodhi';
+                    final bool isPostAuthor = pName.isNotEmpty && (pName == cName || pName == AuthService.currentUser?.username?.toLowerCase());
                     final bool isReplying = _replyingToPostId == postId && _replyingToCommentNode != null;
                     final String? parentId = isReplying ? _replyingToCommentNode!['id']?.toString() : null;
                     final String replyText = (isReplying && _replyingToName != null && _replyingToName != _replyingToCommentNode!['name'])
@@ -1471,7 +1472,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             child: StatusAvatar(
               avatarAsset: ProfileManager.avatarUrl.isNotEmpty
                   ? ProfileManager.avatarUrl
-                  : 'assets/images/somraj_avatar.jpg',
+                  : '',
               radius: 13.5,
               enableTapToViewStory: false,
               onDefaultTap: () {
@@ -2911,10 +2912,20 @@ class _RepostScreenState extends State<RepostScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // User Avatar
-                          const CircleAvatar(
+                          CircleAvatar(
                             radius: 20,
-                            backgroundImage: AssetImage('assets/images/somraj_avatar.jpg'),
+                            backgroundColor: const Color(0xFF0F4C81),
+                            backgroundImage: ProfileManager.avatarUrl.isNotEmpty
+                                ? (ProfileManager.avatarUrl.startsWith('http')
+                                    ? NetworkImage(ProfileManager.avatarUrl) as ImageProvider
+                                    : AssetImage(ProfileManager.avatarUrl))
+                                : null,
+                            child: ProfileManager.avatarUrl.isEmpty
+                                ? Text(
+                                    ProfileManager.name.isNotEmpty ? ProfileManager.name.substring(0, 1).toUpperCase() : 'U',
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  )
+                                : null,
                           ),
                           const SizedBox(width: 12),
                           // Text Input
@@ -3439,21 +3450,55 @@ class _SharePostScreenState extends State<SharePostScreen> {
   Color get textSub => _isDark ? Color(0xFF71767B) : Color(0xFF536471);
   Color get iconColor => _isDark ? Colors.white : Colors.black87;
   Color get borderDivider => _isDark ? Color(0xFF2F3336) : Color(0xFFEFF3F4);
+  List<Map<String, dynamic>> users = [];
+  bool _isLoadingUsers = true;
 
-  final List<Map<String, dynamic>> users = const [
-    {'name': 'ਆਯੂਸ਼', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
-    {'name': 'ANURAG GURJAR💖', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
-    {'name': 'Vandna', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
-    {'name': 'ujjwal', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
-    {'name': 'The club🔥', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
-    {'name': 'Gaurav Rajawat', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': true},
-    {'name': 'vishal', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
-    {'name': 'Tanishk pal', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
-    {'name': 'संकल्प सिंह', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': true},
-    {'name': 'm.s.lodhi5', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
-    {'name': 'Abhay Gupta', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
-    {'name': 'Tannya♠', 'avatar': 'assets/images/somraj_avatar.jpg', 'isOnline': false},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    try {
+      final following = await FollowService.getFollowing('me');
+      if (mounted) {
+        setState(() {
+          users = following.map((f) => {
+            'name': f['fullName'] ?? f['full_name'] ?? f['username'] ?? 'User',
+            'avatar': f['profilePhotoUrl'] ?? f['profile_photo_url'] ?? '',
+            'isOnline': false,
+          }).toList();
+          _isLoadingUsers = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingUsers = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _searchUsers(String q) async {
+    if (q.trim().isEmpty) {
+      _loadUsers();
+      return;
+    }
+    try {
+      final results = await SearchService.searchProfiles(q);
+      if (mounted) {
+        setState(() {
+          users = results.map((f) => {
+            'name': f['fullName'] ?? f['full_name'] ?? f['username'] ?? 'User',
+            'avatar': f['profilePhotoUrl'] ?? f['profile_photo_url'] ?? '',
+            'isOnline': false,
+          }).toList();
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -3487,9 +3532,10 @@ class _SharePostScreenState extends State<SharePostScreen> {
                           alignment: Alignment.center,
                           child: TextField(
                             style: const TextStyle(color: Colors.black),
+                            onChanged: _searchUsers,
                             decoration: InputDecoration(
                               icon: Icon(Icons.search, color: Colors.grey[600], size: 20),
-                              hintText: 'Search',
+                              hintText: 'Search people to share with...',
                               hintStyle: TextStyle(color: Colors.grey[600], fontSize: 15),
                               border: InputBorder.none,
                               isDense: true,
@@ -3503,72 +3549,92 @@ class _SharePostScreenState extends State<SharePostScreen> {
 
                 // Grid of users
                 Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16.0),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 24,
-                      childAspectRatio: 0.85,
-                    ),
-                    itemCount: users.length,
-                    itemBuilder: (context, index) {
-                      final u = users[index];
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Post shared with ${u['name']}!'),
-                              backgroundColor: const Color(0xFF262626),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        },
-                        child: Column(
-                          children: [
-                            Stack(
-                              children: [
-                                CircleAvatar(
-                                  radius: 36,
-                                  backgroundColor: const Color(0xFFECECE8),
-                                  backgroundImage: AssetImage(u['avatar']),
-                                ),
-                                if (u['isOnline'] == true)
-                                  Positioned(
-                                    right: 2,
-                                    bottom: 2,
-                                    child: Container(
-                                      width: 14,
-                                      height: 14,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF4CAF50),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white, width: 2),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Expanded(
+                  child: _isLoadingUsers
+                      ? const Center(child: CircularProgressIndicator())
+                      : (users.isEmpty
+                          ? const Center(
                               child: Text(
-                                u['name'],
-                                style: TextStyle(
-                                  color: textMain,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                'No connections found.\nSearch for users above.',
                                 textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                            )
+                          : GridView.builder(
+                              padding: const EdgeInsets.all(16.0),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 24,
+                                childAspectRatio: 0.85,
+                              ),
+                              itemCount: users.length,
+                              itemBuilder: (context, index) {
+                                final u = users[index];
+                                final avatarUrl = u['avatar']?.toString() ?? '';
+                                final name = u['name']?.toString() ?? 'User';
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Post shared with $name!'),
+                                        backgroundColor: const Color(0xFF262626),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  },
+                                  child: Column(
+                                    children: [
+                                      Stack(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 36,
+                                            backgroundColor: const Color(0xFF0F4C81),
+                                            backgroundImage: avatarUrl.isNotEmpty
+                                                ? (avatarUrl.startsWith('http')
+                                                    ? NetworkImage(avatarUrl) as ImageProvider
+                                                    : AssetImage(avatarUrl))
+                                                : null,
+                                            child: avatarUrl.isEmpty
+                                                ? Text(
+                                                    name.isNotEmpty ? name.substring(0, 1).toUpperCase() : 'U',
+                                                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                                                  )
+                                                : null,
+                                          ),
+                                          if (u['isOnline'] == true)
+                                            Positioned(
+                                              right: 2,
+                                              bottom: 2,
+                                              child: Container(
+                                                width: 14,
+                                                height: 14,
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFF4CAF50),
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(color: Colors.white, width: 2),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        name,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF191919),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            )),
                 ),
 
                 // Bottom bar

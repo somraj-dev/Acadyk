@@ -34,7 +34,7 @@ class PostDetailScreen extends StatefulWidget {
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
   bool _isPostLiked = false;
-  int _postLikesCount = 537;
+  int _postLikesCount = 0;
   bool _isPostBookmarked = false;
 
   // Replying state
@@ -56,12 +56,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   String get _currentUserAvatar => ProfileManager.avatarUrl.isNotEmpty
       ? ProfileManager.avatarUrl
-      : 'assets/images/somraj_avatar.jpg';
+      : '';
 
   @override
   void initState() {
     super.initState();
     _comments = [];
+    final rawLikes = widget.post?['likes'] ?? widget.post?['likesCount'] ?? 0;
+    _postLikesCount = rawLikes is num ? rawLikes.toInt() : (int.tryParse(rawLikes.toString()) ?? 0);
+    _isPostLiked = widget.post?['isLiked'] == true || (widget.post != null && PostService.isLiked(widget.post!['id'].toString()));
+    _isPostBookmarked = widget.post?['isBookmarked'] == true || (widget.post != null && PostService.isBookmarked(widget.post!['id'].toString()));
     if (widget.post != null) {
       _loadRealComments();
     }
@@ -115,8 +119,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final currentUserAvatar = _currentUserAvatar;
 
     final bool isPostAuthor = (widget.authorName.trim().isNotEmpty && widget.authorName.trim().toLowerCase() == currentUserName.trim().toLowerCase()) ||
-        (widget.authorName.toLowerCase() == 'developer') ||
-        (widget.authorName.toLowerCase() == 'somraj lodhi');
+        (widget.authorName.toLowerCase() == AuthService.currentUser?.username?.toLowerCase());
 
     if (widget.post != null) {
       String? parentId;
@@ -488,10 +491,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                               children: [
                                 GestureDetector(
                                   onTap: () {
+                                    final current = _isPostLiked;
                                     setState(() {
-                                      _isPostLiked = !_isPostLiked;
+                                      _isPostLiked = !current;
                                       _postLikesCount += _isPostLiked ? 1 : -1;
                                     });
+                                    if (widget.post != null) {
+                                      PostService.toggleLike(widget.post!['id'].toString(), current);
+                                    }
                                   },
                                   child: Icon(
                                     _isPostLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
@@ -528,9 +535,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             ),
                             GestureDetector(
                               onTap: () {
+                                final current = _isPostBookmarked;
                                 setState(() {
-                                  _isPostBookmarked = !_isPostBookmarked;
+                                  _isPostBookmarked = !current;
                                 });
+                                if (widget.post != null) {
+                                  PostService.toggleBookmark(widget.post!['id'].toString(), current);
+                                }
                               },
                               child: Icon(
                                 _isPostBookmarked ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,

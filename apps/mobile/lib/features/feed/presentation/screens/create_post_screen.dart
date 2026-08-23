@@ -262,7 +262,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Widget build(BuildContext context) {
     final String avatarUrl = ProfileManager.avatarUrl.isNotEmpty
         ? ProfileManager.avatarUrl
-        : 'assets/images/somraj_avatar.jpg';
+        : '';
     final name = ProfileManager.name.isNotEmpty
         ? ProfileManager.name
         : (AuthService.currentUser?.fullName != null && AuthService.currentUser!.fullName!.isNotEmpty

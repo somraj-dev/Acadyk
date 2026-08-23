@@ -2,6 +2,7 @@ package com.acadyk.config
 
 import com.acadyk.security.FirebaseAuthFilter
 import com.acadyk.security.RateLimitingFilter
+import org.springframework.http.HttpMethod
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
@@ -39,6 +40,7 @@ class SecurityConfig(
                         "/ws/**",
                         "/actuator/**"
                     ).permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/posts/**").permitAll()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter::class.java)

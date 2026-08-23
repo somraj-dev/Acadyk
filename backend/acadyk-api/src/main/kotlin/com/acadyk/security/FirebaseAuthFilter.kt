@@ -36,11 +36,50 @@ class FirebaseAuthFilter(
             if (verifiedUser != null) {
                 val email = verifiedUser.email.trim().lowercase()
 
-                // Look up verified user in DB - strictly requiring pre-provisioning
-                val user = userRepository.findByFirebaseUid(verifiedUser.uid)
+                // Look up verified user in DB - auto-provision if genuine college domain
+                var user = userRepository.findByFirebaseUid(verifiedUser.uid)
                     .or { userRepository.findByEmail(email) }
                     .or { userRepository.findByCollegeEmail(email) }
                     .orElse(null)
+
+                if (user == null && (enrollmentNumberService.isCollegeEmail(email) || email.endsWith("@mitsgwl.ac.in") || email.endsWith("@mits.ac.in"))) {
+                    try {
+                        val parsed = enrollmentNumberService.parseCollegeEmail(email)
+                        val newUser = UserEntity(
+                            firebaseUid = verifiedUser.uid,
+                            email = email,
+                            collegeEmail = email,
+                            enrollmentNumber = parsed.enrollmentNumber.ifBlank { email.substringBefore("@").uppercase() },
+                            degree = parsed.degree,
+                            branch = parsed.branch,
+                            joiningYear = parsed.joiningYear,
+                            role = Role.STUDENT,
+                            accountStatus = AccountStatus.ACTIVE,
+                            isActive = true,
+                            isEmailVerified = verifiedUser.isEmailVerified,
+                            profileCompleted = true,
+                            firstLoginAt = Instant.now(),
+                            lastLoginAt = Instant.now(),
+                            lastSignInAt = Instant.now()
+                        )
+                        user = userRepository.save(newUser)
+
+                        profileRepository.save(
+                            ProfileEntity(
+                                id = user.id,
+                                userId = user.id,
+                                username = user.enrollmentNumber ?: email.substringBefore("@"),
+                                fullName = verifiedUser.name ?: user.enrollmentNumber ?: email.substringBefore("@"),
+                                profilePhotoUrl = verifiedUser.picture,
+                                collegeName = "Madhav Institute of Technology & Science, Gwalior",
+                                major = user.branch ?: "Engineering",
+                                graduationYear = (user.joiningYear ?: 2025) + 4
+                            )
+                        )
+                    } catch (_: Exception) {
+                        user = userRepository.findByEmail(email).or { userRepository.findByCollegeEmail(email) }.orElse(null)
+                    }
+                }
 
                 if (user != null && user.deletedAt == null && user.isActive && user.accountStatus == AccountStatus.ACTIVE) {
                     val curUid = user.firebaseUid

@@ -11,17 +11,20 @@ class PostService {
   static final ValueNotifier<int> feedChangeNotifier = ValueNotifier<int>(0);
   static final ValueNotifier<Map<String, dynamic>?> activePostingNotifier = ValueNotifier<Map<String, dynamic>?>(null);
 
-  // In-memory created posts for immediate and persistent session state
-  static final List<Map<String, dynamic>> _inMemoryPosts = [];
-  static final Map<String, List<Map<String, dynamic>>> _postComments = {};
-  static final Map<String, bool> _likedPosts = {};
-  static final Map<String, int> _likeCounts = {};
-  static final Map<String, bool> _bookmarkedPosts = {};
+  // Client-side UI preferences (not social data)
   static final Set<String> _hiddenPostIds = {};
   static final Set<String> _hiddenAuthors = {};
 
+  // Optimistic UI caches — shadow backend state for instant feedback
+  // Backend response always wins when it arrives.
+  static final Map<String, bool> _optimisticLikes = {};
+  static final Map<String, int> _optimisticLikeCounts = {};
+  static final Map<String, bool> _optimisticBookmarks = {};
+
   static Set<String> get hiddenPostIds => Set.unmodifiable(_hiddenPostIds);
   static Set<String> get hiddenAuthors => Set.unmodifiable(_hiddenAuthors);
+
+  // ─── Post Visibility (Client-Side Preferences) ──────────────────────
 
   static bool isPostHidden(Map<String, dynamic> post) {
     final postId = post['id']?.toString();
@@ -71,7 +74,8 @@ class PostService {
     feedChangeNotifier.value = feedChangeNotifier.value + 1;
   }
 
-  /// Format timestamp into readable relative time (e.g., "Just now", "2m ago", "1h ago", "3d ago")
+  // ─── Time Formatting ────────────────────────────────────────────────
+
   static String formatTimeAgo(dynamic timestamp) {
     if (timestamp == null) return 'Just now';
     if (timestamp is String) {
@@ -91,7 +95,87 @@ class PostService {
     return 'Just now';
   }
 
-  /// Start posting asynchronously with live progress animation
+  // ─── Feed Posts (Backend Source of Truth) ────────────────────────────
+
+  /// Fetch feed posts from PostgreSQL via Spring Boot REST API.
+  /// Backend is the ONLY source of truth — no local seed posts.
+  static Future<List<Map<String, dynamic>>> getFeedPosts({int limit = 20, int offset = 0}) async {
+    try {
+      final safeLimit = limit > 0 ? limit : 20;
+      final safeOffset = offset >= 0 ? offset : 0;
+      final int page = (safeOffset / safeLimit).floor();
+
+      final response = await ApiClient.get('/posts', queryParameters: {
+        'page': page,
+        'size': safeLimit,
+      });
+
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        List<Map<String, dynamic>> posts = [];
+
+        if (resData is Map && resData.containsKey('data')) {
+          final payload = resData['data'];
+          if (payload is Map && payload.containsKey('content') && payload['content'] is List) {
+            posts = List<Map<String, dynamic>>.from(payload['content']);
+          } else if (payload is List) {
+            posts = List<Map<String, dynamic>>.from(payload);
+          }
+        } else if (resData is List) {
+          posts = List<Map<String, dynamic>>.from(resData);
+        }
+
+        return posts
+            .map((p) => _normalizePostData(p))
+            .where((p) => !isPostHidden(p))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('[PostService] Error fetching feed: $e');
+    }
+    return [];
+  }
+
+  /// Get posts authored by a specific user from the backend.
+  static Future<List<Map<String, dynamic>>> getUserPosts(String userId) async {
+    try {
+      final response = await ApiClient.get('/posts/user/$userId');
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        List<Map<String, dynamic>> posts = [];
+
+        if (resData is Map && resData.containsKey('data')) {
+          final payload = resData['data'];
+          if (payload is Map && payload.containsKey('content') && payload['content'] is List) {
+            posts = List<Map<String, dynamic>>.from(payload['content']);
+          } else if (payload is List) {
+            posts = List<Map<String, dynamic>>.from(payload);
+          }
+        } else if (resData is List) {
+          posts = List<Map<String, dynamic>>.from(resData);
+        }
+
+        return posts
+            .map((p) => _normalizePostData(p))
+            .where((p) => !isPostHidden(p))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('[PostService] Error fetching user posts: $e');
+    }
+    return [];
+  }
+
+  /// Get current user's own posts — returns empty synchronously.
+  /// Callers should use getUserPosts(userId) or getFeedPosts() instead.
+  static List<Map<String, dynamic>> getUserCreatedPosts() {
+    return [];
+  }
+
+  // ─── Post Creation ──────────────────────────────────────────────────
+
+  /// Start posting asynchronously with live progress animation.
+  /// Uses optimistic UI: shows post immediately, then syncs with backend.
   static Future<Map<String, dynamic>> startPostingAsync({
     required String content,
     String? postType,
@@ -116,11 +200,15 @@ class PostService {
   }) async {
     final authorName = ProfileManager.name.isNotEmpty
         ? ProfileManager.name
-        : (AuthService.currentUser?.fullName ?? 'Acadyk Member');
+        : (AuthService.currentUser?.fullName != null && AuthService.currentUser!.fullName!.isNotEmpty
+            ? AuthService.currentUser!.fullName!
+            : 'Acadyk Member');
     final authorAvatar = ProfileManager.avatarUrl.isNotEmpty
         ? ProfileManager.avatarUrl
-        : 'assets/images/somraj_avatar.jpg';
-    final authorBio = ProfileManager.bio;
+        : '';
+    final authorBio = ProfileManager.bio.isNotEmpty
+        ? ProfileManager.bio
+        : (AuthService.currentUser?.branch != null ? '${AuthService.currentUser?.degree ?? "B.Tech"} in ${AuthService.currentUser?.branch}' : 'Student @ MITS Gwalior');
     final authorHandle = ProfileManager.username.isNotEmpty
         ? ProfileManager.username
         : (AuthService.currentUser?.username ?? 'user');
@@ -151,28 +239,32 @@ class PostService {
       }
     }
 
-    final newId = 'post_${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = 'post_${DateTime.now().millisecondsSinceEpoch}';
     final authorInitials = authorName.isNotEmpty ? authorName.substring(0, min(2, authorName.length)).toUpperCase() : 'U';
 
-    final fullPost = {
-      'id': newId,
+    final resolvedPostType = postType ?? (poll != null ? 'poll' : (gifUrl != null ? 'gif' : (uploadedImageUrl != null || imageBytes != null ? 'image' : 'text')));
+
+    // 2. Optimistic local post (shown immediately before backend confirms)
+    final optimisticPost = {
+      'id': tempId,
       'author': {
         'id': AuthService.currentUser?.id ?? '',
         'username': authorHandle,
         'fullName': authorName,
         'headline': authorBio,
         'profilePhotoUrl': authorAvatar,
+        'email': AuthService.currentUser?.email ?? '',
       },
       'authorName': authorName,
-      'authorSubtitle': authorBio.isNotEmpty ? authorBio : 'Student @ Acadyk',
+      'authorSubtitle': authorBio,
       'authorInitials': authorInitials,
       'authorBgColor': 0xFF0F4C81,
       'authorAvatar': authorAvatar,
-      'isVerified': true,
-      'badgeType': 'gold',
+      'isVerified': false,
+      'badgeType': 'none',
       'timeAgo': 'Just now',
       'content': content,
-      'postType': postType ?? (poll != null ? 'poll' : (gifUrl != null ? 'gif' : (uploadedImageUrl != null || imageBytes != null ? 'image' : 'text'))),
+      'postType': resolvedPostType,
       'imageUrl': uploadedImageUrl,
       'imageBytes': imageBytes,
       'gifUrl': gifUrl,
@@ -193,31 +285,60 @@ class PostService {
         'isOfficial': isOfficialCollab ?? false,
       },
       'likes': 0,
+      'likesCount': 0,
       'comments': 0,
+      'commentsCount': 0,
       'isLiked': false,
       'isBookmarked': false,
       'createdAt': DateTime.now().toIso8601String(),
     };
 
-    // Prepend to in-memory list
-    _inMemoryPosts.insert(0, fullPost);
-
-    // Call backend API gracefully
+    // 3. Try to create on backend
+    Map<String, dynamic> finalPost = optimisticPost;
     try {
-      await ApiClient.post('/posts', data: {
+      final response = await ApiClient.post('/posts', data: {
         'content': content,
-        'postType': fullPost['postType'],
+        'postType': resolvedPostType,
+        if (uploadedImageUrl != null) 'imageUrl': uploadedImageUrl,
         if (uploadedImageUrl != null) 'mediaUrls': [uploadedImageUrl],
         if (location != null) 'location': location,
       });
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resData = response.data;
+        Map<String, dynamic>? createdData;
+        if (resData is Map && resData.containsKey('data')) {
+          createdData = resData['data'] as Map<String, dynamic>?;
+        } else if (resData is Map) {
+          createdData = Map<String, dynamic>.from(resData);
+        }
+        if (createdData != null) {
+          finalPost = _normalizePostData(createdData);
+          // Carry over client-only fields
+          finalPost['imageBytes'] = imageBytes;
+          finalPost['gifUrl'] = gifUrl;
+          finalPost['poll'] = poll;
+          finalPost['milestone'] = milestone;
+          if (isCollab) {
+            finalPost['isCollab'] = true;
+            finalPost['collabAuthorName'] = collabAuthorName;
+            finalPost['collabAuthorSubtitle'] = collabAuthorSubtitle;
+            finalPost['collabAuthorAvatar'] = collabAuthorAvatar;
+            finalPost['collabAuthorInitials'] = collabAuthorInitials;
+            finalPost['collabAuthorBgColor'] = collabAuthorBgColor;
+            finalPost['collabAuthorHandle'] = collabAuthorHandle;
+            finalPost['collabAuthorId'] = collabAuthorId;
+          }
+        }
+      }
     } catch (e) {
-      debugPrint('[PostService] Backend create post note: $e');
+      debugPrint('[PostService] Backend create post error: $e');
     }
 
-    // Notify done and refresh feed
+    // 4. Notify done and refresh feed
     activePostingNotifier.value = {
       'status': 'done',
-      'post': fullPost,
+      'post': finalPost,
     };
     notifyFeedChanged();
 
@@ -228,97 +349,256 @@ class PostService {
       }
     });
 
-    return fullPost;
+    return finalPost;
   }
 
-  /// Vote on an interactive poll in the feed
-  static void votePoll(String postId, int optionIndex) {
-    for (int i = 0; i < _inMemoryPosts.length; i++) {
-      if (_inMemoryPosts[i]['id']?.toString() == postId) {
-        final poll = _inMemoryPosts[i]['poll'] as Map<String, dynamic>?;
-        if (poll != null) {
-          final options = poll['options'] as List<dynamic>?;
-          if (options != null && optionIndex >= 0 && optionIndex < options.length) {
-            final currentVotes = (options[optionIndex]['votes'] as num?)?.toInt() ?? 0;
-            options[optionIndex]['votes'] = currentVotes + 1;
-            final total = (poll['totalVotes'] as num?)?.toInt() ?? 0;
-            poll['totalVotes'] = total + 1;
-            poll['userVotedIndex'] = optionIndex;
-            notifyFeedChanged();
-          }
-        }
-        break;
-      }
+  /// Create post (alternative API used by some screens)
+  static Future<Map<String, dynamic>> createPost(
+    String content, {
+    String? authorName,
+    String? authorBio,
+    String? authorAvatar,
+    String? authorHandle,
+    String? postType,
+    String? imageUrl,
+    File? imageFile,
+  }) async {
+    String? uploadedImageUrl = imageUrl;
+    final currentUser = AuthService.currentUser;
+
+    if (imageFile != null && currentUser != null) {
+      uploadedImageUrl = await StorageService.uploadPostImage(currentUser.id, imageFile);
     }
+
+    return startPostingAsync(
+      content: content,
+      postType: postType,
+      imageUrl: uploadedImageUrl,
+    );
   }
 
-  /// Get feed posts directly from PostgreSQL backend via Spring Boot REST API
-  static Future<List<Map<String, dynamic>>> getFeedPosts({int limit = 20, int offset = 0}) async {
-    List<Map<String, dynamic>> backendPosts = [];
-    try {
-      final safeLimit = limit > 0 ? limit : 20;
-      final safeOffset = offset >= 0 ? offset : 0;
-      final int page = (safeOffset / safeLimit).floor();
+  // ─── Post Update & Delete ───────────────────────────────────────────
 
-      final response = await ApiClient.get('/posts', queryParameters: {
-        'page': page,
-        'size': safeLimit,
+  /// Update a post on the backend.
+  static Future<Map<String, dynamic>?> updatePost(
+    String postId, {
+    String? content,
+    String? postType,
+    String? imageUrl,
+  }) async {
+    try {
+      final response = await ApiClient.put('/posts/$postId', data: {
+        if (content != null) 'content': content,
+        if (postType != null) 'postType': postType,
+        if (imageUrl != null) 'imageUrl': imageUrl,
       });
 
       if (response.statusCode == 200) {
         final resData = response.data;
         if (resData is Map && resData.containsKey('data')) {
-          final payload = resData['data'];
-          if (payload is Map && payload.containsKey('content') && payload['content'] is List) {
-            backendPosts = List<Map<String, dynamic>>.from(payload['content']);
-          } else if (payload is List) {
-            backendPosts = List<Map<String, dynamic>>.from(payload);
-          }
-        } else if (resData is List) {
-          backendPosts = List<Map<String, dynamic>>.from(resData);
+          notifyFeedChanged();
+          return _normalizePostData(resData['data'] as Map<String, dynamic>);
         }
       }
     } catch (e) {
-      debugPrint('[PostService] Error fetching feed posts from backend: $e');
+      debugPrint('[PostService] Error updating post: $e');
     }
-
-    final normalized = backendPosts.map((p) => _normalizePostData(p)).toList();
-    // Merge any locally created memory posts at the top
-    final memoryPostIds = _inMemoryPosts.map((p) => p['id']?.toString()).toSet();
-    final nonDuplicateBackend = normalized.where((p) => !memoryPostIds.contains(p['id']?.toString())).toList();
-    return [..._inMemoryPosts, ...nonDuplicateBackend].where((p) => !isPostHidden(p)).toList();
+    notifyFeedChanged();
+    return null;
   }
 
-  /// Get posts authored by a specific user
-  static Future<List<Map<String, dynamic>>> getUserPosts(String userId) async {
-    List<Map<String, dynamic>> backendPosts = [];
+  /// Delete a post from the backend.
+  static Future<void> deletePost(String postId) async {
     try {
-      final response = await ApiClient.get('/posts/user/$userId');
+      await ApiClient.delete('/posts/$postId');
+    } catch (e) {
+      debugPrint('[PostService] Error deleting post: $e');
+    }
+    notifyFeedChanged();
+  }
+
+  // ─── Likes (Backend + Optimistic UI) ────────────────────────────────
+
+  /// Toggle like on a post. Uses optimistic UI with backend sync.
+  static Future<bool> toggleLike(String postId, bool currentLikeState) async {
+    final newState = !currentLikeState;
+
+    // Optimistic update
+    _optimisticLikes[postId] = newState;
+    final currentCount = _optimisticLikeCounts[postId] ?? 0;
+    _optimisticLikeCounts[postId] = newState ? currentCount + 1 : max(0, currentCount - 1);
+    notifyFeedChanged();
+
+    // Sync with backend
+    try {
+      final response = await ApiClient.post('/posts/$postId/like');
       if (response.statusCode == 200) {
         final resData = response.data;
         if (resData is Map && resData.containsKey('data')) {
-          final payload = resData['data'];
-          if (payload is Map && payload.containsKey('content') && payload['content'] is List) {
-            backendPosts = List<Map<String, dynamic>>.from(payload['content']);
-          } else if (payload is List) {
-            backendPosts = List<Map<String, dynamic>>.from(payload);
-          }
-        } else if (resData is List) {
-          backendPosts = List<Map<String, dynamic>>.from(resData);
+          final data = resData['data'] as Map<String, dynamic>;
+          final serverLiked = data['isLiked'] ?? data['liked'] ?? newState;
+          final serverCount = data['likesCount'] ?? data['likeCount'] ?? _optimisticLikeCounts[postId];
+          _optimisticLikes[postId] = serverLiked is bool ? serverLiked : newState;
+          if (serverCount is num) _optimisticLikeCounts[postId] = serverCount.toInt();
+          notifyFeedChanged();
+          return _optimisticLikes[postId]!;
         }
       }
     } catch (e) {
-      debugPrint('[PostService] Error fetching user posts: $e');
+      debugPrint('[PostService] Error toggling like: $e');
+      // Rollback optimistic update on failure
+      _optimisticLikes[postId] = currentLikeState;
+      _optimisticLikeCounts[postId] = currentCount;
+      notifyFeedChanged();
+      return currentLikeState;
     }
-    return backendPosts.map((p) => _normalizePostData(p)).where((p) => !isPostHidden(p)).toList();
+
+    return newState;
   }
 
-  /// Get user's own created posts for Profile "Listed"
-  static List<Map<String, dynamic>> getUserCreatedPosts() {
-    return _inMemoryPosts.where((p) => !isPostHidden(p)).toList();
+  /// Check if post is liked (optimistic cache)
+  static bool isLiked(String postId) {
+    return _optimisticLikes[postId] ?? false;
   }
 
-  /// Normalize post data structure between backend response and UI
+  /// Get like count (optimistic cache or default)
+  static int getLikeCount(String postId, int defaultCount) {
+    return _optimisticLikeCounts[postId] ?? defaultCount;
+  }
+
+  // ─── Bookmarks (Backend + Optimistic UI) ────────────────────────────
+
+  /// Toggle bookmark on a post. Uses optimistic UI with backend sync.
+  static Future<bool> toggleBookmark(String postId, [bool? currentBookmarkState]) async {
+    final current = currentBookmarkState ?? (_optimisticBookmarks[postId] ?? false);
+    final newState = !current;
+
+    // Optimistic update
+    _optimisticBookmarks[postId] = newState;
+    notifyFeedChanged();
+
+    // Sync with backend
+    try {
+      final response = await ApiClient.post('/posts/$postId/bookmark');
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          final data = resData['data'] as Map<String, dynamic>;
+          final serverBookmarked = data['isBookmarked'] ?? data['bookmarked'] ?? newState;
+          _optimisticBookmarks[postId] = serverBookmarked is bool ? serverBookmarked : newState;
+          notifyFeedChanged();
+          return _optimisticBookmarks[postId]!;
+        }
+      }
+    } catch (e) {
+      debugPrint('[PostService] Error toggling bookmark: $e');
+      _optimisticBookmarks[postId] = current;
+      notifyFeedChanged();
+      return current;
+    }
+
+    return newState;
+  }
+
+  /// Check if post is bookmarked
+  static bool isBookmarked(String postId) {
+    return _optimisticBookmarks[postId] ?? false;
+  }
+
+  // ─── Comments (Backend Source of Truth) ──────────────────────────────
+
+  /// Get comments for a post from the backend.
+  static Future<List<Map<String, dynamic>>> getComments(String postId) async {
+    try {
+      final response = await ApiClient.get('/posts/$postId/comments');
+      if (response.statusCode == 200) {
+        final resData = response.data;
+        List<Map<String, dynamic>> comments = [];
+
+        if (resData is Map && resData.containsKey('data')) {
+          final payload = resData['data'];
+          if (payload is Map && payload.containsKey('content') && payload['content'] is List) {
+            comments = List<Map<String, dynamic>>.from(payload['content']);
+          } else if (payload is List) {
+            comments = List<Map<String, dynamic>>.from(payload);
+          }
+        } else if (resData is List) {
+          comments = List<Map<String, dynamic>>.from(resData);
+        }
+
+        return comments.map((c) => _normalizeCommentData(c, postId)).toList();
+      }
+    } catch (e) {
+      debugPrint('[PostService] Error fetching comments: $e');
+    }
+    return [];
+  }
+
+  /// Add a comment to a post via the backend.
+  static Future<Map<String, dynamic>?> addComment(
+    String postId,
+    String content, {
+    String? parentId,
+  }) async {
+    // Optimistic comment for immediate display
+    final optimistic = {
+      'id': 'comment_${DateTime.now().millisecondsSinceEpoch}',
+      'postId': postId,
+      'content': content,
+      'authorName': ProfileManager.name.isNotEmpty ? ProfileManager.name : 'You',
+      'authorAvatar': ProfileManager.avatarUrl,
+      'authorId': AuthService.currentUser?.id ?? '',
+      'authorHeadline': ProfileManager.bio,
+      'timeAgo': 'Just now',
+      'likes': 0,
+      'likesCount': 0,
+      'isLiked': false,
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+
+    try {
+      final response = await ApiClient.post('/posts/$postId/comments', data: {
+        'content': content,
+        if (parentId != null) 'parentId': parentId,
+      });
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resData = response.data;
+        if (resData is Map && resData.containsKey('data')) {
+          final serverComment = _normalizeCommentData(resData['data'] as Map<String, dynamic>, postId);
+          notifyFeedChanged();
+          return serverComment;
+        }
+      }
+    } catch (e) {
+      debugPrint('[PostService] Error adding comment: $e');
+    }
+
+    // Return optimistic comment if backend failed
+    notifyFeedChanged();
+    return optimistic;
+  }
+
+  /// Delete a comment from the backend.
+  static Future<void> deleteComment(String postId, String commentId) async {
+    try {
+      await ApiClient.delete('/posts/$postId/comments/$commentId');
+    } catch (e) {
+      debugPrint('[PostService] Error deleting comment: $e');
+    }
+    notifyFeedChanged();
+  }
+
+  // ─── Poll Voting ────────────────────────────────────────────────────
+
+  /// Vote on a poll (extend to backend when poll API exists)
+  static void votePoll(String postId, int optionIndex) {
+    notifyFeedChanged();
+  }
+
+  // ─── Data Normalization ─────────────────────────────────────────────
+
+  /// Normalize backend post response to UI widget format.
   static Map<String, dynamic> _normalizePostData(Map<String, dynamic> post) {
     final author = post['author'] is Map ? post['author'] as Map : null;
     final id = post['id']?.toString() ?? 'post_${DateTime.now().millisecondsSinceEpoch}';
@@ -337,26 +617,48 @@ class PostService {
     final taggedPeople = post['taggedPeople'] as List<dynamic>?;
     final postType = post['postType']?.toString() ?? post['type']?.toString() ?? (poll != null ? 'poll' : (imageUrl != null || imageBytes != null ? 'image' : 'text'));
 
-    final rawLikes = _likeCounts[id] ?? post['likesCount'] ?? post['likes'] ?? 0;
-    final int likes = (rawLikes is num) ? rawLikes.toInt() : (int.tryParse(rawLikes.toString()) ?? 0);
+    // Use optimistic cache if available, otherwise backend values
+    final rawLikes = post['likesCount'] ?? post['likes'] ?? 0;
+    final int backendLikes = (rawLikes is num) ? rawLikes.toInt() : (int.tryParse(rawLikes.toString()) ?? 0);
+    final int likes = _optimisticLikeCounts.containsKey(id) ? _optimisticLikeCounts[id]! : backendLikes;
+    if (!_optimisticLikeCounts.containsKey(id)) {
+      _optimisticLikeCounts[id] = backendLikes;
+    }
 
-    final rawComments = _postComments[id]?.length ?? post['commentsCount'] ?? post['comments'] ?? 0;
+    final rawComments = post['commentsCount'] ?? post['comments'] ?? 0;
     final int comments = (rawComments is num) ? rawComments.toInt() : (int.tryParse(rawComments.toString()) ?? 0);
 
-    final isLiked = _likedPosts[id] ?? (post['isLiked'] == true);
+    final backendLiked = post['isLiked'] == true || post['liked'] == true;
+    final isLiked = _optimisticLikes.containsKey(id) ? _optimisticLikes[id]! : backendLiked;
+    if (!_optimisticLikes.containsKey(id)) {
+      _optimisticLikes[id] = backendLiked;
+    }
+
+    final backendBookmarked = post['isBookmarked'] == true || post['bookmarked'] == true;
+    final isBookmarked = _optimisticBookmarks.containsKey(id) ? _optimisticBookmarks[id]! : backendBookmarked;
+    if (!_optimisticBookmarks.containsKey(id)) {
+      _optimisticBookmarks[id] = backendBookmarked;
+    }
+
     final rawTimestamp = post['createdAt'] ?? post['timeAgo'];
     final formattedTime = formatTimeAgo(rawTimestamp);
 
     return {
       'id': id,
-      'author': author,
+      'author': author != null ? Map<String, dynamic>.from(author) : {
+        'id': post['authorId']?.toString() ?? '',
+        'fullName': authorName,
+        'username': post['authorHandle']?.toString() ?? '',
+        'headline': authorSubtitle,
+        'profilePhotoUrl': authorAvatar,
+      },
       'authorName': authorName,
       'authorSubtitle': authorSubtitle,
       'authorAvatar': authorAvatar,
       'authorInitials': post['authorInitials'] ?? authorInitials,
       'authorBgColor': post['authorBgColor'] ?? 0xFF0F4C81,
-      'isVerified': post['isVerified'] ?? true,
-      'badgeType': post['badgeType'] ?? 'gold',
+      'isVerified': post['isVerified'] ?? false,
+      'badgeType': post['badgeType'] ?? 'none',
       'content': content,
       'imageUrl': imageUrl,
       'imageBytes': imageBytes,
@@ -366,9 +668,13 @@ class PostService {
       'taggedPeople': taggedPeople,
       'postType': postType,
       'likes': likes,
+      'likesCount': likes,
       'comments': comments,
+      'commentsCount': comments,
       'isLiked': isLiked,
+      'isBookmarked': isBookmarked,
       'timeAgo': formattedTime,
+      'createdAt': post['createdAt']?.toString(),
       'type': post['postType'] ?? post['type'] ?? 'student',
       'isCollab': post['isCollab'] == true,
       'collabAuthorName': post['collabAuthorName'] ?? post['collabName'],
@@ -382,322 +688,36 @@ class PostService {
     };
   }
 
-  /// Create a new post and persist to PostgreSQL backend
-  static Future<Map<String, dynamic>> createPost(
-    String content, {
-    String? authorName,
-    String? authorBio,
-    String? authorAvatar,
-    String? authorHandle,
-    String? postType,
-    String? imageUrl,
-    File? imageFile,
-  }) async {
-    final currentUser = AuthService.currentUser;
-    String? uploadedImageUrl = imageUrl;
-
-    // Upload image to backend storage if provided
-    if (imageFile != null && currentUser != null) {
-      uploadedImageUrl = await StorageService.uploadPostImage(currentUser.id, imageFile);
-    }
-
-    // Call REST endpoint on Spring Boot backend
-    final response = await ApiClient.post('/posts', data: {
-      'content': content,
-      'postType': postType ?? (uploadedImageUrl != null ? 'image' : 'text'),
-      if (uploadedImageUrl != null) 'imageUrl': uploadedImageUrl,
-      if (uploadedImageUrl != null) 'mediaUrls': [uploadedImageUrl],
-    });
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final resData = response.data;
-      Map<String, dynamic>? createdData;
-      if (resData is Map && resData.containsKey('data')) {
-        createdData = resData['data'] as Map<String, dynamic>?;
-      } else if (resData is Map) {
-        createdData = resData as Map<String, dynamic>?;
-      }
-
-      if (createdData != null) {
-        final normalized = _normalizePostData(createdData);
-        _inMemoryPosts.insert(0, normalized);
-        notifyFeedChanged();
-        return normalized;
-      }
-    }
-
-    final resolvedName = authorName ?? (ProfileManager.name.isNotEmpty ? ProfileManager.name : (currentUser?.fullName ?? 'You'));
-    final resolvedAvatar = authorAvatar ?? (ProfileManager.avatarUrl.isNotEmpty ? ProfileManager.avatarUrl : '');
-    final resolvedBio = authorBio ?? ProfileManager.bio;
-    final resolvedHandle = authorHandle ?? (ProfileManager.username.isNotEmpty ? ProfileManager.username : (currentUser?.username ?? 'user'));
-    final newId = 'local_post_${DateTime.now().millisecondsSinceEpoch}';
-    final authorInitials = resolvedName.isNotEmpty ? resolvedName.substring(0, 1).toUpperCase() : 'U';
-
-    final fullPost = {
-      'id': newId,
-      'author': {
-        'id': currentUser?.id ?? '',
-        'username': resolvedHandle,
-        'fullName': resolvedName,
-        'headline': resolvedBio,
-        'profilePhotoUrl': resolvedAvatar,
-      },
-      'authorName': resolvedName,
-      'authorSubtitle': resolvedBio.isNotEmpty ? resolvedBio : 'Student @ Acadyk',
-      'authorInitials': authorInitials,
-      'authorBgColor': 0xFF0F4C81,
-      'authorAvatar': resolvedAvatar,
-      'isVerified': true,
-      'badgeType': 'gold',
-      'timeAgo': 'Just now',
-      'content': content,
-      'postType': uploadedImageUrl != null ? 'image' : (postType ?? 'text'),
-      'imageUrl': uploadedImageUrl,
-      'likes': 0,
-      'comments': 0,
-      'isLiked': false,
-      'isBookmarked': false,
-      'createdAt': DateTime.now().toIso8601String(),
-    };
-
-    _inMemoryPosts.insert(0, fullPost);
-    notifyFeedChanged();
-    return fullPost;
-  }
-
-  /// Delete a post
-  static Future<void> deletePost(String postId) async {
-    _inMemoryPosts.removeWhere((p) => p['id']?.toString() == postId);
-    try {
-      await ApiClient.delete('/posts/$postId');
-    } catch (e) {
-      debugPrint('[PostService] Error deleting post from backend: $e');
-    }
-    notifyFeedChanged();
-  }
-
-  /// Toggle like on a post
-  static Future<bool> toggleLike(String postId, bool currentLikeState) async {
-    final newState = !currentLikeState;
-    _likedPosts[postId] = newState;
-
-    final currentLikes = _likeCounts[postId] ?? 0;
-    _likeCounts[postId] = newState ? (currentLikes + 1) : (currentLikes > 0 ? currentLikes - 1 : 0);
-
-    for (int i = 0; i < _inMemoryPosts.length; i++) {
-      if (_inMemoryPosts[i]['id']?.toString() == postId) {
-        _inMemoryPosts[i]['isLiked'] = newState;
-        _inMemoryPosts[i]['likes'] = _likeCounts[postId];
-        break;
-      }
-    }
-
-    try {
-      await ApiClient.post('/posts/$postId/like');
-    } catch (e) {
-      debugPrint('[PostService] Error toggling like on backend: $e');
-    }
-
-    notifyFeedChanged();
-    return newState;
-  }
-
-  /// Get comments for a post
-  static Future<List<Map<String, dynamic>>> getComments(String postId) async {
-    List<Map<String, dynamic>> backendComments = [];
-    try {
-      final response = await ApiClient.get('/posts/$postId/comments');
-      if (response.statusCode == 200) {
-        final resData = response.data;
-        if (resData is Map && resData.containsKey('data')) {
-          final payload = resData['data'];
-          if (payload is Map && payload.containsKey('content') && payload['content'] is List) {
-            backendComments = List<Map<String, dynamic>>.from(payload['content']);
-          } else if (payload is List) {
-            backendComments = List<Map<String, dynamic>>.from(payload);
-          }
-        } else if (resData is List) {
-          backendComments = List<Map<String, dynamic>>.from(resData);
-        }
-      }
-    } catch (e) {
-      debugPrint('[PostService] Error getting comments from backend: $e');
-    }
-
-    final normalizedBackend = backendComments.map((c) {
-      final author = c['author'] is Map ? c['author'] as Map : null;
-      return {
-        'id': c['id']?.toString() ?? '',
-        'postId': postId,
-        'content': c['content']?.toString() ?? '',
-        'authorName': author?['fullName']?.toString() ?? author?['username']?.toString() ?? 'Acadyk Member',
-        'authorAvatar': author?['profilePhotoUrl']?.toString() ?? '',
-        'authorHeadline': author?['headline']?.toString() ?? '',
-        'timeAgo': formatTimeAgo(c['createdAt']),
-        'likes': c['likesCount'] ?? 0,
-        'isLiked': false,
-        'createdAt': c['createdAt']?.toString() ?? '',
-      };
-    }).toList();
-
-    final local = _postComments[postId] ?? [];
-    return [...local, ...normalizedBackend];
-  }
-
-  /// Add comment to a post
-  static Future<Map<String, dynamic>?> addComment(
-    String postId,
-    String content, {
-    String? parentId,
-  }) async {
-    final authorName = ProfileManager.name;
-    final authorAvatar = ProfileManager.avatarUrl;
-
-    Map<String, dynamic>? createdCommentData;
-    try {
-      final response = await ApiClient.post('/posts/$postId/comments', data: {
-        'content': content,
-        'parentId': parentId,
-      });
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final resData = response.data;
-        if (resData is Map && resData.containsKey('data')) {
-          createdCommentData = resData['data'] as Map<String, dynamic>?;
-        }
-      }
-    } catch (e) {
-      debugPrint('[PostService] Error adding comment to backend: $e');
-    }
-
-    final author = createdCommentData?['author'] is Map ? createdCommentData!['author'] as Map : null;
-    final newComment = {
-      'id': createdCommentData?['id']?.toString() ?? 'comment_${DateTime.now().millisecondsSinceEpoch}',
+  /// Normalize a comment from backend response.
+  static Map<String, dynamic> _normalizeCommentData(Map<String, dynamic> c, String postId) {
+    final author = c['author'] is Map ? c['author'] as Map : null;
+    return {
+      'id': c['id']?.toString() ?? '',
       'postId': postId,
-      'content': content,
-      'authorName': author?['fullName']?.toString() ?? (authorName.isNotEmpty ? authorName : 'You'),
-      'authorAvatar': author?['profilePhotoUrl']?.toString() ?? authorAvatar,
-      'authorHeadline': ProfileManager.bio,
-      'timeAgo': 'Just now',
-      'likes': 0,
-      'isLiked': false,
-      'createdAt': DateTime.now().toIso8601String(),
+      'content': c['content']?.toString() ?? '',
+      'authorName': author?['fullName']?.toString() ?? author?['username']?.toString() ?? 'Acadyk Member',
+      'authorAvatar': author?['profilePhotoUrl']?.toString() ?? '',
+      'authorId': author?['id']?.toString() ?? c['authorId']?.toString() ?? '',
+      'authorHeadline': author?['headline']?.toString() ?? '',
+      'timeAgo': formatTimeAgo(c['createdAt']),
+      'likes': c['likesCount'] ?? c['likes'] ?? 0,
+      'likesCount': c['likesCount'] ?? c['likes'] ?? 0,
+      'isLiked': c['isLiked'] == true,
+      'createdAt': c['createdAt']?.toString() ?? '',
+      'parentId': c['parentId']?.toString(),
     };
-
-    if (!_postComments.containsKey(postId)) {
-      _postComments[postId] = [];
-    }
-    _postComments[postId]!.insert(0, newComment);
-
-    for (int i = 0; i < _inMemoryPosts.length; i++) {
-      if (_inMemoryPosts[i]['id']?.toString() == postId) {
-        final currentCount = (_inMemoryPosts[i]['comments'] as num?)?.toInt() ?? 0;
-        _inMemoryPosts[i]['comments'] = currentCount + 1;
-        break;
-      }
-    }
-
-    final currentLikes = _likeCounts[postId] ?? 0;
-    _likeCounts[postId] = currentLikes;
-
-    notifyFeedChanged();
-    return newComment;
   }
 
-  /// Delete a comment
-  static Future<void> deleteComment(String postId, String commentId) async {
-    if (_postComments.containsKey(postId)) {
-      _postComments[postId]!.removeWhere((c) => c['id']?.toString() == commentId);
-    }
+  // ─── State Cleanup ──────────────────────────────────────────────────
 
-    for (int i = 0; i < _inMemoryPosts.length; i++) {
-      if (_inMemoryPosts[i]['id']?.toString() == postId) {
-        final currentCount = (_inMemoryPosts[i]['comments'] as num?)?.toInt() ?? 0;
-        _inMemoryPosts[i]['comments'] = max(0, currentCount - 1);
-        break;
-      }
-    }
-
-    try {
-      await ApiClient.delete('/posts/$postId/comments/$commentId');
-    } catch (e) {
-      debugPrint('[PostService] Error deleting comment on backend: $e');
-    }
-
-    notifyFeedChanged();
-  }
-
-  /// Update a post
-  static Future<Map<String, dynamic>?> updatePost(
-    String postId, {
-    String? content,
-    String? postType,
-    String? imageUrl,
-  }) async {
-    for (int i = 0; i < _inMemoryPosts.length; i++) {
-      if (_inMemoryPosts[i]['id']?.toString() == postId) {
-        if (content != null) _inMemoryPosts[i]['content'] = content;
-        if (postType != null) _inMemoryPosts[i]['postType'] = postType;
-        if (imageUrl != null) _inMemoryPosts[i]['imageUrl'] = imageUrl;
-        break;
-      }
-    }
-
-    try {
-      final response = await ApiClient.put('/posts/$postId', data: {
-        if (content != null) 'content': content,
-        if (postType != null) 'postType': postType,
-        if (imageUrl != null) 'imageUrl': imageUrl,
-      });
-
-      if (response.statusCode == 200) {
-        final resData = response.data;
-        if (resData is Map && resData.containsKey('data')) {
-          return resData['data'] as Map<String, dynamic>?;
-        }
-      }
-    } catch (e) {
-      debugPrint('[PostService] Error updating post on backend: $e');
-    }
-
-    notifyFeedChanged();
-    return null;
-  }
-
-  /// Toggle bookmark on a post
-  static Future<bool> toggleBookmark(String postId, [bool? currentBookmarkState]) async {
-    final current = currentBookmarkState ?? (_bookmarkedPosts[postId] ?? false);
-    final newState = !current;
-    _bookmarkedPosts[postId] = newState;
-
-    for (int i = 0; i < _inMemoryPosts.length; i++) {
-      if (_inMemoryPosts[i]['id']?.toString() == postId) {
-        _inMemoryPosts[i]['isBookmarked'] = newState;
-        break;
-      }
-    }
-
-    try {
-      await ApiClient.post('/posts/$postId/bookmark');
-    } catch (e) {
-      debugPrint('[PostService] Error toggling bookmark on backend: $e');
-    }
-
-    notifyFeedChanged();
-    return newState;
-  }
-
-  /// Check if post is bookmarked
-  static bool isBookmarked(String postId) {
-    return _bookmarkedPosts[postId] ?? false;
-  }
-
-  /// Check if post is liked
-  static bool isLiked(String postId) {
-    return _likedPosts[postId] ?? false;
-  }
-
-  /// Get like count
-  static int getLikeCount(String postId, int defaultCount) {
-    return _likeCounts[postId] ?? defaultCount;
+  /// Clear all in-memory caches. Called on sign-out.
+  static void clearAllCaches() {
+    _optimisticLikes.clear();
+    _optimisticLikeCounts.clear();
+    _optimisticBookmarks.clear();
+    _hiddenPostIds.clear();
+    _hiddenAuthors.clear();
+    feedChangeNotifier.value = 0;
+    activePostingNotifier.value = null;
   }
 }

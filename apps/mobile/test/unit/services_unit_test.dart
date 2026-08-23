@@ -32,6 +32,17 @@ void main() {
       PostService.unhidePost('post-hide-test');
       expect(PostService.isPostHidden({'id': 'post-hide-test', 'authorName': 'John Doe'}), false);
 
+      // Test post creation and feed verification
+      final newPost = await PostService.startPostingAsync(
+        content: 'Excited to collaborate on AI projects at MITS Gwalior! #Flutter #AIML',
+        postType: 'text',
+      );
+      expect(newPost, isNotNull);
+      expect(newPost['content'], contains('MITS Gwalior'));
+
+      final updatedFeed = await PostService.getFeedPosts();
+      expect(updatedFeed, isA<List<Map<String, dynamic>>>());
+
       // Test hide & unhide author
       expect(PostService.isAuthorHidden('MITS Gwalior'), false);
       PostService.hideAuthor('MITS Gwalior');

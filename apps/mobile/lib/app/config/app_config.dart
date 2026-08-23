@@ -12,14 +12,16 @@ class AppConfig {
   // Development endpoints (auto-adapts for Android emulator loopback vs web/localhost)
   static String get _devApiBaseUrl {
     if (kIsWeb) {
-      return 'http://localhost:8080/api/v1';
+      final host = Uri.base.host.isNotEmpty ? Uri.base.host : 'localhost';
+      return 'http://$host:8080/api/v1';
     }
     return 'http://35.154.243.7:8080/api/v1';
   }
 
   static String get _devWsBaseUrl {
     if (kIsWeb) {
-      return 'ws://localhost:8080/ws';
+      final host = Uri.base.host.isNotEmpty ? Uri.base.host : 'localhost';
+      return 'ws://$host:8080/ws';
     }
     return 'ws://35.154.243.7:8080/ws';
   }

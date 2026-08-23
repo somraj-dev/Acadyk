@@ -38,7 +38,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
 
   String get _currentUserAvatar => ProfileManager.avatarUrl.isNotEmpty
       ? ProfileManager.avatarUrl
-      : 'assets/images/somraj_avatar.jpg';
+      : '';
 
   @override
   void dispose() {

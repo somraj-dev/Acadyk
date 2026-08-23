@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../common/services/auth_service.dart';
+import '../services/profile_manager.dart';
 import 'profile_screen.dart';
 
 class ClubMembersScreen extends StatefulWidget {
@@ -358,7 +360,9 @@ class _MemberRowItem extends StatelessWidget {
   }
 
   void _openUserProfile(BuildContext context) {
-    final bool isOwn = item['name'] == 'Somraj Lodhi';
+    final bool isOwn = item['id'] == AuthService.currentUser?.id ||
+        (item['name'] != null && item['name'] == ProfileManager.name) ||
+        ((item['handle'] as String? ?? '').replaceAll('@', '').toLowerCase() == AuthService.currentUser?.username?.toLowerCase());
     final Map<String, dynamic> userData = {
       'name': item['name'],
       'fullName': item['name'],
