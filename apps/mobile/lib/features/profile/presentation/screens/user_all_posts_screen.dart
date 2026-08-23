@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../../../common/services/post_service.dart';
@@ -357,25 +358,7 @@ class _UserAllPostsScreenState extends State<UserAllPostsScreen> {
                 onTap: () => _openPostDetail(post, authorName, timeAgo, content),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: imageBytes != null
-                      ? (imageBytes is Uint8List
-                          ? Image.memory(
-                              imageBytes,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                            )
-                          : const SizedBox.shrink())
-                      : (postImageUrl!.startsWith('http')
-                          ? Image.network(
-                              postImageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                            )
-                          : Image.asset(
-                              postImageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                            )),
+                  child: _buildPostMediaWidget(postImageUrl, imageBytes),
                 ),
               ),
             ),
@@ -517,6 +500,44 @@ class _UserAllPostsScreenState extends State<UserAllPostsScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildPostMediaWidget(String? postImageUrl, dynamic imageBytes) {
+    if (imageBytes != null && imageBytes is Uint8List) {
+      return Image.memory(
+        imageBytes,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      );
+    }
+    if (postImageUrl != null && postImageUrl.isNotEmpty) {
+      if (postImageUrl.startsWith('data:image/') || postImageUrl.contains(';base64,')) {
+        try {
+          final base64String = postImageUrl.split(';base64,').last;
+          final bytes = base64Decode(base64String);
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          );
+        } catch (_) {}
+      }
+      if (postImageUrl.startsWith('http://') || postImageUrl.startsWith('https://')) {
+        return Image.network(
+          postImageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        );
+      }
+      if (postImageUrl.startsWith('assets/')) {
+        return Image.asset(
+          postImageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        );
+      }
+    }
+    return const SizedBox.shrink();
   }
 
   Widget _buildAvatar({

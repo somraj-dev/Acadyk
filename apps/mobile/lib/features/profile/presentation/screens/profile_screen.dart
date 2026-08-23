@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -1732,9 +1733,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 8),
             ClipRRect(
-              child: item['imageAsset'].toString().startsWith('http')
-                  ? Image.network(
-                      item['imageAsset'],
+              child: Builder(
+                builder: (context) {
+                  final img = item['imageAsset']?.toString() ?? '';
+                  if (img.startsWith('data:image/') || img.contains(';base64,')) {
+                    try {
+                      final base64String = img.split(';base64,').last;
+                      final bytes = base64Decode(base64String);
+                      return Image.memory(
+                        bytes,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 160,
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 160,
+                          color: const Color(0xFFF1F5F9),
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.image, color: Color(0xFF94A3B8), size: 36),
+                        ),
+                      );
+                    } catch (_) {}
+                  }
+                  if (img.startsWith('http://') || img.startsWith('https://')) {
+                    return Image.network(
+                      img,
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: 160,
@@ -1744,19 +1766,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         alignment: Alignment.center,
                         child: const Icon(Icons.image, color: Color(0xFF94A3B8), size: 36),
                       ),
-                    )
-                  : Image.asset(
-                      item['imageAsset'],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
+                    );
+                  }
+                  return Image.asset(
+                    img.isNotEmpty ? img : 'assets/images/mits_campus.png',
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: 160,
+                    errorBuilder: (_, __, ___) => Container(
                       height: 160,
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 160,
-                        color: const Color(0xFFF1F5F9),
-                        alignment: Alignment.center,
-                        child: const Icon(Icons.image, color: Color(0xFF94A3B8), size: 36),
-                      ),
+                      color: const Color(0xFFF1F5F9),
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.image, color: Color(0xFF94A3B8), size: 36),
                     ),
+                  );
+                },
+              ),
             ),
           ],
         ),

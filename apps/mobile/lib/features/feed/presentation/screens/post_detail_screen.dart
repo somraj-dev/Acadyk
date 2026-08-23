@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:acadyk/common/services/post_service.dart';
@@ -489,22 +491,22 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 ),
                               ),
                       ),
-                      if (widget.post != null && widget.post!['image_url'] != null && widget.post!['image_url'].toString().isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8.0),
-                            child: Image.network(
-                              widget.post!['image_url'],
-                              width: double.infinity,
-                              height: 180,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      Builder(
+                        builder: (context) {
+                          final detailImg = widget.post?['imageUrl'] ?? widget.post?['image_url'] ?? widget.post?['image'] ?? widget.post?['imageAsset'];
+                          final dynamic detailBytes = widget.post?['imageBytes'];
+                          if (detailBytes == null && (detailImg == null || detailImg.toString().isEmpty)) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8.0),
+                              child: _buildDetailMediaImage(detailImg?.toString(), detailBytes),
                             ),
-                          ),
-                        ),
-                      ],
+                          );
+                        },
+                      ),
                       const SizedBox(height: 20),
 
                       // Action/Engagement row
@@ -706,6 +708,52 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildDetailMediaImage(String? postImageUrl, dynamic imageBytes) {
+    if (imageBytes != null && imageBytes is Uint8List) {
+      return Image.memory(
+        imageBytes,
+        width: double.infinity,
+        height: 220,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      );
+    }
+    if (postImageUrl != null && postImageUrl.isNotEmpty) {
+      if (postImageUrl.startsWith('data:image/') || postImageUrl.contains(';base64,')) {
+        try {
+          final base64String = postImageUrl.split(';base64,').last;
+          final bytes = base64Decode(base64String);
+          return Image.memory(
+            bytes,
+            width: double.infinity,
+            height: 220,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          );
+        } catch (_) {}
+      }
+      if (postImageUrl.startsWith('http://') || postImageUrl.startsWith('https://')) {
+        return Image.network(
+          postImageUrl,
+          width: double.infinity,
+          height: 220,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        );
+      }
+      if (postImageUrl.startsWith('assets/')) {
+        return Image.asset(
+          postImageUrl,
+          width: double.infinity,
+          height: 220,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        );
+      }
+    }
+    return const SizedBox.shrink();
   }
 
 

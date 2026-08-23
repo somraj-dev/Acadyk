@@ -276,20 +276,20 @@ class PostService {
     String? collabAuthorId,
     bool? isOfficialCollab,
   }) async {
-    final authorName = ProfileManager.name.isNotEmpty
+    final currentUser = AuthService.currentUser;
+    final authorName = (ProfileManager.name.isNotEmpty && ProfileManager.name != 'Acadyk Member')
         ? ProfileManager.name
-        : (AuthService.currentUser?.fullName != null && AuthService.currentUser!.fullName!.isNotEmpty
-            ? AuthService.currentUser!.fullName!
-            : 'Acadyk Member');
-    final authorAvatar = ProfileManager.avatarUrl.isNotEmpty
-        ? ProfileManager.avatarUrl
-        : '';
+        : (currentUser?.fullName != null && currentUser!.fullName!.isNotEmpty
+            ? currentUser.fullName!
+            : (currentUser?.username != null && currentUser!.username!.isNotEmpty ? currentUser.username! : 'Acadyk Member'));
+    final authorAvatar = ProfileManager.avatarUrl;
     final authorBio = ProfileManager.bio.isNotEmpty
         ? ProfileManager.bio
-        : (AuthService.currentUser?.branch != null ? '${AuthService.currentUser?.degree ?? "B.Tech"} in ${AuthService.currentUser?.branch}' : 'Student @ MITS Gwalior');
+        : (currentUser?.branch != null ? '${currentUser?.degree ?? "B.Tech"} in ${currentUser?.branch}' : 'Student @ Acadyk');
     final authorHandle = ProfileManager.username.isNotEmpty
         ? ProfileManager.username
-        : (AuthService.currentUser?.username ?? 'user');
+        : (currentUser?.username ?? 'user');
+    final authorId = currentUser?.id ?? '';
 
     // 1. Notify posting in progress
     activePostingNotifier.value = {
@@ -304,7 +304,7 @@ class PostService {
     String? uploadedImageUrl = imageUrl;
     if (imageBytes != null) {
       try {
-        final userId = AuthService.currentUser?.id ?? 'user';
+        final userId = authorId.isNotEmpty ? authorId : 'user';
         final ext = (imageName != null && imageName.contains('.')) ? imageName.split('.').last : 'jpg';
         uploadedImageUrl = await StorageService.uploadBytes(
           bucket: 'posts',
@@ -314,6 +314,13 @@ class PostService {
         );
       } catch (e) {
         debugPrint('[PostService] Image upload note: $e');
+      }
+
+      // If remote upload didn't return a remote URL, encode imageBytes to Data URI
+      // so the image is permanently stored in JSON cache and across all user feeds!
+      if (uploadedImageUrl == null || uploadedImageUrl.isEmpty) {
+        final mimeType = (imageName != null && imageName.toLowerCase().endsWith('.png')) ? 'image/png' : 'image/jpeg';
+        uploadedImageUrl = 'data:$mimeType;base64,${base64Encode(imageBytes)}';
       }
     }
 
@@ -326,14 +333,16 @@ class PostService {
     final optimisticPost = {
       'id': tempId,
       'author': {
-        'id': AuthService.currentUser?.id ?? '',
+        'id': authorId,
         'username': authorHandle,
         'fullName': authorName,
         'headline': authorBio,
         'profilePhotoUrl': authorAvatar,
-        'email': AuthService.currentUser?.email ?? '',
+        'email': currentUser?.email ?? '',
       },
+      'authorId': authorId,
       'authorName': authorName,
+      'authorHandle': authorHandle,
       'authorSubtitle': authorBio,
       'authorInitials': authorInitials,
       'authorBgColor': 0xFF0F4C81,
@@ -382,6 +391,18 @@ class PostService {
       final response = await ApiClient.post('/posts', data: {
         'content': content,
         'postType': resolvedPostType,
+        'authorId': authorId,
+        'authorName': authorName,
+        'authorHandle': authorHandle,
+        'authorAvatar': authorAvatar,
+        'authorHeadline': authorBio,
+        'author': {
+          'id': authorId,
+          'fullName': authorName,
+          'username': authorHandle,
+          'headline': authorBio,
+          'profilePhotoUrl': authorAvatar,
+        },
         if (uploadedImageUrl != null) 'imageUrl': uploadedImageUrl,
         if (uploadedImageUrl != null) 'mediaUrls': [uploadedImageUrl],
         if (location != null) 'location': location,
@@ -397,6 +418,13 @@ class PostService {
         }
         if (createdData != null) {
           finalPost = _normalizePostData(createdData);
+          if (finalPost['authorName'] == null || finalPost['authorName'] == 'Acadyk Member') {
+            finalPost['authorName'] = authorName;
+            finalPost['author'] = optimisticPost['author'];
+          }
+          if (uploadedImageUrl != null) {
+            finalPost['imageUrl'] = uploadedImageUrl;
+          }
           finalPost['imageBytes'] = imageBytes;
           finalPost['gifUrl'] = gifUrl;
           finalPost['poll'] = poll;
@@ -729,14 +757,39 @@ class PostService {
     final author = post['author'] is Map ? post['author'] as Map : null;
     final id = post['id']?.toString() ?? 'post_${DateTime.now().millisecondsSinceEpoch}';
 
-    final authorName = post['authorName']?.toString() ?? author?['fullName']?.toString() ?? author?['username']?.toString() ?? 'Acadyk Member';
-    final authorSubtitle = post['authorSubtitle']?.toString() ?? author?['headline']?.toString() ?? '';
-    final authorAvatar = post['authorAvatar']?.toString() ?? author?['profilePhotoUrl']?.toString() ?? '';
+    final authorName = post['authorName']?.toString() ??
+        author?['fullName']?.toString() ??
+        author?['name']?.toString() ??
+        author?['username']?.toString() ??
+        post['authorHandle']?.toString() ??
+        'Acadyk Member';
+    final authorSubtitle = post['authorSubtitle']?.toString() ??
+        author?['headline']?.toString() ??
+        author?['bio']?.toString() ??
+        '';
+    final authorAvatar = post['authorAvatar']?.toString() ??
+        author?['profilePhotoUrl']?.toString() ??
+        author?['avatar']?.toString() ??
+        '';
+    final authorId = post['authorId']?.toString() ?? author?['id']?.toString() ?? '';
+    final authorHandle = post['authorHandle']?.toString() ?? author?['username']?.toString() ?? '';
     final authorInitials = authorName.isNotEmpty ? authorName.substring(0, min(2, authorName.length)).toUpperCase() : 'U';
-    final content = post['content']?.toString() ?? '';
-    final imageUrl = post['imageUrl']?.toString() ?? (post['mediaUrls'] is List && (post['mediaUrls'] as List).isNotEmpty ? post['mediaUrls'][0]?.toString() : null);
+    final content = post['content']?.toString() ?? post['text']?.toString() ?? '';
 
-    final imageBytes = post['imageBytes'] as Uint8List?;
+    final imageUrl = post['imageUrl']?.toString() ??
+        post['image_url']?.toString() ??
+        post['image']?.toString() ??
+        post['imageAsset']?.toString() ??
+        (post['mediaUrls'] is List && (post['mediaUrls'] as List).isNotEmpty ? post['mediaUrls'][0]?.toString() : null);
+
+    Uint8List? imageBytes = post['imageBytes'] is Uint8List ? post['imageBytes'] as Uint8List : null;
+    if (imageBytes == null && imageUrl != null && imageUrl.contains(';base64,')) {
+      try {
+        final base64String = imageUrl.split(';base64,').last;
+        imageBytes = base64Decode(base64String);
+      } catch (_) {}
+    }
+
     final poll = post['poll'] as Map<String, dynamic>?;
     final milestone = post['milestone']?.toString();
     final location = post['location']?.toString();
@@ -772,13 +825,15 @@ class PostService {
     return {
       'id': id,
       'author': author != null ? Map<String, dynamic>.from(author) : {
-        'id': post['authorId']?.toString() ?? '',
+        'id': authorId,
         'fullName': authorName,
-        'username': post['authorHandle']?.toString() ?? '',
+        'username': authorHandle,
         'headline': authorSubtitle,
         'profilePhotoUrl': authorAvatar,
       },
+      'authorId': authorId,
       'authorName': authorName,
+      'authorHandle': authorHandle,
       'authorSubtitle': authorSubtitle,
       'authorAvatar': authorAvatar,
       'authorInitials': post['authorInitials'] ?? authorInitials,
