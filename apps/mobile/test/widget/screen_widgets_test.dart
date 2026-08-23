@@ -7,6 +7,7 @@ import 'package:acadyk/common/providers/profile_provider.dart';
 import 'package:acadyk/common/providers/theme_provider.dart';
 import 'package:acadyk/features/auth/presentation/screens/login_screen.dart';
 import 'package:acadyk/features/notifications/presentation/screens/notification_screen.dart';
+import 'package:acadyk/features/notifications/presentation/screens/club_join_request_review_screen.dart';
 import 'package:acadyk/features/profile/presentation/screens/appearance_screen.dart';
 import 'package:acadyk/features/profile/presentation/screens/project_details.dart';
 import 'package:acadyk/features/profile/presentation/screens/experience_details.dart';
@@ -51,9 +52,46 @@ void main() {
 
     testWidgets('NotificationScreen renders notification headers and list', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(const NotificationScreen()));
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.byType(NotificationScreen), findsOneWidget);
+      expect(find.text('Your notifications'), findsOneWidget);
+      expect(find.text('Review Request'), findsWidgets);
+      expect(find.text('Pending Review'), findsWidgets);
+      expect(find.text('Approved · Member Added'), findsWidgets);
+    });
+
+    testWidgets('ClubJoinRequestReviewScreen renders dual avatar header, invitation details, and accept/decline buttons', (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget(
+        const ClubJoinRequestReviewScreen(
+          requestData: {
+            'id': 'test_req_1',
+            'clubTitle': 'GDSC MITS Chapter',
+            'role': 'Technical Team Member',
+            'requestStatus': 'pending',
+            'sender': {
+              'full_name': 'Kavya Singhania',
+              'username': 'kavya_s',
+              'profile_photo_url': 'assets/images/alina_avatar.jpg',
+              'headline': '2nd Year B.Tech CSE · AIML Enthusiast',
+            },
+          },
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(ClubJoinRequestReviewScreen), findsOneWidget);
+      expect(find.text('Join Request Review'), findsOneWidget);
+      expect(find.text('GDSC MITS Chapter'), findsOneWidget);
+      expect(find.text('Accept request'), findsOneWidget);
+      expect(find.text('Decline request'), findsOneWidget);
+      expect(find.textContaining('will be able to see:'), findsOneWidget);
+
+      // Tap Accept request
+      await tester.tap(find.text('Accept request'));
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.textContaining('You accepted this request'), findsOneWidget);
     });
 
     testWidgets('AppearanceScreen renders theme options and radio selections', (WidgetTester tester) async {
@@ -236,9 +274,7 @@ void main() {
       expect(find.text('Organizer'), findsOneWidget);
       expect(find.text('SonicVibe Events'), findsOneWidget);
       expect(find.text('Address'), findsOneWidget);
-      expect(find.text('Total Price'), findsOneWidget);
-      expect(find.text('\$30.00'), findsOneWidget);
-      expect(find.text('Book Now'), findsOneWidget);
+      expect(find.text('Join'), findsOneWidget);
       expect(find.text('Event Photos & Moments'), findsOneWidget);
       expect(find.text('Organized Events'), findsOneWidget);
       expect(find.text('Achievements & Milestones'), findsOneWidget);

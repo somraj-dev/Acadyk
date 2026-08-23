@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../../../common/services/notification_service.dart';
+import '../../../../common/services/auth_service.dart';
+import '../services/profile_manager.dart';
 import 'club_members_screen.dart';
 import 'profile_screen.dart';
 
@@ -173,9 +176,6 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
 
     final String address = widget.clubData['address']?.toString() ??
         'Madhav Institute of Technology & Science, Racecourse Road, Gwalior';
-
-    final String price = widget.clubData['price']?.toString() ?? 'Free';
-    final String priceUnit = widget.clubData['priceUnit']?.toString() ?? '/open access';
 
     final String heroImage = widget.clubData['heroImage']?.toString() ??
         'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&auto=format&fit=crop&q=80';
@@ -979,86 +979,71 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
               ),
               child: SafeArea(
                 top: false,
-                child: Row(
-                  children: [
-                    // Price / Status Column
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Total Price',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: textMuted,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              price,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                                color: primaryBlue,
-                              ),
-                            ),
-                            Text(
-                              ' $priceUnit',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: textMuted,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final willJoin = !_isJoined;
+                      setState(() {
+                        _isJoined = willJoin;
+                      });
 
-                    // Prominent Rounded Light Blue CTA Button
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _isJoined = !_isJoined;
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(_isJoined ? 'Successfully registered for $title!' : 'Registration cancelled'),
-                                backgroundColor: _isJoined ? const Color(0xFF10B981) : const Color(0xFF0F172A),
-                                duration: const Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _isJoined ? const Color(0xFF0F172A) : primaryBlue,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(26),
-                            ),
-                          ),
-                          child: Text(
-                            _isJoined ? 'Registered' : 'Book Now',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
+                      if (willJoin) {
+                        final currentUserName = ProfileManager.name.isNotEmpty && ProfileManager.name != 'Acadyk Member'
+                            ? ProfileManager.name
+                            : (AuthService.currentUser?.fullName ?? 'Acadyk Student');
+                        final currentUserHandle = ProfileManager.username.isNotEmpty
+                            ? ProfileManager.username
+                            : (AuthService.currentUser?.username ?? 'student');
+                        final currentUserAvatar = ProfileManager.avatarUrl.isNotEmpty
+                            ? ProfileManager.avatarUrl
+                            : 'assets/images/somraj_avatar.jpg';
+                        final currentUserHeadline = ProfileManager.bio.isNotEmpty
+                            ? ProfileManager.bio
+                            : (AuthService.currentUser?.branch != null
+                                ? '${AuthService.currentUser?.degree ?? "B.Tech"} in ${AuthService.currentUser?.branch}'
+                                : 'Student @ MITS Gwalior');
+
+                        NotificationService.addClubJoinRequest(
+                          clubId: widget.clubData['id']?.toString() ?? 'club_${DateTime.now().millisecondsSinceEpoch}',
+                          clubTitle: title,
+                          userName: currentUserName,
+                          userHandle: currentUserHandle,
+                          userAvatar: currentUserAvatar,
+                          userHeadline: currentUserHeadline,
+                          role: 'Core Member',
+                        );
+                      }
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(willJoin
+                              ? 'Join request sent to the President of $title!'
+                              : 'Left $title'),
+                          backgroundColor: willJoin ? const Color(0xFF10B981) : const Color(0xFF0F172A),
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
                         ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isJoined ? const Color(0xFF0F172A) : primaryBlue,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26),
                       ),
                     ),
-                  ],
+                    child: Text(
+                      _isJoined ? 'Joined' : 'Join',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
