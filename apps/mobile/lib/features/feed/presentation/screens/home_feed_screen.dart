@@ -26,6 +26,7 @@ import '../../../../common/services/search_service.dart';
 import '../../../chat/presentation/screens/message_center_screen.dart';
 import '../../../../common/widgets/acadyk_top_header_bar.dart';
 import '../../../../shared/widgets/skeleton/skeleton.dart';
+import '../widgets/lazy_file_attachment_card.dart';
 class HomeFeedScreen extends StatefulWidget {
   static final GlobalKey<ScaffoldState> mainScaffoldKey = GlobalKey<ScaffoldState>();
   static final ValueNotifier<int> activeTabNotifier = ValueNotifier<int>(0);
@@ -80,7 +81,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   void initState() {
     super.initState();
     _feedPosts = PostService.getUserCreatedPosts();
-    _isLoading = _feedPosts.isEmpty;
+    if (_feedPosts.isEmpty) {
+      _feedPosts = PostService.getInitialMockPosts();
+    }
+    _isLoading = false;
     _activeTab = HomeFeedScreen.activeTabNotifier.value;
     _pageController = PageController(initialPage: _activeTab == 4 ? 3 : (_activeTab == 3 ? 2 : _activeTab));
     ProfileManager.profileUpdateNotifier.addListener(_onProfileUpdated);
@@ -129,7 +133,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final posts = await _fetchPostsFromBackend();
     if (mounted) {
       setState(() {
-        _feedPosts = posts;
+        _feedPosts = posts.isNotEmpty ? posts : PostService.getInitialMockPosts();
         _isLoading = false;
       });
     }
@@ -197,7 +201,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                     final posts = await _fetchPostsFromBackend();
                                     if (mounted) {
                                       setState(() {
-                                        _feedPosts = posts;
+                                        _feedPosts = posts.isNotEmpty ? posts : PostService.getInitialMockPosts();
                                         _isLoading = false;
                                       });
                                     }
@@ -866,7 +870,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sheetBg = isDark ? const Color(0xFF000000) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final iconColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563);
     final handleColor = isDark ? const Color(0xFF333639) : const Color(0xFFE2E8F0);
 
     // If current user is the author of this post, show author management menu (Twitter / X style)
@@ -1624,6 +1627,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           ),
                           _buildCreateOption(
                             context,
+                            icon: Icons.campaign_rounded,
+                            label: 'Notice',
+                            isDark: isDark,
+                            onTap: () {
+                              Navigator.pop(context); // Close bottom sheet
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (context) => const CreatePostScreen(isNotice: true)),
+                              );
+                            },
+                          ),
+                          _buildCreateOption(
+                            context,
                             icon: Icons.calendar_month_rounded,
                             label: 'Event',
                             isDark: isDark,
@@ -1633,21 +1648,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const SelectOpportunityScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildCreateOption(
-                            context,
-                            icon: Icons.dashboard_customize_outlined,
-                            label: 'Board',
-                            isDark: isDark,
-                            onTap: () {
-                              Navigator.pop(context); // Close bottom sheet
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Board creation coming soon!'),
-                                  duration: Duration(seconds: 2),
                                 ),
                               );
                             },
@@ -2401,10 +2401,29 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final String mainAvatarAsset = post['authorAvatar'] ?? (isMITSOfficial ? 'assets/images/mits_logo.png' : '');
     final String? postImageUrl = post['imageUrl'] ?? post['image'] ?? post['gifUrl'];
     final dynamic imageBytes = post['imageBytes'];
-    final String? milestone = post['milestone']?.toString();
     final String? location = post['location']?.toString();
     final dynamic pollData = post['poll'];
     final List<dynamic>? taggedPeople = post['taggedPeople'] as List<dynamic>?;
+
+    // Document / File Attachment metadata (WhatsApp-style on-demand download)
+    final Map<String, dynamic>? fileAttachment = post['fileAttachment'] is Map<String, dynamic>
+        ? post['fileAttachment'] as Map<String, dynamic>
+        : null;
+    final bool isMITSNoticePost = postId == 'dummy_post_1' ||
+        (isNotification && (authorName.toLowerCase().contains('academic') || authorName.toLowerCase().contains('mits')));
+    final String? docUrl = post['documentUrl']?.toString() ??
+        fileAttachment?['fileUrl']?.toString() ??
+        (isMITSNoticePost
+            ? 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf'
+            : null) ??
+        (_isDocumentUrl(postImageUrl) ? postImageUrl : null);
+    final String docName = post['documentName']?.toString() ??
+        post['fileName']?.toString() ??
+        fileAttachment?['fileName']?.toString() ??
+        (isMITSNoticePost
+            ? 'End_Semester_Exam_Schedule_Autumn_2026.pdf'
+            : (docUrl != null ? docUrl.split('/').last.split('?').first : 'Document.pdf'));
+    final int docSize = ((post['fileSizeBytes'] ?? post['fileSize'] ?? fileAttachment?['fileSizeBytes'] ?? (isMITSNoticePost ? 4194304 : 0)) as num).toInt();
 
     return Container(
       color: cardBg,
@@ -2412,53 +2431,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Milestone banner if present
-          if (milestone != null && milestone.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 7.0),
-              decoration: BoxDecoration(
-                color: _isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
-                border: Border(bottom: BorderSide(color: _isDark ? const Color(0xFF334155) : const Color(0xFFDBEAFE))),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.stars_rounded, size: 16, color: Color(0xFF1D9BF0)),
-                  const SizedBox(width: 6),
-                  Text(
-                    milestone,
-                    style: const TextStyle(
-                      color: Color(0xFF1D9BF0),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          // Notification banner for notification-type posts
-          if (isNotification)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-              decoration: BoxDecoration(
-                color: _isDark ? const Color(0xFF1E1B4B) : const Color(0xFFFFF3E0),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.notifications_active, size: 16, color: _isDark ? const Color(0xFFF59E0B) : const Color(0xFFE65100)),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Official Notification • $timeAgo',
-                    style: TextStyle(
-                      color: _isDark ? const Color(0xFFF59E0B) : const Color(0xFFE65100),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
           Padding(
             padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0),
             child: Row(
@@ -2661,7 +2633,20 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             const SizedBox(height: 10),
           ],
 
-          if (imageBytes != null || (postImageUrl != null && postImageUrl.isNotEmpty)) ...[
+          // WhatsApp-style on-demand file/document attachment (ZERO auto-download on scroll)
+          if (docUrl != null && docUrl.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: LazyFileAttachmentCard(
+                fileUrl: docUrl,
+                fileName: docName,
+                fileSizeBytes: docSize,
+                label: null,
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          if (imageBytes != null || (postImageUrl != null && postImageUrl.isNotEmpty && !_isDocumentUrl(postImageUrl))) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: ClipRRect(
@@ -2721,6 +2706,21 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // -------------------------------------------------------------
   // REUSABLE FEEDBACK ACTION ROW WITH COMMENTS ACCORDION
   // -------------------------------------------------------------
+
+  bool _isDocumentUrl(String? url) {
+    if (url == null || url.isEmpty) return false;
+    final clean = url.toLowerCase().split('?').first;
+    return clean.endsWith('.pdf') ||
+        clean.endsWith('.doc') ||
+        clean.endsWith('.docx') ||
+        clean.endsWith('.xls') ||
+        clean.endsWith('.xlsx') ||
+        clean.endsWith('.ppt') ||
+        clean.endsWith('.pptx') ||
+        clean.endsWith('.txt') ||
+        clean.endsWith('.csv') ||
+        clean.endsWith('.zip');
+  }
 
   Widget _buildPostMediaWidget(String? postImageUrl, dynamic imageBytes) {
     if (imageBytes != null && imageBytes is Uint8List) {

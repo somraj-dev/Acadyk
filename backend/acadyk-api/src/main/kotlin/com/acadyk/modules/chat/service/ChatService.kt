@@ -84,28 +84,45 @@ class ChatService(
         val sender = profileRepository.findById(currentUserId)
             .orElseThrow { ResourceNotFoundException("User profile not found") }
 
-        // 1. PostgreSQL Persistence FIRST
+        // Determine message type: if file attachment is present, use file-based type
+        val effectiveMessageType = if (request.fileAttachment != null) {
+            resolveMessageTypeFromMime(request.fileAttachment.mimeType)
+        } else {
+            request.messageType ?: "TEXT"
+        }
+
+        // 1. PostgreSQL Persistence FIRST (Source of Truth)
         val message = MessageEntity(
             conversation = conv,
             sender = sender,
             content = request.content,
-            messageType = request.messageType ?: "TEXT",
-            mediaUrl = request.mediaUrl
+            messageType = effectiveMessageType,
+            mediaUrl = request.fileAttachment?.fileUrl ?: request.mediaUrl,
+            // WhatsApp-style: Populate file metadata if attachment is present
+            fileName = request.fileAttachment?.fileName,
+            fileSizeBytes = request.fileAttachment?.fileSizeBytes,
+            mimeType = request.fileAttachment?.mimeType,
+            thumbnailUrl = request.fileAttachment?.thumbnailUrl
         )
         val saved = messageRepository.save(message)
 
-        conv.lastMessageText = request.content
+        val lastMsgText = if (request.fileAttachment != null) {
+            "📎 ${request.fileAttachment.fileName}"
+        } else {
+            request.content
+        }
+        conv.lastMessageText = lastMsgText
         conv.lastMessageAt = saved.createdAt
         conversationRepository.save(conv)
 
         val dto = chatMapper.toDto(saved)
 
-        // 2. Realtime WebSocket broadcast
+        // 2. Realtime WebSocket broadcast (WhatsApp-style instant delivery)
         try {
             messagingTemplate.convertAndSend("/topic/conversations/$conversationId", dto)
         } catch (_: Exception) {}
 
-        // 3. Asynchronous Kafka event
+        // 3. Asynchronous Kafka event (for offline FCM push)
         val memberIds = conversationMemberRepository.findAllByConversationId(conversationId).map { it.profile.id.toString() }
         domainEventPublisher.publishMessageSent(
             MessageSentEvent(
@@ -113,7 +130,7 @@ class ChatService(
                 conversationId = conversationId.toString(),
                 senderId = sender.id.toString(),
                 senderName = sender.fullName,
-                contentSnippet = payloadToSnippet(request.content),
+                contentSnippet = payloadToSnippet(lastMsgText),
                 recipientIds = memberIds
             )
         )
@@ -125,6 +142,20 @@ class ChatService(
         sendMessage(conversationId.toUUID(), request)
 
     private fun payloadToSnippet(content: String): String = if (content.length > 100) content.take(97) + "..." else content
+
+    private fun resolveMessageTypeFromMime(mimeType: String): String {
+        return when {
+            mimeType.startsWith("image/") -> "IMAGE"
+            mimeType.startsWith("video/") -> "VIDEO"
+            mimeType.startsWith("audio/") -> "AUDIO"
+            mimeType == "application/pdf" ||
+            mimeType.contains("document") ||
+            mimeType.contains("spreadsheet") ||
+            mimeType.contains("presentation") ||
+            mimeType.startsWith("text/") -> "DOCUMENT"
+            else -> "FILE"
+        }
+    }
 
     fun startDirectMessage(request: StartDirectMessageRequest): ConversationResponse {
         val currentUserId = currentUserProvider.getCurrentUserId()

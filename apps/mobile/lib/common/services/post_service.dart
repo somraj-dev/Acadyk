@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/network/api_client.dart';
@@ -53,6 +52,32 @@ class PostService {
       }
     } catch (e) {
       debugPrint('[PostService] Error loading cached posts: $e');
+    }
+    if (_cachedPosts.isEmpty) {
+      _cachedPosts.addAll(getInitialMockPosts());
+      notifyFeedChanged();
+    }
+
+    // Ensure strictly only dummy_post_1 (MITS Academic Administration) has the attached official notice PDF
+    final dummy1Idx = _cachedPosts.indexWhere((p) => p['id']?.toString() == 'dummy_post_1');
+    if (dummy1Idx != -1) {
+      _cachedPosts[dummy1Idx]['documentUrl'] = 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf';
+      _cachedPosts[dummy1Idx]['documentName'] = 'End_Semester_Exam_Schedule_Autumn_2026.pdf';
+      _cachedPosts[dummy1Idx]['fileName'] = 'End_Semester_Exam_Schedule_Autumn_2026.pdf';
+      _cachedPosts[dummy1Idx]['fileSizeBytes'] = 4194304;
+      _cachedPosts[dummy1Idx]['documentLabel'] = 'Official Academic Notice • Exam Circular';
+    }
+    for (final otherId in ['dummy_post_2', 'dummy_post_3', 'dummy_post_4', 'dummy_post_5']) {
+      final otherIdx = _cachedPosts.indexWhere((p) => p['id']?.toString() == otherId);
+      if (otherIdx != -1) {
+        _cachedPosts[otherIdx].remove('documentUrl');
+        _cachedPosts[otherIdx].remove('documentName');
+        _cachedPosts[otherIdx].remove('fileName');
+        _cachedPosts[otherIdx].remove('fileSizeBytes');
+        _cachedPosts[otherIdx].remove('fileSize');
+        _cachedPosts[otherIdx].remove('documentLabel');
+        _cachedPosts[otherIdx].remove('fileAttachment');
+      }
     }
   }
 
@@ -197,10 +222,15 @@ class PostService {
       debugPrint('[PostService] Error fetching feed from backend: $e');
     }
 
-    return _cachedPosts
+    final result = _cachedPosts
         .map((p) => _normalizePostData(p))
         .where((p) => !isPostHidden(p))
         .toList();
+    if (result.isEmpty) {
+      _cachedPosts.addAll(getInitialMockPosts());
+      return getInitialMockPosts();
+    }
+    return result;
   }
 
   /// Get posts authored by a specific user from the backend or local cache.
@@ -242,12 +272,208 @@ class PostService {
         .toList();
   }
 
+  /// Curated dummy posts designed to showcase every post card variant on the main feed:
+  /// 1. Official Academic Notification with WhatsApp-style PDF download card
+  /// 2. Student Study Material Post with Revision Notes PDF + Location + Tagged Peers
+  /// 3. Campus Tech Club Victory Celebration with Milestone banner and Image
+  /// 4. Interactive Campus Engagement Poll Post
+  /// 5. Co-Authored / Official Incubation Collaboration Post with dual avatars
+  static List<Map<String, dynamic>> getInitialMockPosts() {
+    return [
+      {
+        'id': 'dummy_post_1',
+        'author': {
+          'id': 'author_mits_academic',
+          'fullName': 'MITS Academic Administration',
+          'username': 'mits_academics',
+          'headline': 'Dean of Academic Affairs • MITS Gwalior',
+          'profilePhotoUrl': '',
+        },
+        'authorId': 'author_mits_academic',
+        'authorName': 'MITS Academic Administration',
+        'authorHandle': 'mits_academics',
+        'authorSubtitle': 'Dean of Academic Affairs • MITS Gwalior',
+        'authorInitials': 'MI',
+        'authorBgColor': 0xFF0A2540,
+        'isVerified': true,
+        'timeAgo': '15m ago',
+        'postType': 'notification',
+        'type': 'notification',
+        'content':
+            '📢 NOTICE: End-Semester Examination Schedule for Autumn 2026 has been officially released.\n\nAll B.Tech, M.Tech, and MCA students must download and review their subject codes, shift timings, and respective examination halls. Hall tickets will be issued starting Monday.',
+        'documentUrl': 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
+        'documentName': 'End_Semester_Exam_Schedule_Autumn_2026.pdf',
+        'fileName': 'End_Semester_Exam_Schedule_Autumn_2026.pdf',
+        'fileSizeBytes': 4194304,
+        'documentLabel': 'Official Academic Circular',
+        'location': 'Dean Office, Administrative Block',
+        'likes': 154,
+        'likesCount': 154,
+        'comments': 23,
+        'commentsCount': 23,
+        'sharesCount': 45,
+        'isLiked': false,
+        'isBookmarked': true,
+        'createdAt': DateTime.now().subtract(const Duration(minutes: 15)).toIso8601String(),
+      },
+      {
+        'id': 'dummy_post_2',
+        'author': {
+          'id': 'author_aarav_sharma',
+          'fullName': 'Aarav Sharma',
+          'username': 'aarav_codes',
+          'headline': 'B.Tech CSE 2025 • Cloud & Systems Enthusiast',
+          'profilePhotoUrl': '',
+        },
+        'authorId': 'author_aarav_sharma',
+        'authorName': 'Aarav Sharma',
+        'authorHandle': 'aarav_codes',
+        'authorSubtitle': 'B.Tech CSE 2025 • Cloud & Systems Enthusiast',
+        'authorInitials': 'AS',
+        'authorBgColor': 0xFF1D9BF0,
+        'isVerified': true,
+        'timeAgo': '1h ago',
+        'postType': 'student',
+        'type': 'student',
+        'content':
+            'Hey everyone! 👋 As promised, here are the complete revision notes for Distributed Systems & Cloud Architecture (Units 1 to 5). Includes detailed diagrams on Raft consensus, CAP theorem trade-offs, and microservices caching patterns.\n\nGood luck with the mid-term test tomorrow! 🚀📚',
+        'location': 'Central Library, Floor 2',
+        'taggedPeople': ['Priya Patel', 'Devansh Verma', 'Ananya Gupta'],
+        'likes': 238,
+        'likesCount': 238,
+        'comments': 41,
+        'commentsCount': 41,
+        'sharesCount': 62,
+        'isLiked': true,
+        'isBookmarked': false,
+        'createdAt': DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
+      },
+      {
+        'id': 'dummy_post_3',
+        'author': {
+          'id': 'author_gdsc_mits',
+          'fullName': 'Google Developer Student Club - MITS',
+          'username': 'gdsc_mits',
+          'headline': 'Official Technical Chapter • MITS Gwalior',
+          'profilePhotoUrl': '',
+        },
+        'authorId': 'author_gdsc_mits',
+        'authorName': 'Google Developer Student Club - MITS',
+        'authorHandle': 'gdsc_mits',
+        'authorSubtitle': 'Official Technical Chapter • MITS Gwalior',
+        'authorInitials': 'GD',
+        'authorBgColor': 0xFFEA4335,
+        'isVerified': true,
+        'timeAgo': '3h ago',
+        'postType': 'student',
+        'type': 'student',
+        'milestone': '🏆 1st Prize Winners @ Smart India Hackathon 2026',
+        'content':
+            'Huge congratulations to Team NeuralRoots from MITS for bagging 1st Place at SIH 2026! 🚀\n\nThey built an automated crop-disease detection UAV drone operating with edge-computed quantized vision models in under 36 hours. Extremely proud of our campus innovators!',
+        'imageUrl': 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80',
+        'location': 'Auditorium Hall B, MITS Gwalior',
+        'likes': 512,
+        'likesCount': 512,
+        'comments': 67,
+        'commentsCount': 67,
+        'sharesCount': 120,
+        'isLiked': false,
+        'isBookmarked': false,
+        'createdAt': DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),
+      },
+      {
+        'id': 'dummy_post_4',
+        'author': {
+          'id': 'author_tech_council',
+          'fullName': 'Student Technical Council',
+          'username': 'stc_council',
+          'headline': 'Organizing Committee • TechFest 2026',
+          'profilePhotoUrl': '',
+        },
+        'authorId': 'author_tech_council',
+        'authorName': 'Student Technical Council',
+        'authorHandle': 'stc_council',
+        'authorSubtitle': 'Organizing Committee • TechFest 2026',
+        'authorInitials': 'ST',
+        'authorBgColor': 0xFF10B981,
+        'isVerified': true,
+        'timeAgo': '5h ago',
+        'postType': 'poll',
+        'type': 'poll',
+        'content':
+            '📊 TechFest 2026 Workshop Track Poll!\n\nWe are partnering with top engineering leads to conduct hands-on masterclasses next month. Which domain would you like us to prioritize?',
+        'poll': {
+          'question': 'Which workshop domain do you want most?',
+          'options': [
+            {'text': 'Autonomous AI Agents & Local LLMs', 'votes': 342, 'percentage': 58},
+            {'text': 'Full-Stack Rust & High-Perf Systems', 'votes': 136, 'percentage': 23},
+            {'text': 'Cloud Native DevOps & Kubernetes', 'votes': 71, 'percentage': 12},
+            {'text': 'Cybersecurity & Reverse Engineering', 'votes': 41, 'percentage': 7},
+          ],
+          'totalVotes': 590,
+          'userVotedIndex': 0,
+        },
+        'likes': 189,
+        'likesCount': 189,
+        'comments': 32,
+        'commentsCount': 32,
+        'sharesCount': 15,
+        'isLiked': false,
+        'isBookmarked': false,
+        'createdAt': DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
+      },
+      {
+        'id': 'dummy_post_5',
+        'author': {
+          'id': 'author_rohan_verma',
+          'fullName': 'Rohan Verma',
+          'username': 'rohan_v',
+          'headline': 'Founder, AeroDrone Systems • B.Tech Mech 2025',
+          'profilePhotoUrl': '',
+        },
+        'authorId': 'author_rohan_verma',
+        'authorName': 'Rohan Verma',
+        'authorHandle': 'rohan_v',
+        'authorSubtitle': 'Founder, AeroDrone Systems • B.Tech Mech 2025',
+        'authorInitials': 'RV',
+        'authorBgColor': 0xFF6366F1,
+        'isVerified': true,
+        'timeAgo': '1d ago',
+        'isCollab': true,
+        'collabAuthorName': 'MITS Innovation & Incubation Centre',
+        'collabAuthorSubtitle': 'Official Startup Incubator • MITS',
+        'collabAuthorAvatar': 'assets/images/mits_logo.png',
+        'collabAuthorInitials': 'IC',
+        'collabAuthorBgColor': 0xFF0F172A,
+        'collabAuthorHandle': 'mits_iic',
+        'isOfficial': true,
+        'postType': 'student',
+        'type': 'student',
+        'content':
+            'Thrilled to share that AeroDrone Systems has officially received seed incubation and lab prototyping support from MITS Innovation & Incubation Centre (IIC)! 🛸🏭\n\nWe are looking for 2 embedded C++ interns and 1 Flutter developer to join our core team. Attached is the project brief & open roles description. Apply through the Opportunities tab!',
+        'location': 'Idea Lab & Incubation Centre',
+        'likes': 315,
+        'likesCount': 315,
+        'comments': 54,
+        'commentsCount': 54,
+        'sharesCount': 89,
+        'isLiked': true,
+        'isBookmarked': true,
+        'createdAt': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+      },
+    ];
+  }
+
   /// Get current user's own created posts synchronously.
   static List<Map<String, dynamic>> getUserCreatedPosts() {
-    return _cachedPosts
+    final list = _cachedPosts
         .map((p) => _normalizePostData(p))
         .where((p) => !isPostHidden(p))
         .toList();
+    if (list.isEmpty) {
+      return getInitialMockPosts();
+    }
+    return list;
   }
 
   // ─── Post Creation ──────────────────────────────────────────────────
@@ -261,6 +487,10 @@ class PostService {
     Uint8List? imageBytes,
     String? imageName,
     String? gifUrl,
+    String? documentUrl,
+    String? documentName,
+    int? documentSize,
+    Uint8List? documentBytes,
     Map<String, dynamic>? poll,
     String? milestone,
     String? location,
@@ -275,6 +505,8 @@ class PostService {
     String? collabAuthorHandle,
     String? collabAuthorId,
     bool? isOfficialCollab,
+    String? authorDesignation,
+    bool isFacultyApproval = false,
   }) async {
     final currentUser = AuthService.currentUser;
     final authorName = (ProfileManager.name.isNotEmpty && ProfileManager.name != 'Acadyk Member')
@@ -324,10 +556,43 @@ class PostService {
       }
     }
 
+    // Upload document bytes if present
+    String? uploadedDocUrl = documentUrl;
+    if (documentBytes != null && (uploadedDocUrl == null || uploadedDocUrl.isEmpty)) {
+      try {
+        uploadedDocUrl = await StorageService.uploadBytes(
+          bucket: 'post-documents',
+          bytes: documentBytes,
+          fileName: documentName ?? 'attachment.pdf',
+          remotePath: '$authorId/docs/${DateTime.now().millisecondsSinceEpoch}_${documentName ?? "file.pdf"}',
+        );
+      } catch (e) {
+        debugPrint('[PostService] Document upload note: $e');
+      }
+      // If remote upload didn't return a remote URL, encode documentBytes to Data URI
+      // so the attached PDF/document is preserved in local JSON cache and in feed!
+      if (uploadedDocUrl == null || uploadedDocUrl.isEmpty) {
+        final ext = (documentName != null && documentName.contains('.'))
+            ? documentName.split('.').last.toLowerCase()
+            : 'pdf';
+        final mime = ext == 'pdf' ? 'application/pdf' : 'application/octet-stream';
+        uploadedDocUrl = 'data:$mime;base64,${base64Encode(documentBytes)}';
+      }
+    }
+
     final tempId = 'post_${DateTime.now().millisecondsSinceEpoch}';
     final authorInitials = authorName.isNotEmpty ? authorName.substring(0, min(2, authorName.length)).toUpperCase() : 'U';
 
-    final resolvedPostType = postType ?? (poll != null ? 'poll' : (gifUrl != null ? 'gif' : (uploadedImageUrl != null || imageBytes != null ? 'image' : 'text')));
+    final resolvedPostType = postType ??
+        (poll != null
+            ? 'poll'
+            : (gifUrl != null
+                ? 'gif'
+                : (uploadedDocUrl != null
+                    ? 'document'
+                    : (uploadedImageUrl != null || imageBytes != null ? 'image' : 'student'))));
+
+    final bool isNotificationPost = resolvedPostType == 'notification';
 
     // 2. Optimistic local post (shown immediately before backend confirms)
     final optimisticPost = {
@@ -345,13 +610,15 @@ class PostService {
       'authorHandle': authorHandle,
       'authorSubtitle': authorBio,
       'authorInitials': authorInitials,
-      'authorBgColor': 0xFF0F4C81,
+      'authorBgColor': isNotificationPost ? 0xFF991B1B : 0xFF0F4C81,
       'authorAvatar': authorAvatar,
-      'isVerified': false,
-      'badgeType': 'none',
+      'isVerified': isNotificationPost || (currentUser != null),
+      'badgeType': isNotificationPost ? 'official' : 'none',
       'timeAgo': 'Just now',
       'content': content,
       'postType': resolvedPostType,
+      'type': resolvedPostType,
+      'isOfficial': isNotificationPost,
       'imageUrl': uploadedImageUrl,
       'imageBytes': imageBytes,
       'gifUrl': gifUrl,
@@ -360,6 +627,9 @@ class PostService {
       'location': location,
       'taggedPeople': taggedPeople,
       'replyVisibility': replyVisibility,
+      if (authorDesignation != null && authorDesignation.isNotEmpty) 'authorDesignation': authorDesignation,
+      if (isFacultyApproval) 'isFacultyApproval': true,
+      if (isFacultyApproval) 'approvalStatus': 'pending',
       'isCollab': isCollab,
       if (isCollab) ...{
         'collabAuthorName': collabAuthorName,
@@ -371,6 +641,18 @@ class PostService {
         'collabAuthorId': collabAuthorId,
         'isOfficial': isOfficialCollab ?? false,
       },
+      if (uploadedDocUrl != null) 'documentUrl': uploadedDocUrl,
+      if (documentName != null) 'documentName': documentName,
+      if (documentName != null) 'fileName': documentName,
+      'fileSizeBytes': documentSize ?? documentBytes?.length ?? 0,
+      'fileSize': documentSize ?? documentBytes?.length ?? 0,
+      if (uploadedDocUrl != null)
+        'fileAttachment': {
+          'fileUrl': uploadedDocUrl,
+          'fileName': documentName ?? 'attachment.pdf',
+          'fileSizeBytes': documentSize ?? documentBytes?.length ?? 0,
+          'mimeType': (documentName != null && documentName.endsWith('.pdf')) ? 'application/pdf' : 'application/octet-stream',
+        },
       'likes': 0,
       'likesCount': 0,
       'comments': 0,
@@ -405,6 +687,10 @@ class PostService {
         },
         if (uploadedImageUrl != null) 'imageUrl': uploadedImageUrl,
         if (uploadedImageUrl != null) 'mediaUrls': [uploadedImageUrl],
+        if (uploadedDocUrl != null) 'documentUrl': uploadedDocUrl,
+        if (documentName != null) 'documentName': documentName,
+        if (documentName != null) 'fileName': documentName,
+        if (documentSize != null) 'fileSizeBytes': documentSize,
         if (location != null) 'location': location,
       });
 
@@ -822,6 +1108,41 @@ class PostService {
     final rawTimestamp = post['createdAt'] ?? post['timeAgo'];
     final formattedTime = formatTimeAgo(rawTimestamp);
 
+    // Document / PDF metadata
+    final Map<String, dynamic>? fileAttachment = post['fileAttachment'] is Map<String, dynamic>
+        ? post['fileAttachment'] as Map<String, dynamic>
+        : (post['file_attachment'] is Map<String, dynamic> ? post['file_attachment'] as Map<String, dynamic> : null);
+    final String? documentUrl = post['documentUrl']?.toString() ??
+        post['document_url']?.toString() ??
+        post['docUrl']?.toString() ??
+        post['fileUrl']?.toString() ??
+        fileAttachment?['fileUrl']?.toString() ??
+        fileAttachment?['file_url']?.toString();
+    final String? documentName = post['documentName']?.toString() ??
+        post['document_name']?.toString() ??
+        post['fileName']?.toString() ??
+        post['file_name']?.toString() ??
+        fileAttachment?['fileName']?.toString() ??
+        fileAttachment?['file_name']?.toString() ??
+        documentUrl?.split('/').last.split('?').first;
+    final int documentSize = ((post['fileSizeBytes'] ??
+            post['file_size_bytes'] ??
+            post['fileSize'] ??
+            post['file_size'] ??
+            post['documentSize'] ??
+            fileAttachment?['fileSizeBytes'] ??
+            fileAttachment?['file_size_bytes'] ??
+            fileAttachment?['fileSize'] ??
+            0) as num)
+        .toInt();
+    final String? documentLabel = post['documentLabel']?.toString() ??
+        post['document_label']?.toString() ??
+        post['label']?.toString();
+
+    final String? authorDesignation = post['authorDesignation']?.toString() ?? post['designation']?.toString();
+    final bool isFacultyApproval = post['isFacultyApproval'] == true;
+    final String? approvalStatus = post['approvalStatus']?.toString();
+
     return {
       'id': id,
       'author': author != null ? Map<String, dynamic>.from(author) : {
@@ -848,6 +1169,18 @@ class PostService {
       'location': location,
       'taggedPeople': taggedPeople,
       'postType': postType,
+      'type': postType,
+      'isOfficial': post['isOfficial'] == true || postType == 'notification',
+      'authorDesignation': authorDesignation,
+      'isFacultyApproval': isFacultyApproval,
+      'approvalStatus': approvalStatus,
+      'documentUrl': documentUrl,
+      'documentName': documentName,
+      'fileName': documentName,
+      'fileSizeBytes': documentSize,
+      'fileSize': documentSize,
+      'documentLabel': documentLabel,
+      'fileAttachment': fileAttachment,
       'likes': likes,
       'likesCount': likes,
       'comments': comments,
@@ -856,7 +1189,6 @@ class PostService {
       'isBookmarked': isBookmarked,
       'timeAgo': formattedTime,
       'createdAt': post['createdAt']?.toString(),
-      'type': post['postType'] ?? post['type'] ?? 'student',
       'isCollab': post['isCollab'] == true,
       'collabAuthorName': post['collabAuthorName'] ?? post['collabName'],
       'collabAuthorSubtitle': post['collabAuthorSubtitle'] ?? post['collabSubtitle'],

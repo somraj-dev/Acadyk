@@ -20,7 +20,12 @@ class ChatMapper(private val profileMapper: ProfileMapper) {
             messageType = entity.messageType,
             mediaUrl = entity.mediaUrl,
             isEdited = entity.isEdited,
-            createdAt = entity.createdAt
+            createdAt = entity.createdAt,
+            // WhatsApp-style: File attachment metadata
+            fileName = entity.fileName,
+            fileSizeBytes = entity.fileSizeBytes,
+            mimeType = entity.mimeType,
+            thumbnailUrl = entity.thumbnailUrl
         )
     }
 

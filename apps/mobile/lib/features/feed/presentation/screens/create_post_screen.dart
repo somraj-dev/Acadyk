@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:acadyk/common/services/storage_service.dart';
 import 'package:acadyk/common/services/post_service.dart';
@@ -9,7 +10,8 @@ import 'package:acadyk/common/services/auth_service.dart';
 import 'package:acadyk/features/profile/presentation/services/profile_manager.dart';
 
 class CreatePostScreen extends StatefulWidget {
-  const CreatePostScreen({super.key});
+  final bool isNotice;
+  const CreatePostScreen({super.key, this.isNotice = false});
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -17,11 +19,17 @@ class CreatePostScreen extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _textController = TextEditingController();
+  bool _isNotice = false;
 
   // Media
   Uint8List? _pickedImageBytes;
   String? _pickedImageName;
   String? _altText;
+
+  // Document Attachment (WhatsApp-style lazy download in feed)
+  String? _attachedDocName;
+  Uint8List? _attachedDocBytes;
+  int? _attachedDocSize;
 
   // Poll
   bool _isPollActive = false;
@@ -44,9 +52,39 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   // Visibility / Who can reply
   String _replyVisibility = 'Everyone can reply';
 
+  // College Posting Authority & Rules
+  String? _selectedLeadershipRole; // 'Club President', 'Club Vice President', 'Class Representative (CR)', 'Faculty Member'
+  bool _isFacultyApprovalRequested = false;
+
+  bool get _isAuthorizedToPost {
+    // 1. Has selected an official collaborator (Club, Faculty, or Organization)
+    if (_selectedCollaborator != null) return true;
+
+    // 2. Has selected Faculty Approval route
+    if (_isFacultyApprovalRequested) return true;
+
+    // 3. Has declared leadership designation
+    if (_selectedLeadershipRole != null && _selectedLeadershipRole!.isNotEmpty) return true;
+
+    // 4. User has verified leadership roles in AuthService
+    final roles = AuthService.currentUser?.roles.map((r) => r.toUpperCase()).toList() ?? [];
+    if (roles.any((r) =>
+        r.contains('PRESIDENT') ||
+        r.contains('LEAD') ||
+        r.contains('CR') ||
+        r.contains('REPRESENTATIVE') ||
+        r.contains('FACULTY') ||
+        r.contains('ADMIN'))) {
+      return true;
+    }
+
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
+    _isNotice = widget.isNotice;
     _textController.addListener(() => setState(() {}));
     ProfileManager.profileUpdateNotifier.addListener(_onProfileUpdated);
   }
@@ -78,12 +116,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       final choice2 = _pollControllers[1].text.trim();
       return text.isNotEmpty && choice1.isNotEmpty && choice2.isNotEmpty;
     }
-    return text.isNotEmpty || _pickedImageBytes != null || _selectedMilestone != null || _selectedCollaborator != null;
+    return text.isNotEmpty ||
+        _pickedImageBytes != null ||
+        _attachedDocName != null ||
+        _selectedMilestone != null ||
+        _selectedCollaborator != null;
   }
 
   String get _currentHintText {
+    if (_isNotice) return 'Write official notice or academic circular announcement...';
     if (_isPollActive) return 'Ask a question...';
-    if (_pickedImageBytes != null) return 'Add a comment...';
+    if (_pickedImageBytes != null) return 'Add a description for this photo...';
+    if (_attachedDocName != null) return 'Add details about this document / notice...';
     if (_selectedCollaborator != null) return 'Share what you and ${_selectedCollaborator!['name']} are working on...';
     return "What's happening?";
   }
@@ -98,6 +142,35 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         _isPollActive = false;
       });
     }
+  }
+
+  Future<void> _pickDocument() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'zip'],
+        withData: true,
+      );
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        setState(() {
+          _attachedDocName = file.name;
+          _attachedDocBytes = file.bytes;
+          _attachedDocSize = file.size;
+          _isPollActive = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[CreatePostScreen] Error picking document: $e');
+    }
+  }
+
+  void _removeDocument() {
+    setState(() {
+      _attachedDocName = null;
+      _attachedDocBytes = null;
+      _attachedDocSize = null;
+    });
   }
 
   void _togglePoll() {
@@ -206,8 +279,390 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 
+  void _showPostingRulesDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalCtx) {
+        return Container(
+          constraints: const BoxConstraints(maxWidth: 540),
+          decoration: BoxDecoration(
+            color: _bgColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: _borderColor),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Drag handle
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: _borderColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+
+                  // Header with badge
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.shield_outlined,
+                          color: Color(0xFFD97706),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Campus Publishing Rules',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: _textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Authorization or collaboration required',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: _subTextColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: _subTextColor, size: 22),
+                        onPressed: () => Navigator.pop(modalCtx),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Policy Alert Box
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Text(
+                      'Under college publishing guidelines, posts must be authored by a Club President / VP, Class Representative (CR), co-authored with a Faculty or Club, or submitted for Faculty Approval.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: _textColor.withValues(alpha: 0.9),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Text(
+                    'Select an authorization method to proceed:',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: _subTextColor,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Option 1: Club or Faculty Collaboration
+                  _buildRuleOptionTile(
+                    icon: Icons.handshake_rounded,
+                    iconColor: const Color(0xFF0284C7),
+                    title: 'Add Faculty or Club Collaboration',
+                    subtitle: 'Co-author with a faculty mentor, department cell, or student club',
+                    badgeText: 'Collaboration',
+                    badgeColor: const Color(0xFF0284C7),
+                    onTap: () {
+                      Navigator.pop(modalCtx);
+                      _openCollaboratorPicker();
+                    },
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Option 2: Submit with Faculty Approval
+                  _buildRuleOptionTile(
+                    icon: Icons.verified_user_outlined,
+                    iconColor: const Color(0xFF10B981),
+                    title: 'Submit for Faculty Approval',
+                    subtitle: 'Send this post to your department faculty for review & publication',
+                    badgeText: 'Approval Route',
+                    badgeColor: const Color(0xFF10B981),
+                    onTap: () {
+                      Navigator.pop(modalCtx);
+                      setState(() {
+                        _isFacultyApprovalRequested = true;
+                      });
+                      _onPostSubmit();
+                    },
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Option 3: Declare Leadership Designation
+                  _buildRuleOptionTile(
+                    icon: Icons.badge_outlined,
+                    iconColor: const Color(0xFFD97706),
+                    title: 'I am Club President / VP / CR',
+                    subtitle: 'Select your official college position to publish directly',
+                    badgeText: 'Designation',
+                    badgeColor: const Color(0xFFD97706),
+                    onTap: () {
+                      Navigator.pop(modalCtx);
+                      _openLeadershipDesignationPicker();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRuleOptionTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String badgeText,
+    required Color badgeColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: _isDark ? const Color(0xFF161E2E) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+            width: 1.2,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: _textColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: badgeColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          badgeText,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: badgeColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _subTextColor,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right_rounded, color: _subTextColor, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openLeadershipDesignationPicker() {
+    final List<Map<String, dynamic>> roles = [
+      {
+        'title': 'Club President',
+        'subtitle': 'Official head of registered campus student club or society',
+        'icon': '🏆',
+      },
+      {
+        'title': 'Club Vice President',
+        'subtitle': 'Executive vice president of campus student club or chapter',
+        'icon': '🥈',
+      },
+      {
+        'title': 'Class Representative (CR)',
+        'subtitle': 'Official department / batch student representative',
+        'icon': '🎓',
+      },
+      {
+        'title': 'Faculty Member / Mentor',
+        'subtitle': 'Department faculty, academic mentor, or committee lead',
+        'icon': '👨‍🏫',
+      },
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          constraints: const BoxConstraints(maxWidth: 540),
+          decoration: BoxDecoration(
+            color: _bgColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: _borderColor),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: _borderColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.badge_rounded, color: Color(0xFFD97706), size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Select Your Designation',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: _textColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Posts published with your designation will display an official leadership badge on the college feed.',
+                  style: TextStyle(fontSize: 12.5, color: _subTextColor),
+                ),
+                const SizedBox(height: 14),
+                for (final r in roles) ...[
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: _isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(r['icon'] as String, style: const TextStyle(fontSize: 20)),
+                    ),
+                    title: Text(
+                      r['title'] as String,
+                      style: TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 14.5),
+                    ),
+                    subtitle: Text(
+                      r['subtitle'] as String,
+                      style: TextStyle(color: _subTextColor, fontSize: 12),
+                    ),
+                    trailing: _selectedLeadershipRole == r['title']
+                        ? const Icon(Icons.check_circle_rounded, color: Color(0xFF1D9BF0))
+                        : null,
+                    onTap: () {
+                      setState(() {
+                        _selectedLeadershipRole = r['title'] as String;
+                      });
+                      Navigator.pop(ctx);
+                      _onPostSubmit();
+                    },
+                  ),
+                  Divider(height: 1, color: _borderColor),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _onPostSubmit() {
     if (!_canPost) return;
+
+    // Enforce campus publishing authorization rules:
+    // User must be Club President/VP, CR, have Faculty/Club collab, or submit for Faculty Approval
+    if (!_isAuthorizedToPost) {
+      _showPostingRulesDialog();
+      return;
+    }
 
     final text = _textController.text.trim();
 
@@ -230,19 +685,30 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       }
     }
 
+    final String resolvedPostType = _isNotice
+        ? 'notification'
+        : (_isPollActive
+            ? 'poll'
+            : (_attachedDocName != null
+                ? 'document'
+                : (_pickedImageBytes != null ? 'image' : 'student')));
+
     // Trigger async posting in PostService (shows live progress bar in feed)
     PostService.startPostingAsync(
       content: text,
-      postType: _isPollActive
-          ? 'poll'
-          : (_pickedImageBytes != null ? 'image' : 'text'),
+      postType: resolvedPostType,
       imageBytes: _pickedImageBytes,
       imageName: _pickedImageName,
+      documentName: _attachedDocName,
+      documentBytes: _attachedDocBytes,
+      documentSize: _attachedDocSize,
       poll: pollData,
       milestone: _selectedMilestone,
       location: _selectedLocation,
       taggedPeople: _taggedPeople.isNotEmpty ? _taggedPeople : null,
       replyVisibility: _replyVisibility,
+      authorDesignation: _selectedLeadershipRole,
+      isFacultyApproval: _isFacultyApprovalRequested,
       isCollab: _selectedCollaborator != null,
       collabAuthorName: _selectedCollaborator?['name'],
       collabAuthorSubtitle: _selectedCollaborator?['subtitle'],
@@ -328,7 +794,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 // 2. Main Compose Area
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
                     children: [
                       // Collaboration badge if selected
                       if (_selectedCollaborator != null) ...[
@@ -361,6 +827,80 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               GestureDetector(
                                 onTap: () => setState(() => _selectedCollaborator = null),
                                 child: const Icon(Icons.close, size: 16, color: Color(0xFF0284C7)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      // Leadership designation badge if selected
+                      if (_selectedLeadershipRole != null) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: _isDark ? const Color(0xFF1E1B4B) : const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFD97706).withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.badge_rounded, size: 16, color: Color(0xFFD97706)),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  'Designation: $_selectedLeadershipRole',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFD97706),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => setState(() => _selectedLeadershipRole = null),
+                                child: const Icon(Icons.close, size: 16, color: Color(0xFFD97706)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      // Faculty approval route badge if selected
+                      if (_isFacultyApprovalRequested) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: _isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFF059669).withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.verified_outlined, size: 16, color: Color(0xFF059669)),
+                              const SizedBox(width: 6),
+                              const Flexible(
+                                child: Text(
+                                  'Route: Submitted for Faculty Approval',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF059669),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => setState(() => _isFacultyApprovalRequested = false),
+                                child: const Icon(Icons.close, size: 16, color: Color(0xFF059669)),
                               ),
                             ],
                           ),
@@ -467,6 +1007,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                   ),
                                 ],
 
+                                // Attached document preview (WhatsApp-style lazy download in feed)
+                                if (_attachedDocName != null) ...[
+                                  const SizedBox(height: 14),
+                                  _buildDocumentPreviewInComposer(),
+                                ],
+
                                 // Poll Composer Widget (Image 4)
                                 if (_isPollActive) ...[
                                   const SizedBox(height: 14),
@@ -532,6 +1078,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           ),
                           const SizedBox(width: 18),
 
+                          // 2. Document / PDF (WhatsApp-style lazy download in feed)
+                          _buildToolbarIcon(
+                            icon: CupertinoIcons.doc_text,
+                            tooltip: 'Attach Document or PDF',
+                            isActive: _attachedDocName != null,
+                            onTap: _pickDocument,
+                          ),
+                          const SizedBox(width: 18),
+
                           // 2. Poll
                           _buildToolbarIcon(
                             icon: CupertinoIcons.list_bullet,
@@ -566,6 +1121,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             isActive: _selectedMilestone != null,
                             onTap: _openMilestonePicker,
                           ),
+                          const SizedBox(width: 18),
+
+                          // 6. Authority & Verification Policy
+                          _buildToolbarIcon(
+                            icon: Icons.shield_outlined,
+                            tooltip: 'Publishing Rules & Authorization',
+                            isActive: _isAuthorizedToPost,
+                            onTap: _showPostingRulesDialog,
+                          ),
                         ],
                       ),
                     ),
@@ -578,10 +1142,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       ),
     );
   }
-
-  // -------------------------------------------------------------
-  // WIDGET HELPERS
-  // -------------------------------------------------------------
 
   Widget _buildUserAvatar(String avatarUrl, String initials) {
     if (ProfileManager.avatarBytes != null) {
@@ -758,6 +1318,63 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildDocumentPreviewInComposer() {
+    final ext = _attachedDocName != null && _attachedDocName!.contains('.')
+        ? _attachedDocName!.split('.').last.toUpperCase()
+        : 'DOC';
+    final sizeStr = _attachedDocSize != null
+        ? (_attachedDocSize! < 1024 * 1024
+            ? '${(_attachedDocSize! / 1024).toStringAsFixed(1)} KB'
+            : '${(_attachedDocSize! / (1024 * 1024)).toStringAsFixed(1)} MB')
+        : '';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: _isDark ? const Color(0xFF161E2E) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.5), width: 1.2),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF3B82F6), size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _attachedDocName ?? 'Document',
+                  style: TextStyle(color: _textColor, fontSize: 14, fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '$ext${sizeStr.isNotEmpty ? " • $sizeStr" : ""}',
+                  style: TextStyle(color: _subTextColor, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 20),
+            color: _subTextColor,
+            onPressed: _removeDocument,
+          ),
+        ],
+      ),
     );
   }
 

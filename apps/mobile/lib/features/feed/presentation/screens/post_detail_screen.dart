@@ -9,7 +9,7 @@ import 'package:acadyk/common/services/follow_service.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../profile/presentation/screens/about_account_screen.dart';
 import '../../../profile/presentation/services/profile_manager.dart';
-
+import '../widgets/lazy_file_attachment_card.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String authorName;
@@ -495,6 +495,32 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         builder: (context) {
                           final detailImg = widget.post?['imageUrl'] ?? widget.post?['image_url'] ?? widget.post?['image'] ?? widget.post?['imageAsset'];
                           final dynamic detailBytes = widget.post?['imageBytes'];
+
+                          // Check for document/file attachment (WhatsApp-style lazy download)
+                          final Map<String, dynamic>? fileAttachment = widget.post?['fileAttachment'] is Map<String, dynamic>
+                              ? widget.post!['fileAttachment'] as Map<String, dynamic>
+                              : null;
+                          final String? docUrl = widget.post?['documentUrl']?.toString() ??
+                              fileAttachment?['fileUrl']?.toString() ??
+                              (_isDocumentUrl(detailImg?.toString()) ? detailImg?.toString() : null);
+
+                          if (docUrl != null && docUrl.isNotEmpty) {
+                            final String docName = widget.post?['documentName']?.toString() ??
+                                widget.post?['fileName']?.toString() ??
+                                fileAttachment?['fileName']?.toString() ??
+                                docUrl.split('/').last.split('?').first;
+                            final int docSize = ((widget.post?['fileSizeBytes'] ?? widget.post?['fileSize'] ?? fileAttachment?['fileSizeBytes'] ?? 0) as num).toInt();
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 0),
+                              child: LazyFileAttachmentCard(
+                                fileUrl: docUrl,
+                                fileName: docName,
+                                fileSizeBytes: docSize,
+                                label: widget.post?['documentLabel']?.toString() ?? (widget.post?['type'] == 'notification' ? 'Official Document' : null),
+                              ),
+                            );
+                          }
+
                           if (detailBytes == null && (detailImg == null || detailImg.toString().isEmpty)) {
                             return const SizedBox.shrink();
                           }
@@ -708,6 +734,21 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         ),
       ),
     );
+  }
+
+  bool _isDocumentUrl(String? url) {
+    if (url == null || url.isEmpty) return false;
+    final clean = url.toLowerCase().split('?').first;
+    return clean.endsWith('.pdf') ||
+        clean.endsWith('.doc') ||
+        clean.endsWith('.docx') ||
+        clean.endsWith('.xls') ||
+        clean.endsWith('.xlsx') ||
+        clean.endsWith('.ppt') ||
+        clean.endsWith('.pptx') ||
+        clean.endsWith('.txt') ||
+        clean.endsWith('.csv') ||
+        clean.endsWith('.zip');
   }
 
   Widget _buildDetailMediaImage(String? postImageUrl, dynamic imageBytes) {

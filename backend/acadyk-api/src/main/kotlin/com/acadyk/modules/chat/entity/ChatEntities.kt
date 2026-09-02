@@ -65,6 +65,20 @@ data class MessageEntity(
 
     var messageType: String = "TEXT",
     var mediaUrl: String? = null,
+
+    // WhatsApp-style: File attachment metadata columns (V19 migration)
+    @Column(name = "file_name")
+    var fileName: String? = null,
+
+    @Column(name = "file_size_bytes")
+    var fileSizeBytes: Long? = null,
+
+    @Column(name = "mime_type")
+    var mimeType: String? = null,
+
+    @Column(name = "thumbnail_url")
+    var thumbnailUrl: String? = null,
+
     var isEdited: Boolean = false,
 
     @Column(nullable = false)
