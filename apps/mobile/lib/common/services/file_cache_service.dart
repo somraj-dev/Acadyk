@@ -2,10 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../features/file_viewer/services/file_viewer_service.dart';
 
 /// Enum representing the download state of a file in the app (WhatsApp model).
 enum FileDownloadState {
@@ -15,13 +14,20 @@ enum FileDownloadState {
   failed,
 }
 
-/// Singleton service managing on-demand (lazy) file downloads and local disk caching.
+/// Singleton service managing on-demand (lazy) file downloads and persistent user storage.
 ///
-/// Follows the WhatsApp architecture:
+/// Follows the complete WhatsApp storage architecture:
 /// 1. Files are NEVER automatically downloaded upon receiving or rendering in feed/chat.
 /// 2. Files are downloaded ONLY when the user explicitly taps to view/download them.
-/// 3. Downloaded files are cached locally in the sandbox temporary directory and reopened
-///    instantly on subsequent taps without re-downloading or consuming network data.
+/// 3. Downloaded files are saved directly into the user's permanent device storage in organized
+///    WhatsApp-style categorized directories:
+///      - Internal Storage / Download / Acadyk / Acadyk Documents/ (PDFs, DOC, XLS, PPT, TXT)
+///      - Internal Storage / Download / Acadyk / Acadyk Images/    (JPG, PNG, WEBP, GIF)
+///      - Internal Storage / Download / Acadyk / Acadyk Video/     (MP4, MKV, MOV)
+///      - Internal Storage / Download / Acadyk / Acadyk Audio/     (MP3, WAV, M4A)
+/// 4. Files appear immediately in the user's File Manager (Files by Google, Samsung My Files),
+///    Downloads folder, and Media Gallery with clean, original file names!
+/// 5. Subsequent taps reopen the stored file instantly with zero network consumption.
 class FileCacheService {
   FileCacheService._internal();
   static final FileCacheService instance = FileCacheService._internal();
@@ -33,55 +39,170 @@ class FileCacheService {
     ),
   );
 
-  /// In-memory cache directory reference
-  Directory? _cacheDir;
-
   /// Map of active cancel tokens for ongoing downloads
   final Map<String, CancelToken> _activeDownloads = {};
 
-  /// Cache directory initialization: `<systemTemp>/acadyk_media_cache`
-  Future<Directory> _getCacheDirectory() async {
-    if (_cacheDir != null && await _cacheDir!.exists()) {
-      return _cacheDir!;
+  /// Determine the WhatsApp-style category subfolder for a given file name.
+  static String getCategorySubfolder(String fileName) {
+    final clean = fileName.toLowerCase().split('?').first;
+    final ext = clean.contains('.') ? clean.split('.').last : '';
+    switch (ext) {
+      case 'pdf':
+      case 'doc':
+      case 'docx':
+      case 'xls':
+      case 'xlsx':
+      case 'ppt':
+      case 'pptx':
+      case 'txt':
+      case 'csv':
+      case 'json':
+      case 'zip':
+      case 'rar':
+      case '7z':
+      case 'epub':
+        return 'Acadyk Documents';
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'webp':
+      case 'svg':
+      case 'gif':
+      case 'bmp':
+        return 'Acadyk Images';
+      case 'mp4':
+      case 'mkv':
+      case 'mov':
+      case 'avi':
+      case 'webm':
+        return 'Acadyk Video';
+      case 'mp3':
+      case 'wav':
+      case 'm4a':
+      case 'aac':
+      case 'ogg':
+      case 'flac':
+        return 'Acadyk Audio';
+      default:
+        return 'Acadyk Documents';
     }
+  }
+
+  /// Get or create the root storage directory for Acadyk media (WhatsApp architecture).
+  ///
+  /// On Android:
+  /// Primary: `/storage/emulated/0/Download/Acadyk/$category` (visible in Files by Google, Downloads, File Manager)
+  /// Secondary: `getDownloadsDirectory()/Acadyk/$category`
+  /// Tertiary: `getExternalStorageDirectory()/Acadyk/$category`
+  ///
+  /// On iOS:
+  /// `getApplicationDocumentsDirectory()/Acadyk/$category` (visible in Apple Files app via UIFileSharingEnabled)
+  Future<Directory> getAcadykStorageDirectory(String category) async {
+    if (!kIsWeb && Platform.isAndroid) {
+      // 1. Android Public Download directory: universally visible in all File Managers & Files by Google
+      final publicDownload = Directory('/storage/emulated/0/Download/Acadyk/$category');
+      try {
+        if (!await publicDownload.exists()) {
+          await publicDownload.create(recursive: true);
+        }
+        return publicDownload;
+      } catch (e) {
+        debugPrint('[FileCacheService] Public download path not directly writable: $e');
+      }
+
+      // 2. path_provider getDownloadsDirectory
+      try {
+        final downloadsDir = await getDownloadsDirectory();
+        if (downloadsDir != null) {
+          final dir = Directory('${downloadsDir.path}/Acadyk/$category');
+          if (!await dir.exists()) {
+            await dir.create(recursive: true);
+          }
+          return dir;
+        }
+      } catch (_) {}
+
+      // 3. path_provider getExternalStorageDirectory
+      try {
+        final extDir = await getExternalStorageDirectory();
+        if (extDir != null) {
+          final dir = Directory('${extDir.path}/Acadyk/$category');
+          if (!await dir.exists()) {
+            await dir.create(recursive: true);
+          }
+          return dir;
+        }
+      } catch (_) {}
+    }
+
+    // 4. iOS / Desktop / Fallback
+    try {
+      final docDir = await getApplicationDocumentsDirectory();
+      final dir = Directory('${docDir.path}/Acadyk/$category');
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+      return dir;
+    } catch (_) {}
+
+    // 5. Ultimate Fallback to temp dir
     final tempDir = Directory.systemTemp;
-    final dir = Directory('${tempDir.path}/acadyk_media_cache');
+    final dir = Directory('${tempDir.path}/Acadyk/$category');
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
-    _cacheDir = dir;
     return dir;
   }
 
-  /// Generate a deterministic, sanitized file name for caching based on URL and original name.
-  String _getCacheKey(String fileUrl, String fileName) {
-    final sanitizedName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
-    final urlHash = fileUrl.hashCode.abs().toRadixString(36);
-    return '${urlHash}_$sanitizedName';
+  /// Clean, sanitized original file name for user storage (e.g. "Lecture_Notes_Unit1.pdf")
+  String _getSanitizedFileName(String fileName, String fileUrl) {
+    var clean = fileName.replaceAll(RegExp(r'[/\\?%*:|"<>]+'), '_').trim();
+    if (clean.isEmpty) {
+      final urlHash = fileUrl.hashCode.abs().toRadixString(36);
+      clean = 'acadyk_file_$urlHash';
+    }
+    return clean;
   }
 
-  /// Synchronously or asynchronously check if a file already exists in local disk cache.
+  /// Check if a file already exists in the user's storage.
   Future<bool> isFileDownloaded(String fileUrl, String fileName) async {
     if (kIsWeb) return false;
     if (fileUrl.isEmpty) return false;
     try {
       final file = await getLocalFile(fileUrl, fileName);
-      return await file.exists() && (await file.length()) > 0;
+      if (await file.exists() && (await file.length()) > 0) {
+        return true;
+      }
+      // Check legacy temp cache for backwards compatibility
+      final legacyFile = await _getLegacyCacheFile(fileUrl, fileName);
+      if (await legacyFile.exists() && (await legacyFile.length()) > 0) {
+        return true;
+      }
+      return false;
     } catch (_) {
       return false;
     }
   }
 
-  /// Get the [File] handle for the cached file (may or may not exist yet on disk).
-  Future<File> getLocalFile(String fileUrl, String fileName) async {
-    final dir = await _getCacheDirectory();
-    final cacheKey = _getCacheKey(fileUrl, fileName);
-    return File('${dir.path}/$cacheKey');
+  /// Legacy sandbox cache file handle for backward migration
+  Future<File> _getLegacyCacheFile(String fileUrl, String fileName) async {
+    final tempDir = Directory.systemTemp;
+    final sanitizedName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+    final urlHash = fileUrl.hashCode.abs().toRadixString(36);
+    return File('${tempDir.path}/acadyk_media_cache/${urlHash}_$sanitizedName');
   }
 
-  /// Download a file on-demand with progress tracking.
+  /// Get the [File] handle in the user's permanent Acadyk storage directory.
+  Future<File> getLocalFile(String fileUrl, String fileName) async {
+    final category = getCategorySubfolder(fileName);
+    final dir = await getAcadykStorageDirectory(category);
+    final cleanName = _getSanitizedFileName(fileName, fileUrl);
+    return File('${dir.path}/$cleanName');
+  }
+
+  /// Download a file on-demand into the user's storage (WhatsApp architecture).
   ///
-  /// Returns the cached [File] on success, or `null` if cancelled or failed.
+  /// Returns the saved [File] on success, or `null` if cancelled or failed.
   Future<File?> downloadFile(
     String fileUrl,
     String fileName, {
@@ -89,25 +210,26 @@ class FileCacheService {
   }) async {
     if (fileUrl.isEmpty) return null;
 
-    // Data URI (base64) handling
+    final targetFile = await getLocalFile(fileUrl, fileName);
+
+    // 1. Data URI (base64) handling
     if (fileUrl.startsWith('data:') && fileUrl.contains(';base64,')) {
       try {
         final base64Str = fileUrl.split(';base64,').last;
         final bytes = base64Decode(base64Str);
-        final localFile = await getLocalFile(fileUrl, fileName);
-        if (!await localFile.parent.exists()) {
-          await localFile.parent.create(recursive: true);
+        if (!await targetFile.parent.exists()) {
+          await targetFile.parent.create(recursive: true);
         }
-        await localFile.writeAsBytes(bytes);
+        await targetFile.writeAsBytes(bytes);
         onProgress?.call(1.0);
-        return localFile;
+        return targetFile;
       } catch (e) {
         debugPrint('[FileCacheService] Error decoding data URI: $e');
         return null;
       }
     }
 
-    // Web fallback: open directly
+    // 2. Web fallback: open directly
     if (kIsWeb) {
       final uri = Uri.parse(fileUrl);
       if (await canLaunchUrl(uri)) {
@@ -116,22 +238,37 @@ class FileCacheService {
       return null;
     }
 
-    final localFile = await getLocalFile(fileUrl, fileName);
-
-    // If already downloaded and valid, return immediately
-    if (await localFile.exists() && (await localFile.length()) > 0) {
+    // 3. If already stored in user's Acadyk directory, return immediately
+    if (await targetFile.exists() && (await targetFile.length()) > 0) {
       onProgress?.call(1.0);
-      return localFile;
+      return targetFile;
     }
 
-    final cancelToken = CancelToken();
-    final cacheKey = _getCacheKey(fileUrl, fileName);
-    _activeDownloads[cacheKey] = cancelToken;
+    // 4. If present in legacy temp cache, migrate to user's storage
+    final legacyFile = await _getLegacyCacheFile(fileUrl, fileName);
+    if (await legacyFile.exists() && (await legacyFile.length()) > 0) {
+      try {
+        if (!await targetFile.parent.exists()) {
+          await targetFile.parent.create(recursive: true);
+        }
+        await legacyFile.copy(targetFile.path);
+        onProgress?.call(1.0);
+        return targetFile;
+      } catch (_) {}
+    }
 
-    final tempFilePath = '${localFile.path}.tmp';
+    // 5. Download directly into the user's storage folder
+    final cancelToken = CancelToken();
+    _activeDownloads[fileUrl] = cancelToken;
+
+    final tempFilePath = '${targetFile.path}.download';
     final tempFile = File(tempFilePath);
 
     try {
+      if (!await targetFile.parent.exists()) {
+        await targetFile.parent.create(recursive: true);
+      }
+
       await _dio.download(
         fileUrl,
         tempFilePath,
@@ -141,25 +278,24 @@ class FileCacheService {
             final progress = (received / total).clamp(0.0, 1.0);
             onProgress?.call(progress);
           } else {
-            // Indeterminate progress
             onProgress?.call(-1.0);
           }
         },
       );
 
-      // Atomically move temp file to destination cache file
+      // Atomically rename temp file to permanent user storage file
       if (await tempFile.exists()) {
-        if (await localFile.exists()) {
-          await localFile.delete();
+        if (await targetFile.exists()) {
+          await targetFile.delete();
         }
-        await tempFile.rename(localFile.path);
+        await tempFile.rename(targetFile.path);
       }
 
-      _activeDownloads.remove(cacheKey);
+      _activeDownloads.remove(fileUrl);
       onProgress?.call(1.0);
-      return localFile;
+      return targetFile;
     } catch (e) {
-      _activeDownloads.remove(cacheKey);
+      _activeDownloads.remove(fileUrl);
       if (await tempFile.exists()) {
         try {
           await tempFile.delete();
@@ -176,12 +312,11 @@ class FileCacheService {
 
   /// Cancel an ongoing download
   void cancelDownload(String fileUrl, String fileName) {
-    final cacheKey = _getCacheKey(fileUrl, fileName);
-    _activeDownloads[cacheKey]?.cancel('User cancelled download');
-    _activeDownloads.remove(cacheKey);
+    _activeDownloads[fileUrl]?.cancel('User cancelled download');
+    _activeDownloads.remove(fileUrl);
   }
 
-  /// Open a locally cached file using native OS app chooser (WhatsApp model: ChatGPT, Drive, Word, etc.)
+  /// Open a locally stored file using native OS app chooser (WhatsApp model: ChatGPT, Drive, Word, etc.)
   Future<bool> openLocalFile(File file, [String? mimeType]) async {
     try {
       if (!await file.exists()) return false;
@@ -198,7 +333,7 @@ class FileCacheService {
     }
   }
 
-  /// Convenience method: checks cache -> opens if present, else triggers on-demand download and opens.
+  /// Convenience method: checks storage -> opens if present, else triggers on-demand download and opens.
   Future<bool> openOrDownloadFile(
     String fileUrl,
     String fileName, {
@@ -208,33 +343,23 @@ class FileCacheService {
     if (isCached) {
       final file = await getLocalFile(fileUrl, fileName);
       return await openLocalFile(file);
+    } else {
+      final file = await downloadFile(fileUrl, fileName, onProgress: onProgress);
+      if (file != null) {
+        return await openLocalFile(file);
+      }
+      return false;
     }
-
-    final downloadedFile = await downloadFile(fileUrl, fileName, onProgress: onProgress);
-    if (downloadedFile != null) {
-      return await openLocalFile(downloadedFile);
-    }
-    return false;
   }
 
-  /// Open a file inside the Acadyk Universal In-App File Viewer.
-  Future<void> openInUniversalViewer(
-    BuildContext context, {
-    required String fileUrl,
-    required String fileName,
-    int? fileSizeBytes,
-    String? mimeType,
-    String? uploadedBy,
-    DateTime? uploadedAt,
-  }) async {
-    await FileViewerService.openFile(
-      context,
-      fileUrl: fileUrl,
-      fileName: fileName,
-      fileSizeBytes: fileSizeBytes,
-      mimeType: mimeType,
-      uploadedBy: uploadedBy,
-      uploadedAt: uploadedAt,
-    );
+  /// List all files saved in a specific Acadyk media category in user storage.
+  Future<List<FileSystemEntity>> listCategoryFiles(String category) async {
+    try {
+      final dir = await getAcadykStorageDirectory(category);
+      if (await dir.exists()) {
+        return dir.listSync();
+      }
+    } catch (_) {}
+    return [];
   }
 }
