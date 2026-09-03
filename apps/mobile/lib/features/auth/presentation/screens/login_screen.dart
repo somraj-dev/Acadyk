@@ -5,6 +5,7 @@ import 'package:acadyk/common/providers/auth_provider.dart';
 import 'package:acadyk/common/providers/theme_provider.dart';
 import '../../../../common/widgets/logo_widget.dart';
 import '../../../../shared/widgets/skeleton/login_loading_skeleton.dart';
+import '../widgets/login_failure_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -174,12 +175,72 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  LoginFailureType _classifyLoginError(dynamic error, String input) {
+    final err = error.toString().toLowerCase();
+
+    // 1. Non-institutional / Wrong email domain used
+    if (err.contains('mitsgwl.ac.in') ||
+        err.contains('institutional email') ||
+        err.contains('college email') ||
+        (input.contains('@') && !input.endsWith('@mitsgwl.ac.in') && !input.endsWith('@mits.ac.in'))) {
+      return LoginFailureType.invalidEmailDomain;
+    }
+
+    // 2. Server-side delay / API verification timeout / connection failure
+    if (err.contains('timeout') ||
+        err.contains('timed out') ||
+        err.contains('delay') ||
+        err.contains('socket') ||
+        err.contains('connection') ||
+        err.contains('network') ||
+        err.contains('handshake') ||
+        err.contains('503') ||
+        err.contains('504') ||
+        err.contains('server')) {
+      return LoginFailureType.serverTimeout;
+    }
+
+    // 3. Username mismatch / Enrollment not found in campus database
+    if (err.contains('user-not-found') ||
+        err.contains('not found') ||
+        err.contains('no user') ||
+        err.contains('mismatch') ||
+        err.contains('does not exist')) {
+      return LoginFailureType.usernameMismatch;
+    }
+
+    // 4. Password wrong / Invalid credentials
+    if (err.contains('wrong-password') ||
+        err.contains('invalid-credential') ||
+        err.contains('password') ||
+        err.contains('credential')) {
+      return LoginFailureType.wrongPassword;
+    }
+
+    return LoginFailureType.wrongPassword;
+  }
+
   Future<void> _handlePasswordAction() async {
     final usernameInput = _usernameController.text.trim();
     final password = _passwordController.text.trim();
-    final messenger = ScaffoldMessenger.of(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
+    // Pre-flight check: Non-institutional personal email entered
+    if (usernameInput.contains('@')) {
+      final domain = usernameInput.toLowerCase().split('@').last.trim();
+      if (domain != 'mitsgwl.ac.in' && domain != 'mits.ac.in') {
+        LoginFailureDialog.show(
+          context,
+          failureType: LoginFailureType.invalidEmailDomain,
+          attemptedAccount: usernameInput,
+          onPrimaryAction: () {
+            _handleGoogleSignIn();
+          },
+        );
+        return;
+      }
+    }
 
     // Support both raw username (e.g. 0901CS221001 or somraj.lodhi) and full email
     final email = usernameInput.contains('@') ? usernameInput : '$usernameInput@mitsgwl.ac.in';
@@ -199,14 +260,26 @@ class _LoginScreenState extends State<LoginScreen> {
       } catch (_) {}
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.redAccent,
-        ),
+      setState(() {
+        _isLoading = false;
+      });
+      final failureType = _classifyLoginError(e, usernameInput);
+      LoginFailureDialog.show(
+        context,
+        failureType: failureType,
+        attemptedAccount: usernameInput,
+        onPrimaryAction: () {
+          if (failureType == LoginFailureType.wrongPassword) {
+            _handleForgotPassword();
+          } else if (failureType == LoginFailureType.serverTimeout) {
+            _handlePasswordAction();
+          } else if (failureType == LoginFailureType.invalidEmailDomain) {
+            _handleGoogleSignIn();
+          }
+        },
       );
     } finally {
-      if (mounted) {
+      if (mounted && _isLoading) {
         setState(() {
           _isLoading = false;
         });
@@ -215,7 +288,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleGoogleSignIn() async {
-    final messenger = ScaffoldMessenger.of(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
 
@@ -231,20 +303,27 @@ class _LoginScreenState extends State<LoginScreen> {
           themeProvider.setThemeMode(ThemeMode.light);
         } catch (_) {}
       } else {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Google Sign-In was cancelled or failed.')),
-        );
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.redAccent,
-        ),
+      setState(() {
+        _isLoading = false;
+      });
+      final failureType = _classifyLoginError(e, '');
+      LoginFailureDialog.show(
+        context,
+        failureType: failureType,
+        onPrimaryAction: () {
+          _handleGoogleSignIn();
+        },
       );
     } finally {
-      if (mounted) {
+      if (mounted && _isLoading) {
         setState(() {
           _isLoading = false;
         });
