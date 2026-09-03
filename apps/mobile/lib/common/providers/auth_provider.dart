@@ -102,7 +102,17 @@ class AuthProvider extends ChangeNotifier {
       );
       if (user != null) {
         _currentUser = user;
-        await _fetchProfile(user.id);
+        final fallbackUsername = user.email.isNotEmpty ? user.email.split('@').first : 'user';
+        _currentProfile = ProfileModel.fromJson({
+          'id': user.id,
+          'email': user.email,
+          'full_name': user.fullName ?? (fullName ?? ''),
+          'username': user.enrollmentNumber ?? user.username ?? fallbackUsername,
+          'major': user.branch ?? '',
+          'degree': user.degree ?? '',
+        });
+        notifyListeners();
+        _fetchProfile(user.id);
         return true;
       }
       return false;
@@ -120,7 +130,17 @@ class AuthProvider extends ChangeNotifier {
       final user = await AuthService.signInWithEmail(email, password);
       if (user != null) {
         _currentUser = user;
-        await _fetchProfile(user.id);
+        final fallbackUsername = user.email.isNotEmpty ? user.email.split('@').first : 'user';
+        _currentProfile = ProfileModel.fromJson({
+          'id': user.id,
+          'email': user.email,
+          'full_name': user.fullName ?? '',
+          'username': user.enrollmentNumber ?? user.username ?? fallbackUsername,
+          'major': user.branch ?? '',
+          'degree': user.degree ?? '',
+        });
+        notifyListeners();
+        _fetchProfile(user.id);
         return true;
       }
       return false;
@@ -135,7 +155,17 @@ class AuthProvider extends ChangeNotifier {
       final user = await AuthService.signInWithGoogle();
       if (user != null) {
         _currentUser = user;
-        await _fetchProfile(user.id);
+        final fallbackUsername = user.email.isNotEmpty ? user.email.split('@').first : 'user';
+        _currentProfile = ProfileModel.fromJson({
+          'id': user.id,
+          'email': user.email,
+          'full_name': user.fullName ?? '',
+          'username': user.enrollmentNumber ?? user.username ?? fallbackUsername,
+          'major': user.branch ?? '',
+          'degree': user.degree ?? '',
+        });
+        notifyListeners();
+        _fetchProfile(user.id);
         return true;
       }
       return false;

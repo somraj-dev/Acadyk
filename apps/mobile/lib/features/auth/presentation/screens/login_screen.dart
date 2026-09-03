@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:acadyk/common/providers/auth_provider.dart';
 import 'package:acadyk/common/providers/theme_provider.dart';
 import '../../../../common/widgets/logo_widget.dart';
+import '../../../../shared/widgets/skeleton/login_loading_skeleton.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -315,6 +316,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const LoginLoadingSkeleton(
+        statusText: 'Verifying campus credentials...',
+      );
+    }
+
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 360;
 

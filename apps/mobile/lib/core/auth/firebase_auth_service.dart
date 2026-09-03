@@ -98,15 +98,16 @@ class FirebaseAuthService {
       await _storage.write(key: 'auth_token', value: idToken);
     }
 
-    // Handshake with backend to verify Firebase token and fetch profile & roles
+    // Fast handshake with backend to verify Firebase token and fetch profile & roles
     if (idToken != null) {
       try {
-        final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken});
+        final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken})
+            .timeout(const Duration(milliseconds: 1500));
         if (res.data?['data'] != null) {
           return res.data['data'] as Map<String, dynamic>;
         }
       } catch (e) {
-        debugPrint('[FirebaseAuthService] Backend token verification note: $e');
+        debugPrint('[FirebaseAuthService] Fast token verification fallback: $e');
       }
     }
 
@@ -246,12 +247,13 @@ class FirebaseAuthService {
 
       if (idToken != null) {
         try {
-          final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken});
+          final res = await ApiClient.post('/auth/verify-token', data: {'idToken': idToken})
+              .timeout(const Duration(milliseconds: 1500));
           if (res.data?['data'] != null) {
             return res.data['data'] as Map<String, dynamic>;
           }
         } catch (e) {
-          debugPrint('[FirebaseAuthService] Backend Google token verification note: $e');
+          debugPrint('[FirebaseAuthService] Fast Google token verification fallback: $e');
         }
       }
 
