@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../features/file_viewer/services/file_viewer_service.dart';
 
@@ -87,6 +89,24 @@ class FileCacheService {
   }) async {
     if (fileUrl.isEmpty) return null;
 
+    // Data URI (base64) handling
+    if (fileUrl.startsWith('data:') && fileUrl.contains(';base64,')) {
+      try {
+        final base64Str = fileUrl.split(';base64,').last;
+        final bytes = base64Decode(base64Str);
+        final localFile = await getLocalFile(fileUrl, fileName);
+        if (!await localFile.parent.exists()) {
+          await localFile.parent.create(recursive: true);
+        }
+        await localFile.writeAsBytes(bytes);
+        onProgress?.call(1.0);
+        return localFile;
+      } catch (e) {
+        debugPrint('[FileCacheService] Error decoding data URI: $e');
+        return null;
+      }
+    }
+
     // Web fallback: open directly
     if (kIsWeb) {
       final uri = Uri.parse(fileUrl);
@@ -161,20 +181,20 @@ class FileCacheService {
     _activeDownloads.remove(cacheKey);
   }
 
-  /// Open a locally cached file using the system's external application handler or in-app viewer.
-  Future<bool> openLocalFile(File file) async {
+  /// Open a locally cached file using native OS app chooser (WhatsApp model: ChatGPT, Drive, Word, etc.)
+  Future<bool> openLocalFile(File file, [String? mimeType]) async {
     try {
       if (!await file.exists()) return false;
-      final uri = Uri.file(file.path);
-      if (await canLaunchUrl(uri)) {
-        return await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        // Fallback for platform-specific file intent handlers
-        return await launchUrl(uri);
-      }
+      final result = await OpenFilex.open(file.path, type: mimeType);
+      return result.type == ResultType.done;
     } catch (e) {
-      debugPrint('[FileCacheService] Error opening local file ${file.path}: $e');
-      return false;
+      debugPrint('[FileCacheService] Error opening local file with OpenFilex: $e');
+      try {
+        final uri = Uri.file(file.path);
+        return await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        return false;
+      }
     }
   }
 

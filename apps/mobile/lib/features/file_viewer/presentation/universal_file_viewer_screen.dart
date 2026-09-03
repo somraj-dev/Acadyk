@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../domain/file_type.dart';
 import '../domain/file_viewer_metadata.dart';
@@ -24,6 +25,10 @@ class UniversalFileViewerScreen extends StatelessWidget {
   });
 
   Future<void> _openExternally() async {
+    if (metadata.localPath != null && metadata.localPath!.isNotEmpty) {
+      final res = await OpenFilex.open(metadata.localPath!, type: metadata.mimeType);
+      if (res.type == ResultType.done) return;
+    }
     final uri = Uri.parse(metadata.fileUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
